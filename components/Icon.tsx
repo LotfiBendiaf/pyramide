@@ -11,7 +11,7 @@ const Icon: React.FC<IconProps> = ({ format = "normal" }) => {
   return (
     <>
       <Image
-        src="/pyramide-icon2.svg"
+        src="/pyramide-Icon2.svg"
         width={dimensions.size}
         height={dimensions.size}
         alt="BI Icon"

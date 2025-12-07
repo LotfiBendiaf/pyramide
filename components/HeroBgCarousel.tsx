@@ -16,7 +16,7 @@ export default function HeroBgCarousel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative h-screen w-full mb-20">
+    <div className="relative min-h-[110vh] w-full">
       {/* BACKGROUND IMAGES CAROUSEL */}
       <Carousel
         opts={{ loop: true }}
@@ -26,11 +26,14 @@ export default function HeroBgCarousel({
             stopOnInteraction: false,
           }),
         ]}
-        className="absolute inset-0 w-full h-screen"
+        className="absolute inset-0 w-full min-h-[110vh]"
       >
-        <CarouselContent className="h-screen">
+        <CarouselContent className="min-h-[110vh]">
           {bgImages.map((src, i) => (
-            <CarouselItem key={i} className="relative h-full w-full">
+            <CarouselItem
+              key={i}
+              className="relative h-full lg:min-h-[110vh] w-full"
+            >
               <Image
                 src={src}
                 alt={`Background ${i}`}
@@ -43,7 +46,7 @@ export default function HeroBgCarousel({
       </Carousel>
 
       {/* FOREGROUND CONTENT */}
-      <div className="relative z-10 h-screen">{children}</div>
+      <div className="relative z-10 min-h-[110vh]">{children}</div>
     </div>
   );
 }

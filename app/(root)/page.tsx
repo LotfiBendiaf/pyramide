@@ -100,11 +100,11 @@ export const listings = [
 
 const page = () => {
   return (
-    <main className="space-y-10">
+    <main>
       <HeroBgCarousel>
-        <div className="inset-0 absolute bg-black/50 -z-10"></div>
+        <div className="inset-0 absolute bg-gradient-to-b from-black to-black/10 -z-10"></div>
 
-        <div className="space-y-5 h-full flex flex-col items-center justify-center pt-20 text-center text-white">
+        <div className="space-y-5 min-h-[110vh] flex flex-col items-center justify-center text-center text-white">
           <div className="lg:max-w-2/3 2xl:max-w-1/2 space-y-2">
             <HeroSplitWord />
             <h1 className="text-lg leading-7 lg:text-4xl lg:leading-12 2xl:text-5xl 2xl:leading-14 syncopate-bold ">
@@ -123,16 +123,22 @@ const page = () => {
               <Calendar />
             </Button>
           </div>
-          <h2 className="syncopate-bold text-2xl">Real Estate Agency</h2>
+          {/* <h2 className="syncopate-bold text-2xl">Real Estate Agency</h2> */}
         </div>
-        <div className="flex-1"></div>
+        <div className="rounded-t-[60px] absolute bottom-0 h-32 w-full bg-white z-40"></div>
         <SearchBar />
-      </HeroBgCarousel>{" "}
-      <h2 className="text-5xl mb-10 syncopate-bold text-center">Listings</h2>
-      <div className="grid grid-cols-1 mx-20 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4 gap-6 z-10 relative">
-        {listings.map((item, index) => (
-          <ListingCard key={index} {...item} />
-        ))}
+      </HeroBgCarousel>
+      <div>
+        <div className="flex flex-col items-center justify-center gap-5">
+          <h2 className="text-5xl mb-10 syncopate-bold text-center">
+            Listings
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 mx-20 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4 gap-6 z-10 relative">
+          {listings.map((item, index) => (
+            <ListingCard key={index} {...item} />
+          ))}
+        </div>
       </div>
       <h2 className="text-4xl syncopate-bold">Avis Client</h2>
       <ReviewQuote />

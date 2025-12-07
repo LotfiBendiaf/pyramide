@@ -1,23 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import {
-  AppWindow,
-  Archive,
-  ArchiveRestore,
-  Building2,
-  Calendar,
-  ChevronUp,
-  Home,
-  Landmark,
-  List,
-  MonitorCog,
-  PlusCircle,
-  User2,
-  UserCircle,
-  UserPlus,
-  Users,
-} from "lucide-react";
 
 import {
   Sidebar,
@@ -41,56 +24,71 @@ import { useSession } from "next-auth/react";
 import Logo from "../Logo";
 import LogoutButton from "../LogoutButton";
 import { Separator } from "../ui/separator";
-import ROUTES from "@/constants/routes";
 import Link from "next/link";
+import {
+  User2,
+  ChevronUp,
+  UserCircle,
+  PlusCircle,
+  Award,
+  Briefcase,
+  Building,
+  DollarSign,
+  FileText,
+  Home,
+  KeyRound,
+  List,
+  MonitorCog,
+  Settings,
+  Users,
+  ListCheck,
+} from "lucide-react";
+import Listings from "../Listings";
 
 const sidebarConfig = [
   {
-    label: "Tableau de bord",
-    items: [{ title: "Menu Principal", url: ROUTES.DASHBOARD, icon: Home }],
+    label: "Menu Principal",
+    items: [{ title: "Tableau de bord", url: "/dashboard", icon: Home }], // Assuming '/dashboard' and an 'Home' icon component
   },
   {
-    label: "Cheques",
+    label: "Propriétés",
     items: [
-      { title: "Cheques", url: ROUTES.CHECKS, icon: AppWindow },
-      { title: "Ajouter un cheque", url: "/cheques/add", icon: PlusCircle },
-    ],
-  },
-  {
-    label: "Clients",
-    items: [
-      { title: "Clients", url: "/clients", icon: Users },
-      { title: "Ajouter un client", url: "/clients/add", icon: UserPlus },
-      { title: "Liste d'attente", url: "/clients/waiting", icon: List },
-      { title: "Banques", url: "/banques", icon: Landmark },
-    ],
-  },
-  {
-    label: "Fournisseurs",
-    items: [
-      { title: "Fournisseurs", url: "/fournisseurs", icon: Home },
+      { title: "Toutes les Annonces", url: "/listings", icon: ListCheck }, // List of all properties for sale/rent
       {
-        title: "Ajouter un fournisseur",
-        url: "/fournisseurs/add",
-        icon: Calendar,
+        title: "Ajouter une Propriété",
+        url: "/listings/add",
+        icon: PlusCircle,
       },
-      { title: "Entreprise", url: "/entreprise", icon: Building2 },
+      {
+        title: "Ventes et Transactions",
+        url: "/transactions/sales",
+        icon: DollarSign,
+      }, // Sales pipeline/completed sales
+      { title: "Locations", url: "/transactions/rentals", icon: KeyRound }, // Rental properties and leases
     ],
   },
   {
-    label: "Archives",
+    label: "Clients & Demandes",
     items: [
-      { title: "Archives", url: "/archives", icon: Archive },
-      {
-        title: "Ajouter une archive",
-        url: "/archives/add",
-        icon: ArchiveRestore,
-      },
+      { title: "Clients Acquéreurs", url: "/clients/buyers", icon: Users }, // General clients/buyers
+      { title: "Liste d'Attente", url: "/clients/waiting-list", icon: List }, // Waiting list for specific property types
+      { title: "Propriétaires", url: "/clients/owners", icon: Building }, // Sellers/Landlords
+      { title: "Contrats & Mandats", url: "/contracts", icon: FileText }, // Management of contracts (mandats)
+    ],
+  },
+  {
+    label: "Ressources Humaines",
+    items: [
+      { title: "Agents Immobiliers", url: "/agents", icon: Briefcase }, // Real Estate Agents list
+      { title: "Commissions", url: "/agents/commissions", icon: Award },
     ],
   },
   {
     label: "Système",
-    items: [{ title: "Audit", url: "/audit", icon: MonitorCog }],
+    items: [
+      { title: "Paramètres", url: "/settings", icon: Settings },
+      { title: "Utilisateurs & Accès", url: "/users", icon: MonitorCog },
+    ],
   },
 ];
 

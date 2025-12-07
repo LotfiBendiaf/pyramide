@@ -27,113 +27,114 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-export const description = "An interactive area chart";
+export const description = "Un graphique interactif de l'activité immobilière";
 
+// Real Estate Data: New Mandates (Nouveaux Mandats) and Client Leads (Leads Clients)
 const chartData = [
-  { date: "2024-04-01", desktop: 222, mobile: 150 },
-  { date: "2024-04-02", desktop: 97, mobile: 180 },
-  { date: "2024-04-03", desktop: 167, mobile: 120 },
-  { date: "2024-04-04", desktop: 242, mobile: 260 },
-  { date: "2024-04-05", desktop: 373, mobile: 290 },
-  { date: "2024-04-06", desktop: 301, mobile: 340 },
-  { date: "2024-04-07", desktop: 245, mobile: 180 },
-  { date: "2024-04-08", desktop: 409, mobile: 320 },
-  { date: "2024-04-09", desktop: 59, mobile: 110 },
-  { date: "2024-04-10", desktop: 261, mobile: 190 },
-  { date: "2024-04-11", desktop: 327, mobile: 350 },
-  { date: "2024-04-12", desktop: 292, mobile: 210 },
-  { date: "2024-04-13", desktop: 342, mobile: 380 },
-  { date: "2024-04-14", desktop: 137, mobile: 220 },
-  { date: "2024-04-15", desktop: 120, mobile: 170 },
-  { date: "2024-04-16", desktop: 138, mobile: 190 },
-  { date: "2024-04-17", desktop: 446, mobile: 360 },
-  { date: "2024-04-18", desktop: 364, mobile: 410 },
-  { date: "2024-04-19", desktop: 243, mobile: 180 },
-  { date: "2024-04-20", desktop: 89, mobile: 150 },
-  { date: "2024-04-21", desktop: 137, mobile: 200 },
-  { date: "2024-04-22", desktop: 224, mobile: 170 },
-  { date: "2024-04-23", desktop: 138, mobile: 230 },
-  { date: "2024-04-24", desktop: 387, mobile: 290 },
-  { date: "2024-04-25", desktop: 215, mobile: 250 },
-  { date: "2024-04-26", desktop: 75, mobile: 130 },
-  { date: "2024-04-27", desktop: 383, mobile: 420 },
-  { date: "2024-04-28", desktop: 122, mobile: 180 },
-  { date: "2024-04-29", desktop: 315, mobile: 240 },
-  { date: "2024-04-30", desktop: 454, mobile: 380 },
-  { date: "2024-05-01", desktop: 165, mobile: 220 },
-  { date: "2024-05-02", desktop: 293, mobile: 310 },
-  { date: "2024-05-03", desktop: 247, mobile: 190 },
-  { date: "2024-05-04", desktop: 385, mobile: 420 },
-  { date: "2024-05-05", desktop: 481, mobile: 390 },
-  { date: "2024-05-06", desktop: 498, mobile: 520 },
-  { date: "2024-05-07", desktop: 388, mobile: 300 },
-  { date: "2024-05-08", desktop: 149, mobile: 210 },
-  { date: "2024-05-09", desktop: 227, mobile: 180 },
-  { date: "2024-05-10", desktop: 293, mobile: 330 },
-  { date: "2024-05-11", desktop: 335, mobile: 270 },
-  { date: "2024-05-12", desktop: 197, mobile: 240 },
-  { date: "2024-05-13", desktop: 197, mobile: 160 },
-  { date: "2024-05-14", desktop: 448, mobile: 490 },
-  { date: "2024-05-15", desktop: 473, mobile: 380 },
-  { date: "2024-05-16", desktop: 338, mobile: 400 },
-  { date: "2024-05-17", desktop: 499, mobile: 420 },
-  { date: "2024-05-18", desktop: 315, mobile: 350 },
-  { date: "2024-05-19", desktop: 235, mobile: 180 },
-  { date: "2024-05-20", desktop: 177, mobile: 230 },
-  { date: "2024-05-21", desktop: 82, mobile: 140 },
-  { date: "2024-05-22", desktop: 81, mobile: 120 },
-  { date: "2024-05-23", desktop: 252, mobile: 290 },
-  { date: "2024-05-24", desktop: 294, mobile: 220 },
-  { date: "2024-05-25", desktop: 201, mobile: 250 },
-  { date: "2024-05-26", desktop: 213, mobile: 170 },
-  { date: "2024-05-27", desktop: 420, mobile: 460 },
-  { date: "2024-05-28", desktop: 233, mobile: 190 },
-  { date: "2024-05-29", desktop: 78, mobile: 130 },
-  { date: "2024-05-30", desktop: 340, mobile: 280 },
-  { date: "2024-05-31", desktop: 178, mobile: 230 },
-  { date: "2024-06-01", desktop: 178, mobile: 200 },
-  { date: "2024-06-02", desktop: 470, mobile: 410 },
-  { date: "2024-06-03", desktop: 103, mobile: 160 },
-  { date: "2024-06-04", desktop: 439, mobile: 380 },
-  { date: "2024-06-05", desktop: 88, mobile: 140 },
-  { date: "2024-06-06", desktop: 294, mobile: 250 },
-  { date: "2024-06-07", desktop: 323, mobile: 370 },
-  { date: "2024-06-08", desktop: 385, mobile: 320 },
-  { date: "2024-06-09", desktop: 438, mobile: 480 },
-  { date: "2024-06-10", desktop: 155, mobile: 200 },
-  { date: "2024-06-11", desktop: 92, mobile: 150 },
-  { date: "2024-06-12", desktop: 492, mobile: 420 },
-  { date: "2024-06-13", desktop: 81, mobile: 130 },
-  { date: "2024-06-14", desktop: 426, mobile: 380 },
-  { date: "2024-06-15", desktop: 307, mobile: 350 },
-  { date: "2024-06-16", desktop: 371, mobile: 310 },
-  { date: "2024-06-17", desktop: 475, mobile: 520 },
-  { date: "2024-06-18", desktop: 107, mobile: 170 },
-  { date: "2024-06-19", desktop: 341, mobile: 290 },
-  { date: "2024-06-20", desktop: 408, mobile: 450 },
-  { date: "2024-06-21", desktop: 169, mobile: 210 },
-  { date: "2024-06-22", desktop: 317, mobile: 270 },
-  { date: "2024-06-23", desktop: 480, mobile: 530 },
-  { date: "2024-06-24", desktop: 132, mobile: 180 },
-  { date: "2024-06-25", desktop: 141, mobile: 190 },
-  { date: "2024-06-26", desktop: 434, mobile: 380 },
-  { date: "2024-06-27", desktop: 448, mobile: 490 },
-  { date: "2024-06-28", desktop: 149, mobile: 200 },
-  { date: "2024-06-29", desktop: 103, mobile: 160 },
-  { date: "2024-06-30", desktop: 446, mobile: 400 },
+  { date: "2024-04-01", mandates: 5, leads: 15 },
+  { date: "2024-04-02", mandates: 3, leads: 18 },
+  { date: "2024-04-03", mandates: 6, leads: 12 },
+  { date: "2024-04-04", mandates: 8, leads: 26 },
+  { date: "2024-04-05", mandates: 12, leads: 29 },
+  { date: "2024-04-06", mandates: 10, leads: 34 },
+  { date: "2024-04-07", mandates: 7, leads: 18 },
+  { date: "2024-04-08", mandates: 15, leads: 32 },
+  { date: "2024-04-09", mandates: 4, leads: 11 },
+  { date: "2024-04-10", mandates: 8, leads: 19 },
+  { date: "2024-04-11", mandates: 11, leads: 35 },
+  { date: "2024-04-12", mandates: 9, leads: 21 },
+  { date: "2024-04-13", mandates: 10, leads: 38 },
+  { date: "2024-04-14", mandates: 4, leads: 22 },
+  { date: "2024-04-15", mandates: 5, leads: 17 },
+  { date: "2024-04-16", mandates: 6, leads: 19 },
+  { date: "2024-04-17", mandates: 14, leads: 36 },
+  { date: "2024-04-18", mandates: 12, leads: 41 },
+  { date: "2024-04-19", mandates: 7, leads: 18 },
+  { date: "2024-04-20", mandates: 3, leads: 15 },
+  { date: "2024-04-21", mandates: 4, leads: 20 },
+  { date: "2024-04-22", mandates: 7, leads: 17 },
+  { date: "2024-04-23", mandates: 5, leads: 23 },
+  { date: "2024-04-24", mandates: 12, leads: 29 },
+  { date: "2024-04-25", mandates: 6, leads: 25 },
+  { date: "2024-04-26", mandates: 3, leads: 13 },
+  { date: "2024-04-27", mandates: 13, leads: 42 },
+  { date: "2024-04-28", mandates: 4, leads: 18 },
+  { date: "2024-04-29", mandates: 10, leads: 24 },
+  { date: "2024-04-30", mandates: 15, leads: 38 },
+  { date: "2024-05-01", mandates: 6, leads: 22 },
+  { date: "2024-05-02", mandates: 9, leads: 31 },
+  { date: "2024-05-03", mandates: 7, leads: 19 },
+  { date: "2024-05-04", mandates: 12, leads: 42 },
+  { date: "2024-05-05", mandates: 14, leads: 39 },
+  { date: "2024-05-06", mandates: 16, leads: 52 },
+  { date: "2024-05-07", mandates: 12, leads: 30 },
+  { date: "2024-05-08", mandates: 5, leads: 21 },
+  { date: "2024-05-09", mandates: 7, leads: 18 },
+  { date: "2024-05-10", mandates: 9, leads: 33 },
+  { date: "2024-05-11", mandates: 11, leads: 27 },
+  { date: "2024-05-12", mandates: 6, leads: 24 },
+  { date: "2024-05-13", mandates: 6, leads: 16 },
+  { date: "2024-05-14", mandates: 14, leads: 49 },
+  { date: "2024-05-15", mandates: 15, leads: 38 },
+  { date: "2024-05-16", mandates: 11, leads: 40 },
+  { date: "2024-05-17", mandates: 16, leads: 42 },
+  { date: "2024-05-18", mandates: 10, leads: 35 },
+  { date: "2024-05-19", mandates: 7, leads: 18 },
+  { date: "2024-05-20", mandates: 6, leads: 23 },
+  { date: "2024-05-21", mandates: 3, leads: 14 },
+  { date: "2024-05-22", mandates: 3, leads: 12 },
+  { date: "2024-05-23", mandates: 8, leads: 29 },
+  { date: "2024-05-24", mandates: 9, leads: 22 },
+  { date: "2024-05-25", mandates: 6, leads: 25 },
+  { date: "2024-05-26", mandates: 6, leads: 17 },
+  { date: "2024-05-27", mandates: 13, leads: 46 },
+  { date: "2024-05-28", mandates: 7, leads: 19 },
+  { date: "2024-05-29", mandates: 3, leads: 13 },
+  { date: "2024-05-30", mandates: 11, leads: 28 },
+  { date: "2024-05-31", mandates: 6, leads: 23 },
+  { date: "2024-06-01", mandates: 6, leads: 20 },
+  { date: "2024-06-02", mandates: 15, leads: 41 },
+  { date: "2024-06-03", mandates: 4, leads: 16 },
+  { date: "2024-06-04", mandates: 14, leads: 38 },
+  { date: "2024-06-05", mandates: 3, leads: 14 },
+  { date: "2024-06-06", mandates: 9, leads: 25 },
+  { date: "2024-06-07", mandates: 10, leads: 37 },
+  { date: "2024-06-08", mandates: 12, leads: 32 },
+  { date: "2024-06-09", mandates: 14, leads: 48 },
+  { date: "2024-06-10", mandates: 5, leads: 20 },
+  { date: "2024-06-11", mandates: 3, leads: 15 },
+  { date: "2024-06-12", mandates: 16, leads: 42 },
+  { date: "2024-06-13", mandates: 3, leads: 13 },
+  { date: "2024-06-14", mandates: 13, leads: 38 },
+  { date: "2024-06-15", mandates: 10, leads: 35 },
+  { date: "2024-06-16", mandates: 12, leads: 31 },
+  { date: "2024-06-17", mandates: 15, leads: 52 },
+  { date: "2024-06-18", mandates: 4, leads: 17 },
+  { date: "2024-06-19", mandates: 11, leads: 29 },
+  { date: "2024-06-20", mandates: 13, leads: 45 },
+  { date: "2024-06-21", mandates: 5, leads: 21 },
+  { date: "2024-06-22", mandates: 10, leads: 27 },
+  { date: "2024-06-23", mandates: 15, leads: 53 },
+  { date: "2024-06-24", mandates: 4, leads: 18 },
+  { date: "2024-06-25", mandates: 5, leads: 19 },
+  { date: "2024-06-26", mandates: 14, leads: 38 },
+  { date: "2024-06-27", mandates: 14, leads: 49 },
+  { date: "2024-06-28", mandates: 5, leads: 20 },
+  { date: "2024-06-29", mandates: 4, leads: 16 },
+  { date: "2024-06-30", mandates: 14, leads: 40 },
 ];
 
 const chartConfig = {
-  visitors: {
-    label: "Visitors",
+  activity: {
+    label: "Activité",
   },
-  desktop: {
-    label: "Desktop",
-    color: "var(--primary)",
+  leads: {
+    label: "Leads Clients",
+    color: "var(--primary)", // Primary color (e.g., blue)
   },
-  mobile: {
-    label: "Mobile",
-    color: "var(--primary)",
+  mandates: {
+    label: "Nouveaux Mandats",
+    color: "orange", // Secondary color (e.g., orange/yellow)
   },
 } satisfies ChartConfig;
 
@@ -164,12 +165,12 @@ export function Chart() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Total Visitors</CardTitle>
+        <CardTitle>Flux de l&apos;Activité Immobilière</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Total for the last 3 months
+            Nouveaux mandats et leads clients sur les 3 derniers mois
           </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
+          <span className="@[540px]/card:hidden">Derniers 3 mois</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -179,27 +180,27 @@ export function Chart() {
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
           >
-            <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
+            <ToggleGroupItem value="90d">3 derniers mois</ToggleGroupItem>
+            <ToggleGroupItem value="30d">30 derniers jours</ToggleGroupItem>
+            <ToggleGroupItem value="7d">7 derniers jours</ToggleGroupItem>
           </ToggleGroup>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
               className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
               size="sm"
-              aria-label="Select a value"
+              aria-label="Sélectionner une période"
             >
-              <SelectValue placeholder="Last 3 months" />
+              <SelectValue placeholder="3 derniers mois" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
+                3 derniers mois
               </SelectItem>
               <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
+                30 derniers jours
               </SelectItem>
               <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
+                7 derniers jours
               </SelectItem>
             </SelectContent>
           </Select>
@@ -212,27 +213,28 @@ export function Chart() {
         >
           <AreaChart data={filteredData}>
             <defs>
-              <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
+              {/* Note: Updated IDs to match new data keys (mandates/leads) */}
+              <linearGradient id="fillLeads" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--color-desktop)"
+                  stopColor="hsl(var(--chart-1))"
                   stopOpacity={1.0}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--color-desktop)"
+                  stopColor="hsl(var(--chart-1))"
                   stopOpacity={0.1}
                 />
               </linearGradient>
-              <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="fillMandates" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--color-mobile)"
+                  stopColor="hsl(var(--chart-2))"
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--color-mobile)"
+                  stopColor="hsl(var(--chart-2))"
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -246,6 +248,7 @@ export function Chart() {
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value);
+                // Keeping 'en-US' locale for chart compatibility, but showing date format
                 return date.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -266,18 +269,20 @@ export function Chart() {
                 />
               }
             />
+            {/* Leads Clients (stacked first, usually the larger volume) */}
             <Area
-              dataKey="mobile"
+              dataKey="leads"
               type="natural"
-              fill="url(#fillMobile)"
-              stroke="var(--color-mobile)"
+              fill="url(#fillLeads)"
+              stroke="hsl(var(--chart-1))"
               stackId="a"
             />
+            {/* Nouveaux Mandats (stacked second, usually the smaller volume) */}
             <Area
-              dataKey="desktop"
+              dataKey="mandates"
               type="natural"
-              fill="url(#fillDesktop)"
-              stroke="var(--color-desktop)"
+              fill="url(#fillMandates)"
+              stroke="hsl(var(--chart-2))"
               stackId="a"
             />
           </AreaChart>

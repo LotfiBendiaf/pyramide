@@ -1,118 +1,117 @@
 "use client";
 
-import React, { useState } from "react";
 import Link from "next/link";
 import ROUTES from "@/constants/routes";
-import { Button } from "@/components/ui/button";
-import Logo from "@/components/Logo";
 import { useSession } from "next-auth/react";
-import LogoutButton from "@/components/LogoutButton";
-import { ArrowRight, Bell, Loader, Menu, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import { Menu, Bell, User, ArrowRight, Loader } from "lucide-react";
+
 import NavLinks from "./NavLinks";
 import Theme from "./Theme";
 import Logo2 from "../Logo2";
+import LogoutButton from "@/components/LogoutButton";
 
-const Navbar = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+export default function Navbar() {
   const { data: session, status } = useSession();
   const user = session?.user;
 
-  const closeMobileMenu = () => setMobileMenuOpen(false);
-
   return (
-    <nav>
-      <div className="absolute top-0 z-20 p-10 w-full">
-        <div className="flex items-center justify-between py-2">
-          {/* Logo for desktop */}
-          <Link className="hidden md:block flex-1 space-y-1" href={ROUTES.HOME}>
-            <Logo2 />
-          </Link>
+    <nav className="w-full bg-black px-4 md:px-6 lg:px-20 py-10 shadow-sm">
+      <div className="flex items-center justify-between">
+        {/* Logo */}
+        <Link href={ROUTES.HOME} className="flex-1">
+          <Logo2 />
+        </Link>
 
-          {/* Logo for mobile */}
-          <Link className="md:hidden flex-1" href={ROUTES.HOME}>
-            <Logo format="mini" />
-          </Link>
+        {/* Desktop navigation */}
+        <div className="hidden lg:flex gap-10 flex-1 justify-center">
+          <NavLinks />
+        </div>
 
-          {/* Main nav links (visible on large screens) */}
-          <div className="hidden lg:flex lg:flex-2">
-            <NavLinks />
-          </div>
+        {/* Right section */}
+        <div className="flex items-center gap-3 text-white flex-1 justify-end">
+          <Theme />
 
-          {/* Right section (theme + auth + hamburger) */}
-          <div className="flex items-center justify-end gap-2 lg:gap-4 flex-1 text-white">
-            <Theme />
-            <Button variant={"ghost"} className="relative w-8 h-8">
-              <Bell size={20} />
-              <div className="absolute top-0 right-0 size-2 rounded-full bg-green-500"></div>
-            </Button>
-            {status === "authenticated" && user ? (
-              <>
-                {/* <Avatar id={user.id} /> */}
-                <Link href={ROUTES.DASHBOARD} className="hidden md:inline-flex">
-                  <Button>
-                    Espace Admin <ArrowRight />
-                  </Button>
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell size={20} />
+            <span className="absolute top-1 right-1 size-2 bg-green-500 rounded-full"></span>
+          </Button>
+
+          {/* Auth state */}
+          {status === "authenticated" ? (
+            <>
+              <Button asChild className="hidden md:inline-flex">
+                <Link href={ROUTES.DASHBOARD}>
+                  Espace Admin <ArrowRight size={16} className="ml-2" />
                 </Link>
-              </>
-            ) : status === "loading" ? (
-              <Loader className="animate-spin" />
-            ) : (
-              <>
-                <Link
-                  href={ROUTES.SIMULATION}
-                  className="hidden md:inline-flex"
-                >
-                  <Button>
-                    Nous Contacter <ArrowRight />
-                  </Button>
+              </Button>
+            </>
+          ) : status === "loading" ? (
+            <Loader className="animate-spin" />
+          ) : (
+            <>
+              <Button variant="secondary" asChild>
+                <Link href={ROUTES.SIGN_IN} className="hidden md:inline-flex">
+                  <User />
                 </Link>
-                <Button variant={"secondary"}>
-                  <Link href={ROUTES.SIGN_IN} className="hidden md:inline-flex">
-                    <User />
-                  </Link>
-                </Button>
-              </>
-            )}
+              </Button>
+            </>
+          )}
 
-            {/* Hamburger for mobile */}
-            <Button
-              variant={"ghost"}
-              className="lg:hidden text-foreground"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              aria-label="Toggle menu"
+          {/* Mobile Menu (Sheet) */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden text-white"
+              >
+                <Menu className="size-5" />
+              </Button>
+            </SheetTrigger>
+
+            <SheetContent
+              side="top"
+              className="bg-black text-white border-none px-3 py-10"
             >
-              <Menu className="size-5 " />
-            </Button>
-          </div>
+              <SheetHeader>
+                <SheetTitle className="text-white">
+                  <Logo2 />
+                </SheetTitle>
+                <SheetDescription className="text-muted-foreground">
+                  Menu de Navigation
+                </SheetDescription>
+              </SheetHeader>
+
+              {/* Menu Links */}
+              <NavLinks />
+              <SheetFooter className="w-fit">
+                {user ? (
+                  <>
+                    <Button asChild>
+                      <Link href={ROUTES.DASHBOARD}>
+                        Espace Admin <ArrowRight />
+                      </Link>
+                    </Button>
+                    <LogoutButton />
+                  </>
+                ) : (
+                  <LogoutButton />
+                )}
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-gray-950 shadow-md p-10 space-y-10">
-          <NavLinks closeMenu={closeMobileMenu} />
-
-          {user ? (
-            <>
-              <Link href={ROUTES.DASHBOARD} onClick={closeMobileMenu}>
-                <Button className="w-full mb-4">
-                  Espace Admin
-                  <ArrowRight />
-                </Button>
-              </Link>
-
-              <LogoutButton />
-            </>
-          ) : (
-            <Link href={ROUTES.SIGN_IN}>
-              <Button>Se Connecter</Button>
-            </Link>
-          )}
-        </div>
-      )}
     </nav>
   );
-};
-
-export default Navbar;
+}

@@ -54,8 +54,8 @@ const categories = [
 
 const NavLinks: React.FC<NavLinksProps> = ({ closeMenu }) => {
   return (
-    <nav className="flex flex-col lg:flex-row lg:justify-center mx-auto">
-      <ul className="flex flex-col lg:flex-row gap-4 md:gap-6 lg:gap-12 border px-10 py-3 rounded-full">
+    <nav className="mx-5">
+      <ul className="flex flex-col lg:flex-row gap-4 md:gap-6 lg:gap-12 lg:border lg:px-10 lg:py-3 lg:rounded-full">
         {categories.map((category) => (
           <li
             key={category.name}
@@ -65,7 +65,7 @@ const NavLinks: React.FC<NavLinksProps> = ({ closeMenu }) => {
             <Link
               href={category.href}
               onClick={closeMenu}
-              className=" text-sm transition-all hover:text-tertiary"
+              className=" text-sm transition-all hover:text-tertiary text-nowrap"
             >
               {category.name}
             </Link>

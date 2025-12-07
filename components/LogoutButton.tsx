@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import ROUTES from "@/constants/routes";
+import { Button } from "./ui/button";
 
 const LogoutButton = () => {
   const router = useRouter();
@@ -17,10 +18,10 @@ const LogoutButton = () => {
   };
 
   return (
-    <div className="z-20 w-full flex items-center gap-2" onClick={handleLogout}>
-      <LogOut />
+    <Button variant={"secondary"} onClick={handleLogout}>
+      <LogOut className="size-4" />
       <span>Déconnexion</span>
-    </div>
+    </Button>
   );
 };
 

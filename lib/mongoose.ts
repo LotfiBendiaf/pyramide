@@ -33,7 +33,7 @@ const dbConnect = async (): Promise<Mongoose> => {
 
   if (!cached.promise) {
     cached.promise = mongoose
-      .connect(MONGODB_URI, { dbName: "Bouhadiba-Administration" })
+      .connect(MONGODB_URI, { dbName: "Pyramide-Immobilier" })
       .then((mongoose) => {
         logger.info("Connected to MongoDB");
         return mongoose;
