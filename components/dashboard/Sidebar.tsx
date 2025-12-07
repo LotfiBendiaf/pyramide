@@ -43,7 +43,7 @@ import {
   Users,
   ListCheck,
 } from "lucide-react";
-import Listings from "../Listings";
+import { ROLE_LABELS } from "@/constants/values";
 
 const sidebarConfig = [
   {
@@ -137,33 +137,39 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="cursor-pointer flex items-center">
-                  <div className="p-1 border bg-gray-200 rounded-lg">
-                    <User2 />
+              <DropdownMenuTrigger
+                asChild
+                className="shadow-2xl border p-3 rounded-xl h-full"
+              >
+                <SidebarMenuButton className="cursor-pointer flex items-center h-auto">
+                  <div className="p-1 border bg-gray-200 rounded-lg shrink-0">
+                    <User2 className="w-5 h-5" />
                   </div>
-                  <div className="text-xs">
-                    {status === "loading" ? "Chargement..." : user?.name}
+                  <div className="text-xs overflow-hidden flex flex-col ml-2 text-left">
+                    <span className="font-medium truncate">
+                      {status === "loading" ? "Chargement..." : user?.name}
+                    </span>
                     {user?.role && (
-                      <p className="text-muted-foreground text-xs">
-                        {user.role}
-                      </p>
+                      <span className="text-muted-foreground text-[10px] truncate">
+                        {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
+                      </span>
                     )}
                   </div>
-                  <ChevronUp className="ml-auto" />
+                  <ChevronUp className="ml-auto w-4 h-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-[--radix-popper-anchor-width]"
-              >
-                <DropdownMenuItem className="flex items-center">
-                  <UserCircle className=" h-4 w-4" />
+
+              <DropdownMenuContent side="top" className="w-56" align="start">
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                  <UserCircle className="h-4 w-4" />
                   <span>Compte</span>
                 </DropdownMenuItem>
-                <Separator />
-                <DropdownMenuItem>
-                  <LogoutButton />
+                <Separator className="my-1" />
+                <DropdownMenuItem asChild>
+                  {/* Ensure LogoutButton handles its own styling/clicks */}
+                  <div className="w-full cursor-pointer">
+                    <LogoutButton />
+                  </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
