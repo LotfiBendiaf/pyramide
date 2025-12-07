@@ -2,7 +2,7 @@ import { Quote, Star, UserStar } from "lucide-react";
 
 export default function ReviewCard() {
   return (
-    <div className="relative w-fit p-6 rounded-2xl bg-white/70 backdrop-blur-sm shadow-md border border-gray-400 space-y-1">
+    <div className="relative w-fit container mx-auto p-6 rounded-2xl bg-white/70 backdrop-blur-sm shadow-md border space-y-1">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-lg">

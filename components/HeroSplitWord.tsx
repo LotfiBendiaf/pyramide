@@ -13,7 +13,7 @@ export default function HeroSplitWord() {
         initial={{ y: 60, opacity: 1 }}
         animate={{ y: 45, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-7xl font-bold tracking-tight uppercase leading-none"
+        className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight uppercase leading-none"
       >
         {top}
       </motion.h1>
@@ -23,7 +23,7 @@ export default function HeroSplitWord() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="bg-amber-700 text-xl w-full font-medium uppercase tracking-widest mt-2 mb-2 z-20 p-1"
+        className="bg-amber-700 text-lg md:text-xl w-full font-medium uppercase tracking-widest mt-2 mb-2 z-20 p-1"
       >
         agence immobilière
       </motion.span>
@@ -33,7 +33,7 @@ export default function HeroSplitWord() {
         initial={{ y: -60, opacity: 1 }}
         animate={{ y: -45, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-7xl font-bold tracking-tight uppercase leading-none"
+        className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight uppercase leading-none"
       >
         {bottom}
       </motion.h1>

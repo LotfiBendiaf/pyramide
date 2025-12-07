@@ -104,8 +104,8 @@ const page = () => {
       <HeroBgCarousel>
         <div className="inset-0 absolute bg-gradient-to-b from-black to-black/10 -z-10"></div>
 
-        <div className="space-y-5 min-h-[110vh] flex flex-col items-center justify-center text-center text-white">
-          <div className="lg:max-w-2/3 2xl:max-w-1/2 space-y-2">
+        <div className="space-y-5 h-screen lg:h-[110vh] flex flex-col items-center md:justify-center text-center text-white">
+          <div className="lg:max-w-2/3 2xl:max-w-1/2 space-y-2 p-2">
             <HeroSplitWord />
             <h1 className="text-lg leading-7 lg:text-4xl lg:leading-12 2xl:text-5xl 2xl:leading-14 syncopate-bold ">
               Là où vos rêves trouvent une adresse.
@@ -114,7 +114,7 @@ const page = () => {
               Des biens immobiliers, des solutions sur mesure
             </p>
           </div>
-          <div className="lg:flex gap-4">
+          <div className="lg:flex gap-4 space-y-3">
             <Button className="">
               Voir nos offres <ArrowDownRight />
             </Button>
@@ -134,14 +134,16 @@ const page = () => {
             Listings
           </h2>
         </div>
-        <div className="grid grid-cols-1 mx-20 md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4 gap-6 z-10 relative">
+        <div className="grid grid-cols-1 container mx-auto md:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4 gap-6 z-10 relative">
           {listings.map((item, index) => (
             <ListingCard key={index} {...item} />
           ))}
         </div>
+        <div className="container mx-auto">
+          <h2 className="text-4xl syncopate-bold">Avis Client</h2>
+          <ReviewQuote />
+        </div>
       </div>
-      <h2 className="text-4xl syncopate-bold">Avis Client</h2>
-      <ReviewQuote />
     </main>
   );
 };

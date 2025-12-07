@@ -32,7 +32,7 @@ export default function HeroBgCarousel({
           {bgImages.map((src, i) => (
             <CarouselItem
               key={i}
-              className="relative h-full lg:min-h-[110vh] w-full"
+              className="relative h-screen lg:min-h-[110vh] w-full"
             >
               <Image
                 src={src}
