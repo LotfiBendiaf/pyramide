@@ -19,7 +19,7 @@ export default function LoginPage() {
             <div className="flex flex-col gap-6 p-10">
               <div className="flex flex-col">
                 <Logo />
-                <h1 className="text-2xl syncopate-bold mt-10 text-yellow-500">
+                <h1 className="text-2xl syncopate-bold mt-10 text-secondary">
                   Tableau de bord
                 </h1>
                 <p className="text-muted-foreground text-balance text-sm">

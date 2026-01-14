@@ -1,4 +1,4 @@
-import ReviewQuote from "@/components/ReviewQuote";
+import GlobalImpactSection from "@/components/sections/GlobalImpactSection";
 import Hero from "@/components/sections/Hero";
 import ListingsSection from "@/components/sections/Listings";
 
@@ -10,8 +10,8 @@ const page = () => {
       <Hero />
       <div className="container mx-auto">
         <ListingsSection />
-        <ReviewQuote />
       </div>
+      <GlobalImpactSection />
     </main>
   );
 };

@@ -29,6 +29,8 @@ interface ListingInput {
     bedrooms?: number;
     bathrooms?: number;
     area?: number; // m²
+    facade: number;
+
     furnished?: boolean;
     parking?: boolean;
     balcony?: boolean;
@@ -40,4 +42,13 @@ interface ListingInput {
 
   isFeatured?: boolean;
   published?: boolean;
+}
+interface ListingItem {
+  id: string;
+  title: string;
+  description: string;
+
+  price: number;
+
+  image?: string;
 }

@@ -76,6 +76,7 @@ interface Listing {
     bedrooms: number;
     bathrooms: number;
     area: number; // m²
+    facade: number;
     furnished?: boolean;
     parking?: boolean;
     balcony?: boolean;
@@ -93,5 +94,6 @@ interface Listing {
   publishedAt?: Date;
 
   views: number;
+  likes: number;
   isFeatured: boolean;
 }

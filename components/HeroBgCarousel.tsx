@@ -8,7 +8,11 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
 
-const bgImages = ["/immo1.jpg", "/immo2.jpg", "/immo3.jpg", "/immo4.jpg"];
+const bgImages = [
+  "/pyramide-img.jpg",
+  "/pyramide-img2.jpg",
+  "/pyramide-img3.jpg",
+];
 
 export default function HeroBgCarousel({
   children,

@@ -27,7 +27,7 @@ export function SectionHeader({
       {/* MAIN HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 relative z-20">
         <div className="space-y-2 px-2 md:px-6">
-          <h2 className="text-3xl md:text-5xl font-serif syncopate tracking-tight">
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif syncopate tracking-tight">
             {title}
           </h2>
 
@@ -51,7 +51,7 @@ export function SectionHeader({
           className="absolute top-0 left-0 -z-10 pointer-events-none select-none opacity-10"
           aria-hidden="true"
         >
-          <span className="font-serif text-[6rem] lg:text-[10rem] leading-none tracking-wider whitespace-nowrap">
+          <span className="font-serif text-[3.5rem] md:text-[6rem] lg:text-[10rem] leading-none tracking-wider whitespace-nowrap">
             {watermark}
           </span>
         </div>

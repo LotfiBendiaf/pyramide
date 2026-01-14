@@ -7,6 +7,7 @@ import handleError from "../handlers/error";
 import { ListingInput, listingSchema } from "../validators/listing";
 import dbConnect from "../mongoose";
 import { FilterQuery } from "mongoose";
+import { revalidatePath } from "next/cache";
 
 export async function createListing(
   params: ListingInput
@@ -119,5 +120,59 @@ export async function fetchListings(
     };
   } catch (error) {
     return handleError(error) as ErrorResponse;
+  }
+}
+/* -------------------------------- Views -------------------------------- */
+
+export async function incrementListingViews(listingId: string) {
+  try {
+    await dbConnect();
+
+    await Listing.findByIdAndUpdate(listingId, {
+      $inc: { views: 1 },
+    });
+
+    revalidatePath(`/listings/${listingId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to increment listing views", error);
+    return { success: false };
+  }
+}
+
+/* -------------------------------- Likes -------------------------------- */
+
+export async function incrementListingLikes(listingId: string) {
+  try {
+    await dbConnect();
+
+    await Listing.findByIdAndUpdate(listingId, {
+      $inc: { likes: 1 },
+    });
+
+    revalidatePath(`/listings/${listingId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to increment listing likes", error);
+    return { success: false };
+  }
+}
+
+export async function decrementListingLikes(listingId: string) {
+  try {
+    await dbConnect();
+
+    await Listing.findByIdAndUpdate(listingId, {
+      $inc: { likes: -1 },
+    });
+
+    revalidatePath(`/listings/${listingId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to decrement listing likes", error);
+    return { success: false };
   }
 }

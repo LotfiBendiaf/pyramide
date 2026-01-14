@@ -26,7 +26,7 @@ const ListingsContent = async () => {
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {listings.map((listing) => (
         <ListingCard key={listing._id} listing={listing} />
       ))}
@@ -36,7 +36,7 @@ const ListingsContent = async () => {
 
 export default function ListingsSection() {
   return (
-    <section className="container py-16">
+    <section className="container py-10 px-3">
       <SectionHeader
         title="Biens à vendre à Oran"
         subtitle="Trouvez notre selection de biens immobiliers"

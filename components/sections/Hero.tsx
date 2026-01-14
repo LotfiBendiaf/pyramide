@@ -22,10 +22,10 @@ const Hero = () => {
             </p>
           </div>
           <div className="lg:flex gap-4 space-y-3">
-            <Button className="">
+            <Button>
               Voir nos offres <ArrowDownRight />
             </Button>
-            <Button variant="secondary">
+            <Button variant={"outline"} className="text-black">
               Contactez-nous
               <Calendar />
             </Button>
