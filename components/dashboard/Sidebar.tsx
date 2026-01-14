@@ -44,19 +44,22 @@ import {
   ListCheck,
 } from "lucide-react";
 import { ROLE_LABELS } from "@/constants/values";
+import ROUTES from "@/constants/routes";
 
 const sidebarConfig = [
   {
     label: "Menu Principal",
-    items: [{ title: "Tableau de bord", url: "/dashboard", icon: Home }], // Assuming '/dashboard' and an 'Home' icon component
+    roles: ["admin"],
+    items: [{ title: "Tableau de bord", url: ROUTES.DASHBOARD, icon: Home }], // Assuming '/dashboard' and an 'Home' icon component
   },
   {
     label: "Propriétés",
+    roles: ["admin", "agent", "assistant"],
     items: [
-      { title: "Toutes les Annonces", url: "/listings", icon: ListCheck }, // List of all properties for sale/rent
+      { title: "Toutes les Annonces", url: ROUTES.LISTING, icon: ListCheck }, // List of all properties for sale/rent
       {
         title: "Ajouter une Propriété",
-        url: "/listings/add",
+        url: "/dashboard/listings/add",
         icon: PlusCircle,
       },
       {

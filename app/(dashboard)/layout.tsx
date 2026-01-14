@@ -19,8 +19,8 @@ const layout = ({ children }: { children: ReactNode }) => {
     <SessionProvider>
       <SidebarProvider>
         <AppSidebar />
-        <main className=" overflow-hidden">
-          <div className="p-5">{children}</div>
+        <main className="w-full overflow-hidden">
+          <div className="w-full p-5">{children}</div>
         </main>
       </SidebarProvider>
     </SessionProvider>

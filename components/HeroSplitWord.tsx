@@ -25,7 +25,7 @@ export default function HeroSplitWord() {
         transition={{ duration: 0.4 }}
         className="bg-amber-700 text-lg md:text-xl w-full font-medium uppercase tracking-widest mt-2 mb-2 z-20 p-1"
       >
-        agence immobilière
+        Immobilier
       </motion.span>
 
       {/* BOTTOM HALF */}
