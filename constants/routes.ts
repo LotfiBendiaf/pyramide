@@ -10,6 +10,7 @@ const ROUTES = {
   // Dashboard Items Routes
   DASHBOARD: "/dashboard",
   WISHLIST: "/wishlist",
+  CLIENTS_DASHBOARD: "/dashboard/clients",
   LISTINGS_DASHBOARD: "/dashboard/listings",
   LISTING_DETAIL_DASHBOARD: (id: string) => `/dashboard/listings/${id}`,
 };

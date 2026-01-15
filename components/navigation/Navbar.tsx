@@ -13,7 +13,7 @@ import {
   SheetDescription,
   SheetFooter,
 } from "@/components/ui/sheet";
-import { Menu, Bell, User, ArrowRight, Loader } from "lucide-react";
+import { Menu, Bell, User, ArrowRight, Loader, Heart } from "lucide-react";
 
 import NavLinks from "./NavLinks";
 import Theme from "./Theme";
@@ -41,10 +41,13 @@ export default function Navbar() {
         <div className="flex items-center gap-3 text-white flex-1 justify-end">
           <Theme />
 
-          <Button variant="ghost" size="icon" className="relative">
+          {/* <Button variant="ghost" size="icon" className="relative">
             <Bell size={20} />
             <span className="absolute top-1 right-1 size-2 bg-green-500 rounded-full"></span>
-          </Button>
+          </Button> */}
+          <Link href={ROUTES.WISHLIST} aria-label="Wishlist">
+            <Heart className="h-5 w-5" />
+          </Link>
 
           {/* Auth state */}
           {status === "authenticated" ? (

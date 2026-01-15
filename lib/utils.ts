@@ -1,3 +1,4 @@
+import { ClientType } from "@/models/client.model";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -63,4 +64,13 @@ export function formatDate(
     month: "short",
     year: "numeric",
   });
+}
+
+export function clientPrefix(type: ClientType) {
+  return {
+    BUYER: "BUY",
+    RENTER: "RENT",
+    SELLER: "SELL",
+    INVESTOR: "INV",
+  }[type];
 }

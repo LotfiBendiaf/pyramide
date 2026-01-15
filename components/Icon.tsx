@@ -18,7 +18,7 @@ const Icon: React.FC<IconProps> = ({ format = "normal" }) => {
         className="dark:hidden"
       />
       <Image
-        src="/bi-icon-light.svg"
+        src="/pyramide-Icon2.svg"
         width={dimensions.size}
         height={dimensions.size}
         alt="BI Icon Light"

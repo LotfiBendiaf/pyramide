@@ -98,3 +98,30 @@ interface Listing {
   isFeatured: boolean;
   isPremium: boolean;
 }
+
+interface Client {
+  _id: string;
+
+  referenceCode: string; // BUY-032
+  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
+
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+
+  budgetMin?: number;
+  budgetMax?: number;
+  city?: string;
+
+  qualificationStatus: QualificationStatus;
+  qualificationNotes?: string;
+
+  createdBy: Schema.Types.ObjectId; // Agent / Assistant
+  assignedAgent?: Schema.Types.ObjectId;
+
+  archived: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
+}

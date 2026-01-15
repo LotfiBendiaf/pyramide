@@ -77,9 +77,10 @@ export default function SearchFilter() {
           <SelectValue placeholder="Type de propriété" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="apartment">Appartement</SelectItem>
-          <SelectItem value="house">Maison</SelectItem>
-          <SelectItem value="villa">Villa</SelectItem>
+          <SelectItem value="Appartement">Appartement</SelectItem>
+          <SelectItem value="Maison">Maison</SelectItem>
+          <SelectItem value="Villa">Villa</SelectItem>
+          <SelectItem value="Commercial">Local Commercial</SelectItem>
         </SelectContent>
       </Select>
 

@@ -457,7 +457,7 @@ export default function ListingForm() {
                   name="isPremium"
                   render={({ field }) => (
                     <FormItem className="flex justify-between items-center border p-3 rounded-lg">
-                      <FormLabel>Bien Pyaramide Premium</FormLabel>
+                      <FormLabel>Bien Pyramide Premium</FormLabel>
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}

@@ -16,14 +16,6 @@ const Logo2: React.FC<LogoProps> = ({ format = "normal" }) => {
         width={dimensions.width}
         height={dimensions.height}
         alt="BI Logo 2"
-        className="dark:hidden"
-      />
-      <Image
-        src="/bi-logo2-light.svg"
-        width={dimensions.width}
-        height={dimensions.height}
-        alt="BI Logo 2 Light"
-        className="hidden dark:block"
       />
     </>
   );

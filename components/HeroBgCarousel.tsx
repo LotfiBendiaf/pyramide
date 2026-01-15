@@ -47,7 +47,9 @@ export default function HeroBgCarousel({
       </Carousel>
 
       {/* FOREGROUND CONTENT */}
-      <div className="relative z-10 min-h-[90vh]">{children}</div>
+      <div className="relative z-10 min-h-[90vh] flex flex-col justify-center items-center">
+        {children}
+      </div>
     </div>
   );
 }

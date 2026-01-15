@@ -13,6 +13,7 @@ type ListingsSectionProps = {
     minPrice?: string;
     maxPrice?: string;
     bedrooms?: string;
+    propertyType?: string;
   };
 };
 
@@ -24,6 +25,8 @@ const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
     minPrice: params?.minPrice ? Number(params.minPrice) : undefined,
     maxPrice: params?.maxPrice ? Number(params.maxPrice) : undefined,
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
+    propertyType: params?.propertyType,
+    isPremium: false,
   });
 
   if (!result.success) {
@@ -59,7 +62,6 @@ export default function ListingsSection({
   return (
     <section className="relative container py-10 px-3 pt-20">
       {/* Client component */}
-      <SearchFilter />
       <SectionHeader
         title="Biens immobiliers"
         subtitle="Trouvez notre sélection de biens"
@@ -68,6 +70,7 @@ export default function ListingsSection({
       />
 
       <Suspense fallback={<ListingsSkeleton />}>
+        <SearchFilter />
         <ListingsContent searchParams={searchParams} />
       </Suspense>
     </section>

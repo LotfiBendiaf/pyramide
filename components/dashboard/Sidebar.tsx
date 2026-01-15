@@ -42,6 +42,7 @@ import {
   Settings,
   Users,
   ListCheck,
+  UserPlus,
 } from "lucide-react";
 import { ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -77,7 +78,12 @@ const sidebarConfig = [
   {
     label: "Clients & Demandes",
     items: [
-      { title: "Clients Acquéreurs", url: "/clients/buyers", icon: Users }, // General clients/buyers
+      { title: "Clients Acquéreurs", url: "/clients", icon: Users }, // General clients/buyers
+      {
+        title: "Ajouter un Client",
+        url: "/dashboard/clients/add",
+        icon: UserPlus,
+      }, // General clients/buyers
       { title: "Liste d'Attente", url: "/clients/waiting-list", icon: List }, // Waiting list for specific property types
       { title: "Propriétaires", url: "/clients/owners", icon: Building }, // Sellers/Landlords
       { title: "Contrats & Mandats", url: "/contracts", icon: FileText }, // Management of contracts (mandats)
