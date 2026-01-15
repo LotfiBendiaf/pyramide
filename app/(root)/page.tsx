@@ -1,3 +1,4 @@
+import ContactSection from "@/components/sections/ContactSection";
 import GlobalImpactSection from "@/components/sections/GlobalImpactSection";
 import Hero from "@/components/sections/Hero";
 import ListingsSection from "@/components/sections/Listings";
@@ -23,8 +24,9 @@ const page = ({ searchParams }: ListingsSectionProps) => {
         <ListingsSection searchParams={searchParams} />
       </div>
       <GlobalImpactSection />
-      <div className="container mx-auto">
+      <div className="container mx-auto space-y-10">
         <PremiumListings />
+        <ContactSection />
       </div>
     </main>
   );
