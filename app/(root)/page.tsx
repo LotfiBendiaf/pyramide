@@ -1,17 +1,31 @@
 import GlobalImpactSection from "@/components/sections/GlobalImpactSection";
 import Hero from "@/components/sections/Hero";
 import ListingsSection from "@/components/sections/Listings";
+import PremiumListings from "@/components/sections/PremiumListings";
 
 import React from "react";
 
-const page = () => {
+type ListingsSectionProps = {
+  searchParams?: {
+    city?: string;
+    status?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    bedrooms?: string;
+  };
+};
+
+const page = ({ searchParams }: ListingsSectionProps) => {
   return (
     <main>
       <Hero />
       <div className="container mx-auto">
-        <ListingsSection />
+        <ListingsSection searchParams={searchParams} />
       </div>
       <GlobalImpactSection />
+      <div className="container mx-auto">
+        <PremiumListings />
+      </div>
     </main>
   );
 };

@@ -4,26 +4,10 @@ import { fetchListings } from "@/lib/actions/listings.action";
 import ListingCard from "../ListingCard";
 import { ListingsSkeleton } from "../skeletons/ListingsSkeleton";
 import ROUTES from "@/constants/routes";
-import SearchFilter from "../SearchFilter";
 
-type ListingsSectionProps = {
-  searchParams?: {
-    city?: string;
-    status?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    bedrooms?: string;
-  };
-};
-
-const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
-  const params = await searchParams;
+const ListingsContent = async () => {
   const result = await fetchListings({
-    city: params?.city,
-    status: params?.status as "À Vendre" | "À Louer",
-    minPrice: params?.minPrice ? Number(params.minPrice) : undefined,
-    maxPrice: params?.maxPrice ? Number(params.maxPrice) : undefined,
-    bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
+    isPremium: true,
   });
 
   if (!result.success) {
@@ -53,22 +37,19 @@ const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
   );
 };
 
-export default function ListingsSection({
-  searchParams,
-}: ListingsSectionProps) {
+export default function PremiumListings() {
   return (
     <section className="relative container py-10 px-3 pt-20">
       {/* Client component */}
-      <SearchFilter />
       <SectionHeader
-        title="Biens immobiliers"
-        subtitle="Trouvez notre sélection de biens"
+        title="Biens Premiums"
+        subtitle="Trouvez notre sélection de biens d'exception"
         buttonHref={ROUTES.LISTINGS}
         buttonLabel="Voir tous les biens"
       />
 
       <Suspense fallback={<ListingsSkeleton />}>
-        <ListingsContent searchParams={searchParams} />
+        <ListingsContent />
       </Suspense>
     </section>
   );

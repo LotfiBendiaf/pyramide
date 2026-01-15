@@ -23,7 +23,7 @@ export default function SearchBar() {
   const [priceRange, setPriceRange] = useState([30000, 20000000]);
 
   return (
-    <div className="absolute bottom-0 left-1/2 -translate-x-[50%] -translate-y-[10%] md:-translate-y-[50%] bg-white rounded-4xl shadow-md px-10 py-6 flex flex-col gap-4 justify-between md:flex-row md:items-center md:gap-2 w-full max-w-6xl z-40">
+    <div className="absolute top-0 left-1/2 -translate-x-[50%] -translate-y-[10%] md:-translate-y-[50%] bg-white rounded-4xl shadow-md px-10 py-6 flex flex-col gap-4 justify-between md:flex-row md:items-center md:gap-2 w-full max-w-6xl z-40">
       <Icon format="mini" />
       {/* Localisation */}
 

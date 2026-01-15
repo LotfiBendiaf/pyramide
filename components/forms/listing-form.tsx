@@ -75,6 +75,7 @@ export default function ListingForm() {
         area: 0,
         furnished: false,
         parking: false,
+        facade: 1,
       },
       images: [],
       isFeatured: false,
@@ -251,6 +252,81 @@ export default function ListingForm() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="features.furnished"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
+                      <FormLabel>Equipé</FormLabel>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="features.garden"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
+                      <FormLabel>Jardin / Cour</FormLabel>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="features.parking"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
+                      <FormLabel>Parking</FormLabel>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="features.pool"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
+                      <FormLabel>Piscine</FormLabel>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="features.elevator"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
+                      <FormLabel>Ascenseur</FormLabel>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="features.facade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Façades</FormLabel>
+                      <Input type="number" {...field} />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
           </div>
@@ -350,7 +426,7 @@ export default function ListingForm() {
               <CardHeader>
                 <CardTitle>Type de bien</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
                   name="propertyType"
@@ -373,6 +449,19 @@ export default function ListingForm() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isPremium"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
+                      <FormLabel>Bien Pyaramide Premium</FormLabel>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormItem>
                   )}
                 />

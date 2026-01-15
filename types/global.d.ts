@@ -96,4 +96,5 @@ interface Listing {
   views: number;
   likes: number;
   isFeatured: boolean;
+  isPremium: boolean;
 }

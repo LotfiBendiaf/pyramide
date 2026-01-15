@@ -1,3 +1,4 @@
+import { SiteHeader } from "@/components/dashboard/Header";
 import { AppSidebar } from "@/components/dashboard/Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Metadata } from "next";
@@ -20,6 +21,9 @@ const layout = ({ children }: { children: ReactNode }) => {
       <SidebarProvider>
         <AppSidebar />
         <main className="w-full overflow-hidden">
+          <header>
+            <SiteHeader />
+          </header>
           <div className="w-full p-5">{children}</div>
         </main>
       </SidebarProvider>

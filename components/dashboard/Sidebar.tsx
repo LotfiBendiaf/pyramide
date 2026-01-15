@@ -56,7 +56,11 @@ const sidebarConfig = [
     label: "Propriétés",
     roles: ["admin", "agent", "assistant"],
     items: [
-      { title: "Toutes les Annonces", url: ROUTES.LISTING, icon: ListCheck }, // List of all properties for sale/rent
+      {
+        title: "Toutes les Annonces",
+        url: ROUTES.LISTINGS_DASHBOARD,
+        icon: ListCheck,
+      }, // List of all properties for sale/rent
       {
         title: "Ajouter une Propriété",
         url: "/dashboard/listings/add",

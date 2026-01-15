@@ -16,7 +16,7 @@ export default function GlobalImpactSection() {
         <SectionHeader
           title="Notre Attendance Globale"
           subtitle="Connecter des acheteurs potentiels avec des vendeurs de qualité"
-          className="text-secondary"
+          className="text-white"
         />
 
         {/* Stats */}

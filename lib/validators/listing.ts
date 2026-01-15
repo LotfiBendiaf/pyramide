@@ -46,6 +46,7 @@ export const listingSchema = z.object({
   features: z.object({
     bedrooms: z.coerce.number().min(0).max(20),
     bathrooms: z.coerce.number().min(0).max(20),
+    facade: z.coerce.number().min(1).max(4),
     area: z.coerce.number().positive("Surface invalide"),
 
     furnished: z.boolean().optional(),
@@ -64,6 +65,7 @@ export const listingSchema = z.object({
 
   published: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
+  isPremium: z.boolean().optional(),
 });
 
 /* ---------------------------------

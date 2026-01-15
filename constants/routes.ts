@@ -5,11 +5,12 @@ const ROUTES = {
   SIGN_UP: "/sign-up",
 
   LISTING_DETAIL: (id: string) => `/listings/${id}`,
+  LISTINGS: "/listings",
 
   // Dashboard Items Routes
   DASHBOARD: "/dashboard",
   WISHLIST: "/wishlist",
-  LISTING: "/dashboard/listings",
+  LISTINGS_DASHBOARD: "/dashboard/listings",
   LISTING_DETAIL_DASHBOARD: (id: string) => `/dashboard/listings/${id}`,
 };
 

@@ -65,6 +65,7 @@ interface FetchListingsParams {
   bedrooms?: number;
   limit?: number;
   page?: number;
+  isPremium?: boolean;
 }
 
 export async function fetchListings(
@@ -81,6 +82,7 @@ export async function fetchListings(
       bedrooms,
       limit = 12,
       page = 1,
+      isPremium,
     } = params;
 
     const skip = (page - 1) * limit;
@@ -92,6 +94,7 @@ export async function fetchListings(
     if (status) query.status = status;
     if (propertyType) query.propertyType = propertyType;
     if (city) query["location.city"] = city;
+    if (isPremium) query["isPremium"] = isPremium;
 
     if (bedrooms !== undefined) {
       query["features.bedrooms"] = { $gte: bedrooms };

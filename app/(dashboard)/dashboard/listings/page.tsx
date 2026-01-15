@@ -36,7 +36,7 @@ async function ListingsContent() {
 
 export default function ListingsPage() {
   return (
-    <section className="container py-16">
+    <section className="container">
       <SectionHeader title="Biens à vendre à Oran" />
 
       <Suspense fallback={<ListingsSkeleton />}>

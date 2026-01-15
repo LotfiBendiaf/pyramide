@@ -13,81 +13,69 @@ export const routeTitles: Record<string, string> = {
   // === Auth ===
   "/sign-in": "Connexion",
   "/sign-up": "Créer un compte",
-  "/sign-up/artist": "Inscription Artiste",
 
-  // === Public Root Pages ===
+  // === Public Pages ===
   "/": "Accueil",
-  "/artists": "Artistes",
-  "/artists/[id]": "Profil Artiste",
+  "/listings": "Annonces Immobilières",
+  "/listings/[id]": "Détails du Bien",
 
-  "/exhibitions": "Expositions",
+  "/agencies": "Agences Immobilières",
+  "/agencies/[id]": "Profil de l’Agence",
 
-  "/artworks": "Œuvres",
-  "/artworks/[id]": "Détail de l’œuvre",
+  "/about": "Qui sommes-nous",
+  "/contact": "Contact",
 
-  "/subscriptions": "Abonnements",
-  "/dashboard/subscriptions": "Abonnements",
+  // === Property Categories ===
+  "/listings/apartment": "Appartements",
+  "/listings/house": "Maisons",
+  "/listings/villa": "Villas",
+  "/listings/studio": "Studios",
+  "/listings/land": "Terrains",
+  "/listings/commercial": "Locaux Commerciaux",
 
-  // Artwork Categories
-  "/artworks/ceramic": "Céramique",
-  "/artworks/digital": "Art Digital",
-  "/artworks/mosaic": "Mosaïque",
-  "/artworks/paint": "Peinture",
-  "/artworks/photography": "Photographie",
-  "/artworks/sculpture": "Sculpture",
-  "/artworks/calligraphy": "Calligraphie",
+  // === Search / User ===
+  "/wishlist": "Liste de Souhaits",
+  "/favorites": "Favoris",
+  "/compare": "Comparer les Biens",
 
-  "/cart": "Panier",
-  "/checkout": "Paiement",
+  // === Client Space ===
+  "/account": "Mon Compte",
+  "/account/appointments": "Mes Rendez-vous",
+  "/account/messages": "Messages",
 
-  // Magazine
-  "/lsitar-mag": "L’Sitar Mag",
-  "/lsitar-mag/[id]": "Article du Mag",
+  // === Admin / Dashboard ===
+  "/dashboard": "Tableau de Bord",
 
-  "/wishlist": "Liste de souhaits",
+  // Listings Management
+  "/dashboard/listings": "Gestion des Annonces",
+  "/dashboard/listings/add": "Nouvelle Annonce",
+  "/dashboard/listings/[id]": "Détails de l’Annonce",
+  "/dashboard/listings/[id]/edit": "Modifier l’Annonce",
 
-  // === Dashboard ===
-  "/dashboard": "Tableau de bord",
-  "/dashboard/sales": "Ventes & Commandes",
-  "/dashboard/payouts": "Paiements & transaction",
+  // Agencies
+  "/dashboard/agencies": "Agences",
+  "/dashboard/agencies/add": "Ajouter une Agence",
+  "/dashboard/agencies/[id]": "Profil de l’Agence",
 
-  // === Clients ===
-  "/dashboard/clients/orders": "Mes Commandes",
-  "/dashboard/clients/payments": "Paiements & transaction",
-  "/dashboard/clients/wishlist": "Ma wishlist",
+  // Clients
+  "/dashboard/clients": "Clients",
+  "/dashboard/clients/[id]": "Détails Client",
 
-  // === Dashboard: Oeuvres ===
-  "/dashboard/artworks": "Mes Oeuvres",
-  "/dashboard/artworks/add": "Nouvel Oeuvre d'art",
-  "/dashboard/artworks/[id]": "Détails de Oeuvre",
-  "/dashboard/artworks/[id]/edit": "Modifier Oeuvre",
+  // Appointments
+  "/dashboard/appointments": "Rendez-vous",
+  "/dashboard/appointments/calendar": "Calendrier",
 
-  // === Dashboard: Articles ===
-  "/dashboard/articles": "Articles du Mag",
-  "/dashboard/articles/new": "Nouvel Article",
-  "/dashboard/articles/[id]": "Détails de l’Article",
-  "/dashboard/articles/[id]/edit": "Modifier l’Article",
+  // Payments / Billing
+  "/dashboard/payments": "Paiements & Facturation",
 
-  // === Dashboard: Artists ===
-  "/dashboard/artists": "Artistes",
-  "/dashboard/artists/add": "Ajouter un Artiste",
-  "/dashboard/artists/[id]": "Profil Artiste",
-  "/dashboard/artists/subscriptions": "Mes Abonnements",
-  "/dashboard/artists/exhibition": "Exposition",
-  "/dashboard/artists/sales": "Mes Ventes & Commandes",
-
-  // === Dashboard: Users ===
+  // Users & Roles
   "/dashboard/users": "Utilisateurs",
   "/dashboard/users/add": "Créer un Utilisateur",
 
-  // === Dashboard: Committee ===
-  "/dashboard/committee": "Validation Comité",
+  // Moderation
+  "/dashboard/reports": "Signalements",
+  "/dashboard/validation": "Validation des Annonces",
 
-  // === Dashboard: Reports ===
-  "/dashboard/reports": "Rapports",
-
-  // === Dashboard: Artist Space ===
-  "/dashboard/artist/create-artwork": "Soumettre une Œuvre",
-  "/dashboard/artist/submission-terms": "Conditions de Soumission",
-  "/dashboard/artist/": "Conditions de Soumission",
+  // Settings
+  "/dashboard/settings": "Paramètres",
 };

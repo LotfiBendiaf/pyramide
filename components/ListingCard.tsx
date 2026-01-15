@@ -34,22 +34,22 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         <div className=" absolute bottom-3 left-5 space-y-2 z-20">
           {/* Title + Location */}
           <Badge variant={"clear"}>{formatPrice(price)}</Badge>
-          <h3 className="font-semibold text-lg text-secondary mb-1">{title}</h3>
+          <h3 className="font-serif text-lg text-secondary mb-1">{title}</h3>
           <div className="flex items-center text-muted text-sm mb-3">
             <MapPin className="w-4 h-4 mr-1" />
             {location.city}
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-2 items-center gap-4 text-sm text-muted mb-3">
+          <div className="flex justify-between items-center gap-4 text-sm text-muted mb-3">
             <div className="flex items-center gap-1">
-              <Bed className="w-4 h-4" /> {features.bedrooms} Chambres
+              <Bed className="w-4 h-4" /> {features.bedrooms}
             </div>
             <div className="flex items-center gap-1">
-              <Bath className="w-4 h-4" /> {features.bathrooms} Salles de bain
+              <Bath className="w-4 h-4" /> {features.bathrooms}
             </div>
             <div className="flex items-center gap-1">
-              <Building2 className="w-4 h-4" /> {features.facade} Façades
+              <Building2 className="w-4 h-4" /> {features.facade}
             </div>
             <div className="flex items-center gap-1">
               <Home className="w-4 h-4" /> {features.area} m²
