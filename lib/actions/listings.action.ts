@@ -6,7 +6,7 @@ import action from "../handlers/action";
 import handleError from "../handlers/error";
 import { ListingInput, listingSchema } from "../validators/listing";
 import dbConnect from "../mongoose";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
 
 export async function createListing(
@@ -119,6 +119,46 @@ export async function fetchListings(
     return {
       success: true,
       data: JSON.parse(JSON.stringify(listings)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function fetchListingById(
+  listingId: string
+): Promise<ActionResponse<Listing>> {
+  try {
+    // 1️⃣ Validate ObjectId
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d’annonce invalide" },
+        status: 400,
+      };
+    }
+
+    // 2️⃣ DB connection
+    await dbConnect();
+
+    // 3️⃣ Fetch listing
+    const listing = await Listing.findById(listingId)
+      .populate("agent", "firstName lastName email phone")
+      .lean();
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    // 4️⃣ Return serialized data
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(listing)),
       status: 200,
     };
   } catch (error) {

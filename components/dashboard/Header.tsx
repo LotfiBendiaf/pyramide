@@ -14,6 +14,8 @@ import {
   BreadcrumbSeparator,
 } from "../ui/breadcrumb";
 import Theme from "../navigation/Theme";
+import ROUTES from "@/constants/routes";
+import { Button } from "../ui/button";
 
 interface SiteHeaderProps {
   title?: string;
@@ -90,6 +92,9 @@ export function SiteHeader({ title, dynamic = false }: SiteHeaderProps) {
             >
               <NotificationsBell />
             </Button> */}
+            <Button>
+              <Link href={ROUTES.HOME}>Site principale</Link>
+            </Button>
           </div>
         </div>
         {/* Breadcrumbs */}

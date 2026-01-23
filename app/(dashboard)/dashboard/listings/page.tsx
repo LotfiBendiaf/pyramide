@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { fetchListings } from "@/lib/actions/listings.action";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
-import ListingCard from "@/components/listing/ListingCard";
+import { ListingTable } from "@/components/listing/ListingTable";
 
 async function ListingsContent() {
   const result = await fetchListings();
@@ -25,13 +25,7 @@ async function ListingsContent() {
     );
   }
 
-  return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {listings.map((listing) => (
-        <ListingCard key={listing._id} listing={listing} />
-      ))}
-    </div>
-  );
+  return <ListingTable listings={listings} />;
 }
 
 export default function ListingsPage() {

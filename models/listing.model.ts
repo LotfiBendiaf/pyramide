@@ -124,9 +124,14 @@ const listingSchema = new Schema<IListing>(
     owner: {
       type: String,
     },
+    agent: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
     published: { type: Boolean, default: false },
-    publishedAt: { type: Date },
+    publishedAt: { type: Date, default: new Date() },
 
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },

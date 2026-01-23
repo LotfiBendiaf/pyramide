@@ -8,7 +8,6 @@ import { SignInSchema } from "./lib/validators/auth";
 
 import bcrypt from "bcryptjs";
 import { IAccountDoc } from "./models/account.model";
-import { IUserDoc } from "./models/user.model";
 import { Role } from "./constants/values";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -29,7 +28,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           const { data: existingUser } = (await api.users.getById(
             existingAccount.userId.toString()
-          )) as ActionResponse<IUserDoc>;
+          )) as ActionResponse<User>;
 
           if (!existingUser) return null;
 
@@ -40,7 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (isValidPassword) {
             return {
-              id: existingUser.id,
+              id: existingUser._id,
               username: existingUser.username,
               firstname: existingUser.firstname,
               lastname: existingUser.lastname,
@@ -58,7 +57,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.sub = user.id;
+        token.id = user.id;
+        token.username = user.username;
+        token.firstname = user.firstname;
+        token.lastname = user.lastname;
         token.name = user.name;
         token.email = user.email;
         token.image = user.image;
@@ -68,10 +70,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub ?? "";
-        session.user.email = token.email ?? "";
-        session.user.role = token.role as Role;
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.username = token.username as string;
+        session.user.firstname = token.firstname as string;
+        session.user.lastname = token.lastname as string;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.image = token.image ?? null;
+        session.user.role = token.role as Role[];
       }
       return session;
     },
@@ -88,7 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           account.provider === "github"
             ? (profile?.login as string)
             : (user.name?.toLowerCase() as string),
-        role: "VIEWER" as Role,
+        role: ["VIEWER"] as Role[],
       };
 
       const response = await api.auth.oAuthSignIn({

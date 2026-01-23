@@ -33,6 +33,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import ROUTES from "@/constants/routes";
+import { WILAYAS } from "@/constants/values";
 
 type ClientFormValues = z.infer<typeof clientSchema>;
 
@@ -72,13 +73,10 @@ export default function ClientCreateForm() {
   };
 
   return (
-    <Card className="w-fit">
+    <Card>
       <CardContent>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6 max-w-xl"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* First name */}
             <FormField
               control={form.control}
@@ -175,7 +173,18 @@ export default function ClientCreateForm() {
                 <FormItem>
                   <FormLabel>Ville</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ville" {...field} />
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une ville" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {WILAYAS.map((wilaya) => (
+                          <SelectItem key={wilaya} value={wilaya}>
+                            {wilaya}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

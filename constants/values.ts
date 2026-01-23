@@ -1,13 +1,32 @@
-export const ROLES = ["MANAGER", "ADMIN", "EMPLOYEE", "VIEWER"] as const;
+export const ROLES = [
+  "MANAGER",
+  "ADMIN",
+  "ASSISTANT",
+  "AGENT",
+  "EMPLOYEE",
+  "VIEWER",
+] as const;
 
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS = {
-  ADMIN: "Administrateur",
   MANAGER: "Gestionnaire",
+  ADMIN: "Administrateur",
+  ASSISTANT: "Assistant",
+  AGENT: "Agent",
   EMPLOYEE: "Employé",
   VIEWER: "Lecteur",
 } as const;
+
+export const CLIENT_QUALIFICATIONS = [
+  { value: "NEW", label: "Nouveau", color: "secondary" },
+  { value: "PENDING", label: "En Attente", color: "warning" },
+  { value: "QUALIFIED", label: "Qualifié", color: "success" },
+  { value: "ARCHIVED", label: "Archivé", color: "outline" },
+] as const;
+
+export type ClientQualification =
+  (typeof CLIENT_QUALIFICATIONS)[number]["value"];
 
 export const routeTitles: Record<string, string> = {
   // === Auth ===
@@ -60,7 +79,7 @@ export const routeTitles: Record<string, string> = {
   // Clients
   "/dashboard/clients": "Clients",
   "/dashboard/clients/[id]": "Détails Client",
-
+  "/dashboard/clients/add": "Ajouter un Client",
   // Appointments
   "/dashboard/appointments": "Rendez-vous",
   "/dashboard/appointments/calendar": "Calendrier",
@@ -79,3 +98,64 @@ export const routeTitles: Record<string, string> = {
   // Settings
   "/dashboard/settings": "Paramètres",
 };
+
+export const WILAYAS = [
+  "Adrar",
+  "Chlef",
+  "Laghouat",
+  "Oum El Bouaghi",
+  "Batna",
+  "Béjaïa",
+  "Biskra",
+  "Béchar",
+  "Blida",
+  "Bouira",
+  "Tamanrasset",
+  "Tébessa",
+  "Tlemcen",
+  "Tiaret",
+  "Tizi Ouzou",
+  "Alger",
+  "Djelfa",
+  "Jijel",
+  "Sétif",
+  "Saïda",
+  "Skikda",
+  "Sidi Bel Abbès",
+  "Annaba",
+  "Guelma",
+  "Constantine",
+  "Médéa",
+  "Mostaganem",
+  "M'Sila",
+  "Mascara",
+  "Ouargla",
+  "Oran",
+  "El Bayadh",
+  "Illizi",
+  "Bordj Bou Arreridj",
+  "Boumerdès",
+  "El Tarf",
+  "Tindouf",
+  "Tissemsilt",
+  "El Oued",
+  "Khenchela",
+  "Souk Ahras",
+  "Tipaza",
+  "Mila",
+  "Aïn Defla",
+  "Naâma",
+  "Aïn Témouchent",
+  "Ghardaïa",
+  "Relizane",
+  "Timimoun",
+  "Bordj Badji Mokhtar",
+  "Ouled Djellal",
+  "Béni Abbès",
+  "In Salah",
+  "In Guezzam",
+  "Touggourt",
+  "Djanet",
+  "El M'Ghair",
+  "El Meniaa",
+];

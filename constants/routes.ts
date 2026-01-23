@@ -11,7 +11,9 @@ const ROUTES = {
   DASHBOARD: "/dashboard",
   WISHLIST: "/wishlist",
   CLIENTS_DASHBOARD: "/dashboard/clients",
+  CLIENT_ADD: "/dashboard/clients/add",
   LISTINGS_DASHBOARD: "/dashboard/listings",
+  LISTING_ADD: "/dashboard/listings/add",
   LISTING_DETAIL_DASHBOARD: (id: string) => `/dashboard/listings/${id}`,
 };
 

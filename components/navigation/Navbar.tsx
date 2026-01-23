@@ -13,7 +13,7 @@ import {
   SheetDescription,
   SheetFooter,
 } from "@/components/ui/sheet";
-import { Menu, Bell, User, ArrowRight, Loader, Heart } from "lucide-react";
+import { Menu, User, ArrowRight, Loader, Heart } from "lucide-react";
 
 import NavLinks from "./NavLinks";
 import Theme from "./Theme";

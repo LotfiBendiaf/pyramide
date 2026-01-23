@@ -64,7 +64,7 @@ const sidebarConfig = [
       }, // List of all properties for sale/rent
       {
         title: "Ajouter une Propriété",
-        url: "/dashboard/listings/add",
+        url: ROUTES.LISTING_ADD,
         icon: PlusCircle,
       },
       {
@@ -78,10 +78,14 @@ const sidebarConfig = [
   {
     label: "Clients & Demandes",
     items: [
-      { title: "Clients Acquéreurs", url: "/clients", icon: Users }, // General clients/buyers
+      {
+        title: "Clients Acquéreurs",
+        url: ROUTES.CLIENTS_DASHBOARD,
+        icon: Users,
+      }, // General clients/buyers
       {
         title: "Ajouter un Client",
-        url: "/dashboard/clients/add",
+        url: ROUTES.CLIENT_ADD,
         icon: UserPlus,
       }, // General clients/buyers
       { title: "Liste d'Attente", url: "/clients/waiting-list", icon: List }, // Waiting list for specific property types
@@ -164,7 +168,7 @@ export function AppSidebar() {
                     </span>
                     {user?.role && (
                       <span className="text-muted-foreground text-[10px] truncate">
-                        {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
+                        {ROLE_LABELS[user.role[0] as keyof typeof ROLE_LABELS]}
                       </span>
                     )}
                   </div>

@@ -14,7 +14,7 @@ interface AuthCredentials {
   lastname: string;
   phone: string;
   email: string;
-  role: "MANAGER" | "ADMIN" | "EMPLOYEE" | "VIEWER";
+  role: "MANAGER" | "ADMIN" | "ASSISTANT" | "AGENT" | "EMPLOYEE" | "VIEWER";
   password: string;
   confirmPassword?: string;
 }
@@ -25,7 +25,7 @@ interface UserParams {
   lastname: string;
   phone: string;
   email: string;
-  role: "MANAGER" | "ADMIN" | "EMPLOYEE" | "VIEWER";
+  role: "MANAGER" | "ADMIN" | "ASSISTANT" | "AGENT" | "EMPLOYEE" | "VIEWER";
   image?: string;
   password: string;
   createdAt: Date;

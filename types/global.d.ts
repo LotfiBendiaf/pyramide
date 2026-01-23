@@ -97,6 +97,8 @@ interface Listing {
   likes: number;
   isFeatured: boolean;
   isPremium: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface Client {
@@ -114,7 +116,7 @@ interface Client {
   budgetMax?: number;
   city?: string;
 
-  qualificationStatus: QualificationStatus;
+  qualificationStatus: "PENDING" | "QUALIFIED" | "ARCHIVED";
   qualificationNotes?: string;
 
   createdBy: Schema.Types.ObjectId; // Agent / Assistant

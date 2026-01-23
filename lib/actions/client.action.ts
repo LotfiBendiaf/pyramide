@@ -10,6 +10,10 @@ import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
 import { ClientFilters, ClientInput } from "@/types/client";
 import { FilterQuery } from "mongoose";
+import { ClientQualification } from "@/constants/values";
+import dbConnect from "../mongoose";
+import { revalidatePath } from "next/cache";
+import ROUTES from "@/constants/routes";
 
 export async function createClient(
   params: ClientInput
@@ -168,4 +172,26 @@ export async function qualifyClient(
     qualificationNotes: notes,
     archived: status === "ARCHIVED" || status === "NOT_RELEVANT",
   });
+}
+
+export async function updateClientQualification(
+  clientId: string,
+  qualificationStatus: ClientQualification
+) {
+  try {
+    await dbConnect();
+
+    await Client.findByIdAndUpdate(clientId, {
+      qualificationStatus,
+    });
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: { message: error || "Échec de mise à jour du statut" },
+    };
+  }
 }

@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Card, CardContent } from "./ui/card";
+import ClientQualificationSelect from "./ClientQualificationButton";
 
 type ClientsTableProps = {
   clients: Client[];
@@ -43,6 +44,7 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
               <TableHead>Ville</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Créé le</TableHead>
+              <TableHead>Qualification</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -82,6 +84,12 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
                 {/* Created at */}
                 <TableCell className="text-muted-foreground text-sm">
                   {format(new Date(client.createdAt), "dd/MM/yyyy")}
+                </TableCell>
+                <TableCell>
+                  <ClientQualificationSelect
+                    clientId={client._id}
+                    value={client.qualificationStatus}
+                  />
                 </TableCell>
               </TableRow>
             ))}
