@@ -12,7 +12,7 @@ export interface IListing {
   price: number;
   priceLabel?: string; // ex: "80 000 DA / mois"
 
-  status: "À Vendre" | "À Louer";
+  status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
   propertyType:
     | "Appartement"
     | "Maison"

@@ -3,7 +3,13 @@ import { z } from "zod";
 /* ---------------------------------
    Reusable Enums
 ----------------------------------*/
-export const ListingStatusEnum = z.enum(["À Vendre", "À Louer"]);
+export const ListingStatusEnum = z.enum([
+  "En Vente",
+  "En Location",
+  "Vendu",
+  "Loué",
+  "Retiré",
+]);
 
 export const PropertyTypeEnum = z.enum([
   "Appartement",

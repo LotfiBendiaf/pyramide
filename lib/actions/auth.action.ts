@@ -24,6 +24,7 @@ export async function signUpWithCredentials(
     validationResult.params!;
 
   const username = firstname + lastname;
+  const name = firstname + " " + lastname;
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -44,7 +45,7 @@ export async function signUpWithCredentials(
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const [newUser] = await User.create(
-      [{ username, firstname, lastname, email, phone, role }],
+      [{ name, username, firstname, lastname, email, phone, role }],
       {
         session,
       }

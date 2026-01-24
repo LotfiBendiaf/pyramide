@@ -8,6 +8,8 @@ import { ListingInput, listingSchema } from "../validators/listing";
 import dbConnect from "../mongoose";
 import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
+import { PropertyStatus } from "@/constants/values";
+import ROUTES from "@/constants/routes";
 
 export async function createListing(
   params: ListingInput
@@ -111,6 +113,7 @@ export async function fetchListings(
     // 2. Fetch listings
     const listings = await Listing.find(query)
       .sort({ createdAt: -1 })
+      .populate("agent", "name firstname lastname email phone")
       .skip(skip)
       .limit(limit)
       .lean();
@@ -216,6 +219,21 @@ export async function decrementListingLikes(listingId: string) {
     return { success: true };
   } catch (error) {
     console.error("Failed to decrement listing likes", error);
+    return { success: false };
+  }
+}
+
+export async function updateListingStatus(
+  listingId: string,
+  status: PropertyStatus
+) {
+  try {
+    await dbConnect();
+    await Listing.findByIdAndUpdate(listingId, { status });
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    return { success: true };
+  } catch (error) {
+    handleError(error);
     return { success: false };
   }
 }

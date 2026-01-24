@@ -62,7 +62,7 @@ export default function ListingForm() {
       title: "",
       description: "",
       price: 0,
-      status: "À Vendre",
+      status: "En Vente",
       propertyType: "Appartement",
       location: {
         city: "",

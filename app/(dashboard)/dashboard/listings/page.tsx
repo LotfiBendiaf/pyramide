@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { fetchListings } from "@/lib/actions/listings.action";
-import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ListingTable } from "@/components/listing/ListingTable";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 
 async function ListingsContent() {
   const result = await fetchListings();
@@ -30,10 +30,10 @@ async function ListingsContent() {
 
 export default function ListingsPage() {
   return (
-    <section className="container">
+    <section>
       <SectionHeader title="Biens à vendre à Oran" />
 
-      <Suspense fallback={<ListingsSkeleton />}>
+      <Suspense fallback={<TableSkeleton />}>
         <ListingsContent />
       </Suspense>
     </section>

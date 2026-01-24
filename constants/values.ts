@@ -18,6 +18,21 @@ export const ROLE_LABELS = {
   VIEWER: "Lecteur",
 } as const;
 
+export type PropertyStatus =
+  | "En Vente"
+  | "En Location"
+  | "Vendu"
+  | "Loué"
+  | "Retiré";
+
+export const STATUS_COLORS: Record<PropertyStatus, string> = {
+  "En Vente": "text-green-600",
+  "En Location": "text-blue-600",
+  Vendu: "text-gray-500",
+  Loué: "text-purple-600",
+  Retiré: "text-red-600",
+};
+
 export const CLIENT_QUALIFICATIONS = [
   { value: "NEW", label: "Nouveau", color: "secondary" },
   { value: "PENDING", label: "En Attente", color: "warning" },

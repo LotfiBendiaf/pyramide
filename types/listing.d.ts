@@ -6,7 +6,7 @@ interface ListingInput {
   price: number;
   priceLabel?: string;
 
-  status: "À Vendre" | "À Louer";
+  status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
   propertyType:
     | "Appartement"
     | "Maison"
