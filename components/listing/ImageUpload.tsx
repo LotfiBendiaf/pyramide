@@ -6,6 +6,8 @@ import { ImagePlus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
+import imageCompression from "browser-image-compression";
+
 interface ImageUploadProps {
   value: string[]; // Current URLs
   onChange: (value: string[]) => void; // Function to update form
@@ -23,32 +25,40 @@ export default function ImageUpload({
     async (acceptedFiles: File[]) => {
       setUploading(true);
 
-      // 1. Upload Logic Here
-      // This is where you send the file to your backend or Cloudinary
-      // For now, I will simulate it returning a URL.
-
       try {
         const uploadPromises = acceptedFiles.map(async (file) => {
+          // ✅ COMPRESS IMAGE FIRST
+          const compressedFile = await imageCompression(file, {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+          });
+
           const formData = new FormData();
-          formData.append("file", file);
+          formData.append("file", compressedFile);
           formData.append(
             "upload_preset",
             process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
           );
           formData.append("folder", "pyramide/listings");
 
-          // Fetch to Cloudinary
           const response = await fetch(
             `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
-            { method: "POST", body: formData }
+            {
+              method: "POST",
+              body: formData,
+            }
           );
+
+          if (!response.ok) {
+            throw new Error("Cloudinary upload failed");
+          }
+
           const data = await response.json();
           return data.secure_url;
         });
 
         const newUrls = await Promise.all(uploadPromises);
-
-        // Update the parent form with the new URLs
         onChange([...value, ...newUrls]);
       } catch (error) {
         console.error("Upload failed", error);
