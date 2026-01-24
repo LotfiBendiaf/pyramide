@@ -37,7 +37,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         <span
           className={cn(
             "absolute top-4 left-4 rounded-full px-3 py-1 text-xs font-medium text-white backdrop-blur",
-            status === "À Vendre" ? "bg-emerald-600" : "bg-blue-600"
+            status === "En Vente" ? "bg-emerald-600" : "bg-blue-600"
           )}
         >
           {status}
@@ -58,7 +58,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         {/* Price */}
         <div className="absolute bottom-4 left-4 text-white">
           <p className="text-lg font-bold leading-tight">{formattedPrice}</p>
-          {status === "À Louer" && (
+          {status === "En Location" && (
             <span className="text-xs opacity-90">/ mois</span>
           )}
         </div>
