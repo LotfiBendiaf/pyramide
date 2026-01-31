@@ -37,9 +37,24 @@ export async function createListing(
   }
 
   try {
+    const evaluation = validationResult.params?.evaluation
+      ? {
+          ...validationResult.params?.evaluation,
+          positives:
+            validationResult.params.evaluation.positives?.map((p) => p.value) ??
+            [],
+          negatives:
+            validationResult.params.evaluation.negatives?.map((n) => n.value) ??
+            [],
+          evaluatedBy: user.data._id,
+          evaluatedAt:
+            validationResult.params.evaluation.evaluatedAt ?? new Date(),
+        }
+      : undefined;
     // 3. Create listing
     const listing = await Listing.create({
       ...validationResult.params,
+      evaluation,
       agent: user.data._id, // Best practice: store only ObjectId
     });
 
@@ -68,6 +83,7 @@ interface FetchListingsParams {
   limit?: number;
   page?: number;
   isPremium?: boolean;
+  minScore?: number;
 }
 
 export async function fetchListings(
@@ -85,6 +101,7 @@ export async function fetchListings(
       limit = 12,
       page = 1,
       isPremium,
+      minScore,
     } = params;
 
     const skip = (page - 1) * limit;
@@ -97,6 +114,9 @@ export async function fetchListings(
     if (propertyType) query.propertyType = propertyType;
     if (city) query["location.city"] = city;
     if (isPremium) query["isPremium"] = isPremium;
+    if (minScore !== undefined) {
+      query["evaluation.finalScore"] = { $gte: minScore };
+    }
 
     if (bedrooms !== undefined) {
       query["features.bedrooms"] = { $gte: bedrooms };

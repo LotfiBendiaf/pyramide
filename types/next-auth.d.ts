@@ -12,7 +12,7 @@ declare module "next-auth" {
       lastname: string;
       name: string;
       image?: string | null; // ✅ ADD
-      role: Role[]; // Array of roles
+      role: Role; // Array of roles
     } & DefaultSession["user"];
   }
 
@@ -24,7 +24,7 @@ declare module "next-auth" {
     lastname: string;
     name: string;
     image?: string | null; // ✅ ADD
-    role: Role[]; // Array of roles
+    role: Role; // Array of roles
   }
 }
 
@@ -37,6 +37,6 @@ declare module "next-auth/jwt" {
     lastname: string;
     name: string;
     image?: string | null; // ✅ ADD
-    role: Role[];
+    role: Role;
   }
 }

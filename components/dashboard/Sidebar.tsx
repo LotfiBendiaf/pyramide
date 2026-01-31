@@ -168,7 +168,7 @@ export function AppSidebar() {
                     </span>
                     {user?.role && (
                       <span className="text-muted-foreground text-[10px] truncate">
-                        {ROLE_LABELS[user.role[0] as keyof typeof ROLE_LABELS]}
+                        {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
                       </span>
                     )}
                   </div>

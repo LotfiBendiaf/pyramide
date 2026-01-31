@@ -63,6 +63,16 @@ export const listingSchema = z.object({
     elevator: z.boolean().optional(),
   }),
 
+  evaluation: z.object({
+    positives: z.array(z.object({ value: z.string() })).default([]),
+    negatives: z.array(z.object({ value: z.string() })).default([]),
+    idealBuyerType: z.string().optional(),
+    priceQualityOpinion: z.string().optional(),
+    finalScore: z.number().min(0).max(10).optional(),
+    evaluatedBy: z.string().optional(),
+    evaluatedAt: z.date().optional(),
+  }),
+
   images: z
     .array(z.string().url("URL image invalide"))
     .min(1, "Au moins une image requise"),

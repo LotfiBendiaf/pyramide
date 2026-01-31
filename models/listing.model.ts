@@ -44,6 +44,17 @@ export interface IListing {
     elevator?: boolean;
   };
 
+  /** ✅ NEW — Internal Evaluation */
+  evaluation?: {
+    positives?: string[];
+    negatives?: string[];
+    idealBuyerType?: string;
+    priceQualityOpinion?: string;
+    finalScore?: number; // 0 → 10
+    evaluatedBy?: Schema.Types.ObjectId;
+    evaluatedAt?: Date;
+  };
+
   images: string[];
   coverImage?: string;
 
@@ -78,7 +89,7 @@ const listingSchema = new Schema<IListing>(
 
     status: {
       type: String,
-      enum: ["À Vendre", "À Louer"],
+      enum: ["En Vente", "En Location", "Vendu", "Loué", "Retiré"],
       required: true,
     },
 
@@ -117,6 +128,30 @@ const listingSchema = new Schema<IListing>(
       pool: { type: Boolean, default: false },
       elevator: { type: Boolean, default: false },
     },
+    evaluation: {
+      positives: { type: [String], default: [] },
+      negatives: { type: [String], default: [] },
+      idealBuyerType: {
+        type: String,
+        trim: true,
+      },
+      priceQualityOpinion: {
+        type: String,
+        trim: true,
+      },
+      finalScore: {
+        type: Number,
+        min: 0,
+        max: 10,
+      },
+      evaluatedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+      evaluatedAt: {
+        type: Date,
+      },
+    },
 
     images: [{ type: String, required: true }],
     coverImage: { type: String, trim: true },
@@ -149,6 +184,7 @@ listingSchema.index({ price: 1 });
 listingSchema.index({ status: 1 });
 listingSchema.index({ propertyType: 1 });
 listingSchema.index({ isFeatured: 1 });
+listingSchema.index({ "evaluation.finalScore": -1 });
 
 /* ---------------------------------
    Model

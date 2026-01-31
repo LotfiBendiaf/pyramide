@@ -85,6 +85,16 @@ interface Listing {
     elevator?: boolean;
   };
 
+  evaluation?: {
+    positives?: string[];
+    negatives?: string[];
+    idealBuyerType?: string;
+    priceQualityOpinion?: string;
+    finalScore?: number; // 0 → 10
+    evaluatedBy?: string;
+    evaluatedAt?: Date;
+  };
+
   images: string[];
   coverImage?: string;
 

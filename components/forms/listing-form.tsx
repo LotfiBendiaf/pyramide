@@ -1,10 +1,10 @@
 "use client";
 
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
 
 // UI
@@ -77,6 +77,15 @@ export default function ListingForm() {
         parking: false,
         facade: 1,
       },
+      evaluation: {
+        finalScore: 0,
+        positives: [],
+        negatives: [],
+        idealBuyerType: "",
+        priceQualityOpinion: "",
+        evaluatedBy: "",
+        evaluatedAt: new Date(),
+      },
       images: [],
       isFeatured: false,
       published: true,
@@ -86,7 +95,6 @@ export default function ListingForm() {
   const onSubmit = (data: ListingFormValues) => {
     startTransition(async () => {
       try {
-        // Call server action
         const result = await createListing(data);
 
         if (!result.success) {
@@ -109,6 +117,16 @@ export default function ListingForm() {
       }
     });
   };
+
+  const positivesFieldArray = useFieldArray({
+    control: form.control,
+    name: "evaluation.positives",
+  });
+
+  const negativesFieldArray = useFieldArray({
+    control: form.control,
+    name: "evaluation.negatives",
+  });
 
   return (
     <Form {...form}>
@@ -147,6 +165,20 @@ export default function ListingForm() {
                       <FormLabel>Ville</FormLabel>
                       <FormControl>
                         <Input placeholder="Ville..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location.address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adresse</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Adresse..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -208,7 +240,7 @@ export default function ListingForm() {
               <CardHeader>
                 <CardTitle>Caractéristiques</CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-3 gap-4">
+              <CardContent className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="features.bedrooms"
@@ -329,6 +361,168 @@ export default function ListingForm() {
                 />
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Évaluation</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-4">
+                <FormField
+                  control={form.control}
+                  name="evaluation.finalScore"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Score final</FormLabel>
+                      <Select
+                        value={field.value?.toString()}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir une note" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Array.from({ length: 10 }, (_, i) => i + 1).map(
+                            (score) => (
+                              <SelectItem key={score} value={score.toString()}>
+                                {score} / 10
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="evaluation.positives"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Points positifs</FormLabel>
+
+                      <div className="space-y-2">
+                        {positivesFieldArray.fields.map((item, index) => (
+                          <div key={item.id} className="flex gap-2">
+                            <FormField
+                              control={form.control}
+                              // Note the .value at the end of the name
+                              name={`evaluation.positives.${index}.value`}
+                              render={({ field }) => (
+                                <FormControl>
+                                  <Input
+                                    placeholder={`Point positif ${index + 1}`}
+                                    {...field}
+                                  />
+                                </FormControl>
+                              )}
+                            />
+                            <Button
+                              type="button"
+                              variant={"destructive"}
+                              onClick={() => positivesFieldArray.remove(index)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() =>
+                          positivesFieldArray.append({ value: "" })
+                        }
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Ajouter un point
+                      </Button>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="evaluation.negatives"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Points négatifs</FormLabel>
+
+                      <div className="space-y-2">
+                        {negativesFieldArray.fields.map((item, index) => (
+                          <div key={item.id} className="flex gap-2">
+                            <FormField
+                              control={form.control}
+                              // Note the .value at the end of the name
+                              name={`evaluation.negatives.${index}.value`}
+                              render={({ field }) => (
+                                <FormControl>
+                                  <Input
+                                    placeholder={`Point négatif ${index + 1}`}
+                                    {...field}
+                                  />
+                                </FormControl>
+                              )}
+                            />
+                            <Button
+                              type="button"
+                              variant={"destructive"}
+                              onClick={() => negativesFieldArray.remove(index)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() =>
+                          negativesFieldArray.append({ value: "" })
+                        }
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Ajouter un point
+                      </Button>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="evaluation.idealBuyerType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Acheteur idéal</FormLabel>
+                      <Input placeholder="Acheteur idéal..." {...field} />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="evaluation.priceQualityOpinion"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Opinion qualité/prix</FormLabel>
+                      <Textarea
+                        className="min-h-[80px]"
+                        placeholder="Opinion qualité/prix..."
+                        {...field}
+                      />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
           </div>
 
           {/* RIGHT COLUMN */}
@@ -396,8 +590,8 @@ export default function ListingForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="À Vendre">À Vendre</SelectItem>
-                          <SelectItem value="À Louer">À Louer</SelectItem>
+                          <SelectItem value="En Vente">À Vendre</SelectItem>
+                          <SelectItem value="En Location">À Louer</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>

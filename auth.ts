@@ -78,7 +78,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.name = token.name as string;
         session.user.email = token.email as string;
         session.user.image = token.image ?? null;
-        session.user.role = token.role as Role[];
+        session.user.role = token.role as Role;
       }
       return session;
     },
@@ -95,7 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           account.provider === "github"
             ? (profile?.login as string)
             : (user.name?.toLowerCase() as string),
-        role: ["VIEWER"] as Role[],
+        role: "VIEWER" as Role,
       };
 
       const response = await api.auth.oAuthSignIn({
