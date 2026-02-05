@@ -137,3 +137,18 @@ interface Client {
   createdAt: Date;
   updatedAt: Date;
 }
+
+interface FollowUp {
+  _id?: string;
+  listing: Schema.Types.ObjectId;
+  client: Schema.Types.ObjectId;
+  agent: Schema.Types.ObjectId;
+  type: "COLD" | "WARM" | "HOT" | "CUSTOM";
+  title?: string;
+  note?: string;
+  reminderAt?: Date;
+  channel?: "CALL" | "WHATSAPP" | "EMAIL" | "VISIT";
+  status?: "PENDING" | "DONE" | "OVERDUE";
+  createdAt: Date;
+  updatedAt: Date;
+}

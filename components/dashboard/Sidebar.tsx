@@ -43,6 +43,7 @@ import {
   Users,
   ListCheck,
   UserPlus,
+  CalendarArrowUp,
 } from "lucide-react";
 import { ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -76,8 +77,13 @@ const sidebarConfig = [
     ],
   },
   {
-    label: "Clients & Demandes",
+    label: "Clients & Suivies",
     items: [
+      {
+        title: "Suivies Clients",
+        url: ROUTES.FOLLOWUPS,
+        icon: CalendarArrowUp,
+      }, // General clients/buyers
       {
         title: "Clients Acquéreurs",
         url: ROUTES.CLIENTS_DASHBOARD,

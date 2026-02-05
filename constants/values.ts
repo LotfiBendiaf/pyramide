@@ -86,6 +86,11 @@ export const routeTitles: Record<string, string> = {
   "/dashboard/listings/[id]": "Détails de l’Annonce",
   "/dashboard/listings/[id]/edit": "Modifier l’Annonce",
 
+  //Suivies Clients
+  "/dashboard/follow-ups": "Suivis Clients",
+  "/dashboard/follow-ups/new": "Nouveau Suivi",
+  "/dashboard/follow-ups/[listingId]": "Suivis de l’Annonce",
+
   // Agencies
   "/dashboard/agencies": "Agences",
   "/dashboard/agencies/add": "Ajouter une Agence",

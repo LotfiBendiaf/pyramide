@@ -51,6 +51,8 @@ export async function createListing(
             validationResult.params.evaluation.evaluatedAt ?? new Date(),
         }
       : undefined;
+
+    await dbConnect();
     // 3. Create listing
     const listing = await Listing.create({
       ...validationResult.params,

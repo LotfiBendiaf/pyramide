@@ -41,3 +41,18 @@ export async function fetchUserById(
     return handleError(error) as ErrorResponse;
   }
 }
+
+export async function fetchAgents(): Promise<ActionResponse<User[]>> {
+  try {
+    await dbConnect();
+
+    const agents = await User.find({ role: "ADMIN" }).sort({ createdAt: -1 });
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(agents)),
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
