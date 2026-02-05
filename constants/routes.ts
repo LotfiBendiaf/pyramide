@@ -12,6 +12,7 @@ const ROUTES = {
   WISHLIST: "/wishlist",
   CLIENTS_DASHBOARD: "/dashboard/clients",
   CLIENT_ADD: "/dashboard/clients/add",
+  CLIENT_DETAIL: (id: string) => `/dashboard/clients/${id}`,
   LISTINGS_DASHBOARD: "/dashboard/listings",
   LISTING_ADD: "/dashboard/listings/add",
   FOLLOWUPS: "/dashboard/follow-ups",
@@ -19,6 +20,8 @@ const ROUTES = {
   FOLLOWUPS_LISTING: (listingId: string) =>
     `/dashboard/follow-ups/${listingId}`,
   LISTING_DETAIL_DASHBOARD: (id: string) => `/dashboard/listings/${id}`,
+  DAILY_REPORT: "/dashboard/daily-report",
+  TEAM_REPORT: "/dashboard/team-report",
 };
 
 export default ROUTES;

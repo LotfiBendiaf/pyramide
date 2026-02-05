@@ -90,9 +90,9 @@ const RegisterForm = <T extends FieldValues>({
                         <SelectValue placeholder="Choisir un rôle" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ADMIN">Administrateur</SelectItem>
-                        <SelectItem value="ACCOUNTANT">Comptable</SelectItem>
-                        <SelectItem value="VIEWER">Lecteur</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="AGENT">Agent Immobilier</SelectItem>
+                        <SelectItem value="VIEWER">Viewer</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -114,17 +114,17 @@ const RegisterForm = <T extends FieldValues>({
                     {field.name === "email"
                       ? "Adresse Email"
                       : field.name === "firstname"
-                      ? "Prenom"
-                      : field.name === "lastname"
-                      ? "Nom"
-                      : field.name === "phone"
-                      ? "Numero de téléphone"
-                      : field.name === "password"
-                      ? "Mot de passe"
-                      : field.name === "confirmPassword"
-                      ? "Confirmer le mot de passe"
-                      : field.name.charAt(0).toUpperCase() +
-                        field.name.slice(1)}
+                        ? "Prenom"
+                        : field.name === "lastname"
+                          ? "Nom"
+                          : field.name === "phone"
+                            ? "Numero de téléphone"
+                            : field.name === "password"
+                              ? "Mot de passe"
+                              : field.name === "confirmPassword"
+                                ? "Confirmer le mot de passe"
+                                : field.name.charAt(0).toUpperCase() +
+                                  field.name.slice(1)}
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -134,8 +134,8 @@ const RegisterForm = <T extends FieldValues>({
                         field.name === "confirmPassword"
                           ? "password"
                           : field.name === "email"
-                          ? "email"
-                          : "text"
+                            ? "email"
+                            : "text"
                       }
                       {...field}
                     />

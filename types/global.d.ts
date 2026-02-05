@@ -126,7 +126,7 @@ interface Client {
   budgetMax?: number;
   city?: string;
 
-  qualificationStatus: "PENDING" | "QUALIFIED" | "ARCHIVED";
+  qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
   qualificationNotes?: string;
 
   createdBy: Schema.Types.ObjectId; // Agent / Assistant
@@ -142,7 +142,7 @@ interface FollowUp {
   _id?: string;
   listing: Schema.Types.ObjectId;
   client: Schema.Types.ObjectId;
-  agent: Schema.Types.ObjectId;
+  agent?: Schema.Types.ObjectId;
   type: "COLD" | "WARM" | "HOT" | "CUSTOM";
   title?: string;
   note?: string;

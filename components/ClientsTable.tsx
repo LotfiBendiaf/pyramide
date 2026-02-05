@@ -9,9 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import Link from "next/link";
 import { Card, CardContent } from "./ui/card";
 import ClientQualificationSelect from "./ClientQualificationButton";
+import ROUTES from "@/constants/routes";
+import { formatDate } from "@/lib/utils";
 
 type ClientsTableProps = {
   clients: Client[];
@@ -44,6 +46,7 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
               <TableHead>Ville</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Créé le</TableHead>
+              <TableHead>Agent</TableHead>
               <TableHead>Qualification</TableHead>
             </TableRow>
           </TableHeader>
@@ -58,7 +61,12 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
 
                 {/* Client name */}
                 <TableCell className="font-medium">
-                  {client.firstName} {client.lastName}
+                  <Link
+                    href={ROUTES.CLIENT_DETAIL(client._id)}
+                    className="hover:underline"
+                  >
+                    {client.firstName} {client.lastName}
+                  </Link>
                 </TableCell>
 
                 {/* Type */}
@@ -83,7 +91,17 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
 
                 {/* Created at */}
                 <TableCell className="text-muted-foreground text-sm">
-                  {format(new Date(client.createdAt), "dd/MM/yyyy")}
+                  {formatDate(client.createdAt)}
+                </TableCell>
+                {/* Agent */}
+                <TableCell>
+                  <Badge variant="outline">
+                    {client.assignedAgent
+                      ? client.assignedAgent.firstname +
+                        " " +
+                        client.assignedAgent.lastname
+                      : "—"}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <ClientQualificationSelect

@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils"; // optional, for classNames
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   Select,
@@ -40,18 +41,21 @@ import ROUTES from "@/constants/routes";
 interface FollowUpFormProps {
   listings: Listing[];
   clients: Client[];
-  agents: User[];
+  userRole?: string;
+  agents?: User[];
 }
 
-export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
+export function FollowUpForm({ listings, clients, userRole, agents = [] }: FollowUpFormProps) {
+  const canAssignAgent = userRole === "ADMIN" || userRole === "MANAGER";
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FollowUpFormValues>({
     resolver: zodResolver(FollowUpSchema),
     defaultValues: {
       type: "COLD",
-      status: "PENDING",
       channel: "CALL",
+      status: "PENDING",
+      title: "",
       note: "",
       reminderAt: undefined,
     },
@@ -62,13 +66,14 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
   const onSubmit = (data: FollowUpFormValues) => {
     startTransition(async () => {
       try {
-        const result = await createFollowUp(data);
+        const result = await createFollowUp({
+          ...data,
+          title: data.title || undefined,
+        });
 
         if (!result.success) {
-          // Attach error to a specific field
-          form.setError("title", {
-            type: "server",
-            message: "Erreur inconnue",
+          toast.error("Erreur", {
+            description: result.error?.message || "Erreur inconnue",
           });
           return;
         }
@@ -76,7 +81,6 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
         toast.success("Suivi créé avec succès");
         router.push(ROUTES.FOLLOWUPS);
       } catch (error) {
-        // Global form error
         form.setError("root", {
           type: "server",
           message: (error as string) || "Erreur serveur, veuillez réessayer",
@@ -104,7 +108,7 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
                 <SelectContent>
                   {listings.map((l) => (
                     <SelectItem key={l._id} value={l._id}>
-                      {l.title}
+                      {l.title || l.description?.slice(0, 60)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -130,7 +134,7 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
                 <SelectContent>
                   {clients.map((c) => (
                     <SelectItem key={c._id} value={c._id}>
-                      {c.lastName} {c.firstName}
+                      {c.firstName} {c.lastName} — {c.referenceCode}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -140,55 +144,98 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
           )}
         />
 
-        {/* AGENT */}
+        {/* AGENT (admin / manager only) */}
+        {canAssignAgent && (
+          <FormField
+            control={form.control}
+            name="agent"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Agent assigné</FormLabel>
+                <Select onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un agent" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {agents.map((a) => (
+                      <SelectItem key={a._id} value={a._id}>
+                        {a.firstname} {a.lastname}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* TITLE */}
         <FormField
           control={form.control}
-          name="agent"
+          name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Agent</FormLabel>
-              <Select onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un agent" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {agents.map((a) => (
-                    <SelectItem key={a._id} value={a._id}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Titre</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: Relance après visite" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* TYPE */}
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Type de suivi</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="COLD">Cold</SelectItem>
-                  <SelectItem value="WARM">Warm</SelectItem>
-                  <SelectItem value="HOT">Hot</SelectItem>
-                  <SelectItem value="CUSTOM">Personnalisé</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
+        {/* TYPE + CHANNEL */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type de suivi</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="COLD">Cold</SelectItem>
+                    <SelectItem value="WARM">Warm</SelectItem>
+                    <SelectItem value="HOT">Hot</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="channel"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Canal</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="CALL">Appel</SelectItem>
+                    <SelectItem value="WHATSAPP">WhatsApp</SelectItem>
+                    <SelectItem value="EMAIL">Email</SelectItem>
+                    <SelectItem value="VISIT">Visite</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* NOTE */}
         <FormField
@@ -199,11 +246,12 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
               <FormLabel>Note</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Détails du suivi..."
+                  placeholder="Détails du suivi…"
                   className="min-h-[100px]"
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -223,15 +271,14 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
                         type="button"
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left",
+                          "w-full justify-start text-left gap-2",
                           !field.value && "text-muted-foreground"
                         )}
                       >
                         <CalendarSyncIcon className="h-4 w-4 text-muted-foreground" />
-
                         {field.value
-                          ? format(new Date(field.value), "dd/MM/yyyy HH:mm")
-                          : "Sélectionner la date et l'heure"}
+                          ? format(new Date(field.value), "dd/MM/yyyy")
+                          : "Sélectionner une date"}
                       </Button>
                     </div>
                   </FormControl>
@@ -254,7 +301,7 @@ export function FollowUpForm({ listings, clients, agents }: FollowUpFormProps) {
           {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Création du suivi...
+              Création du suivi…
             </>
           ) : (
             "Créer le suivi"

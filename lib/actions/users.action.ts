@@ -46,7 +46,9 @@ export async function fetchAgents(): Promise<ActionResponse<User[]>> {
   try {
     await dbConnect();
 
-    const agents = await User.find({ role: "ADMIN" }).sort({ createdAt: -1 });
+    const agents = await User.find({ role: "AGENT" })
+      .select("firstname lastname email")
+      .sort({ createdAt: -1 });
 
     return {
       success: true,

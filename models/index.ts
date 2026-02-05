@@ -4,4 +4,15 @@ import Client from "./client.model";
 import Listing from "./listing.model";
 import { FollowUp } from "./followUp.model";
 import { FollowUpTemplate } from "./followUpTemplate";
-export { Account, User, Listing, Client, FollowUp, FollowUpTemplate };
+import { Task } from "./task.model";
+import { DailyReport } from "./dailyReport.model";
+export {
+  Account,
+  User,
+  Listing,
+  Client,
+  FollowUp,
+  FollowUpTemplate,
+  Task,
+  DailyReport,
+};

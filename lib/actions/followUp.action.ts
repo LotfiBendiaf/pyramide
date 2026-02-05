@@ -34,10 +34,29 @@ export async function createFollowUp(
   try {
     await dbConnect();
 
+    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    const assignedAgent =
+      isAdmin && validationResult.params && validationResult.params.agent
+        ? validationResult.params.agent
+        : user.data._id;
+
+    console.log("Creating follow-up with data:", {
+      ...validationResult.params,
+      agent: assignedAgent,
+    });
+
     const followUp = await FollowUp.create({
       ...validationResult.params,
-      agent: user.data._id,
+      agent: assignedAgent,
     });
+
+    console.log("Created follow-up:", {
+      _id: followUp._id,
+      channel: followUp.channel,
+      status: followUp.status,
+      agent: followUp.agent,
+    });
+
     return {
       success: true,
       data: JSON.parse(JSON.stringify(followUp)),
@@ -67,10 +86,76 @@ export async function fetchFollowUpsByListing(
   };
 }
 
+export async function fetchFollowUpsByClient(
+  clientId: string
+): Promise<ActionResponse<FollowUp[]>> {
+  try {
+    await dbConnect();
+
+    const followUps = await FollowUp.find({ client: clientId })
+      .populate("agent", "firstname lastname")
+      .populate("listing", "title description price status")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(followUps)),
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function markFollowUpDone(id: string) {
   await dbConnect();
 
-  await FollowUp.findByIdAndUpdate(id, {
-    status: "DONE",
+  // Use timestamps: true to ensure updatedAt is updated
+  const result = await FollowUp.findByIdAndUpdate(
+    id,
+    {
+      status: "DONE",
+    },
+    { new: true, timestamps: true }
+  );
+
+  console.log("markFollowUpDone result:", {
+    id,
+    status: result?.status,
+    updatedAt: result?.updatedAt,
   });
+}
+
+export async function fetchAllFollowUps(): Promise<ActionResponse<FollowUp[]>> {
+  try {
+    const user = await getUserBySessionEmail();
+
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+
+    const query = isAdmin ? {} : { agent: user.data._id };
+
+    const followUps = await FollowUp.find(query)
+      .populate("agent", "firstname lastname name")
+      .populate("client", "firstName lastName referenceCode phone")
+      .populate("listing", "title description price images")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(followUps)),
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
 }

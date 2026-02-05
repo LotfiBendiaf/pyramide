@@ -3,13 +3,17 @@
 import { Client } from "@/models";
 import { QualificationStatus } from "@/models/client.model";
 
-import { clientSchema, fetchClientsSchema } from "../validators/client";
+import {
+  clientSchema,
+  fetchClientsSchema,
+  updateClientSchema,
+} from "../validators/client";
 import action from "../handlers/action";
 import { clientPrefix } from "../utils";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
-import { ClientFilters, ClientInput } from "@/types/client";
-import { FilterQuery } from "mongoose";
+import { ClientFilters, ClientInput, ClientUpdateInput } from "@/types/client";
+import { FilterQuery, Types } from "mongoose";
 import { ClientQualification } from "@/constants/values";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
@@ -45,7 +49,7 @@ export async function createClient(
   }
 
   try {
-    const { type } = validationResult.params;
+    const { type, assignedAgent: providedAgent } = validationResult.params;
 
     // 3️⃣ Generate reference code (BUY-032…)
     const count = await Client.countDocuments({ type });
@@ -54,13 +58,19 @@ export async function createClient(
       "0"
     )}`;
 
-    // 4️⃣ Create client
+    // 4️⃣ Determine assigned agent
+    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    const assignedAgent =
+      isAdmin && providedAgent ? providedAgent : user.data._id;
+
+    // 5️⃣ Create client
     const client = await Client.create({
       ...validationResult.params,
       referenceCode,
       qualificationStatus: "NEW",
       archived: false,
       createdBy: user.data._id,
+      assignedAgent,
     });
 
     if (!client) {
@@ -86,7 +96,6 @@ export async function fetchClients(
     schema: fetchClientsSchema,
     authorize: true,
   });
-  console.log("test");
 
   if (validationResult instanceof Error || !validationResult.params) {
     return handleError(validationResult) as ErrorResponse;
@@ -106,8 +115,7 @@ export async function fetchClients(
   try {
     const {
       type,
-      status,
-      agentId,
+      qualificationStatus,
       search,
       page = 1,
       limit = 20,
@@ -116,24 +124,34 @@ export async function fetchClients(
     // 3. Build MongoDB filter
     const filter: FilterQuery<Client> = {};
 
-    if (type) filter.type = type;
-    if (status) filter.status = status;
-
-    // Agents can see only their clients
-    if (user.data.role === "AGENT") {
-      filter.createdBy = user.data._id;
-    } else if (agentId) {
-      filter.createdBy = agentId;
+    // Role-based filtering: AGENT only sees their own clients
+    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    if (!isAdmin) {
+      filter.$or = [
+        { assignedAgent: user.data._id },
+        { createdBy: user.data._id },
+      ];
     }
+
+    if (type) filter.type = type;
+    if (qualificationStatus) filter.qualificationStatus = qualificationStatus;
 
     // Search (name, phone, email, reference)
     if (search) {
-      filter.$or = [
-        { fullName: { $regex: search, $options: "i" } },
+      const searchConditions = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
         { phone: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
         { referenceCode: { $regex: search, $options: "i" } },
       ];
+      // Combine role filter with search filter
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, { $or: searchConditions }];
+        delete filter.$or;
+      } else {
+        filter.$or = searchConditions;
+      }
     }
 
     // 4. Query
@@ -141,7 +159,8 @@ export async function fetchClients(
 
     const [clients, total] = await Promise.all([
       Client.find(filter)
-        .populate("createdBy", "name role")
+        .populate("createdBy", "firstname lastname role")
+        .populate("assignedAgent", "firstname lastname role")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -183,6 +202,9 @@ export async function updateClientQualification(
 
     await Client.findByIdAndUpdate(clientId, {
       qualificationStatus,
+      archived:
+        qualificationStatus === "ARCHIVED" ||
+        qualificationStatus === "NOT_RELEVANT",
     });
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -193,5 +215,203 @@ export async function updateClientQualification(
       success: false,
       error: { message: error || "Échec de mise à jour du statut" },
     };
+  }
+}
+
+/* -------------------------------- Fetch by ID -------------------------------- */
+
+export async function fetchClientById(
+  clientId: string
+): Promise<ActionResponse<Client>> {
+  try {
+    if (!Types.ObjectId.isValid(clientId)) {
+      return {
+        success: false,
+        error: { message: "ID client invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+
+    const client = await Client.findById(clientId)
+      .populate("createdBy", "firstname lastname email role")
+      .populate("assignedAgent", "firstname lastname email role")
+      .lean();
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
+    }
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(client)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* -------------------------------- Update -------------------------------- */
+
+export async function updateClient(
+  clientId: string,
+  params: ClientUpdateInput
+): Promise<ActionResponse<Client>> {
+  const validationResult = await action({
+    params,
+    schema: updateClientSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorisé" },
+      status: 401,
+    };
+  }
+
+  try {
+    if (!Types.ObjectId.isValid(clientId)) {
+      return {
+        success: false,
+        error: { message: "ID client invalide" },
+        status: 400,
+      };
+    }
+
+    const client = await Client.findByIdAndUpdate(
+      clientId,
+      {
+        ...validationResult.params,
+        archived:
+          validationResult.params?.qualificationStatus === "ARCHIVED" ||
+          validationResult.params?.qualificationStatus === "NOT_RELEVANT",
+      },
+      { new: true }
+    )
+      .populate("createdBy", "firstname lastname email role")
+      .populate("assignedAgent", "firstname lastname email role")
+      .lean();
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(client)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* -------------------------------- Archive / Restore -------------------------------- */
+
+export async function archiveClient(clientId: string): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorisé" },
+      status: 401,
+    };
+  }
+
+  try {
+    if (!Types.ObjectId.isValid(clientId)) {
+      return {
+        success: false,
+        error: { message: "ID client invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+
+    const client = await Client.findByIdAndUpdate(clientId, {
+      archived: true,
+      qualificationStatus: "ARCHIVED",
+    });
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function restoreClient(clientId: string): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorisé" },
+      status: 401,
+    };
+  }
+
+  try {
+    if (!Types.ObjectId.isValid(clientId)) {
+      return {
+        success: false,
+        error: { message: "ID client invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+
+    const client = await Client.findByIdAndUpdate(clientId, {
+      archived: false,
+      qualificationStatus: "NEW",
+    });
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
   }
 }

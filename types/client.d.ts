@@ -5,17 +5,31 @@ export type ClientInput = {
   lastName: string;
   phone: string;
   email?: string;
-
   city?: string;
   budgetMin?: number;
   budgetMax?: number;
 
   qualificationNotes?: string;
+  assignedAgent?: string;
+};
+
+export type ClientUpdateInput = {
+  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  city?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
+  qualificationNotes?: string;
+  assignedAgent?: string;
 };
 
 export type ClientFilters = {
   type?: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
-  status?: "PENDING" | "QUALIFIED" | "ARCHIVED";
+  qualificationStatus?: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
   agentId?: string;
   search?: string;
   fromDate?: Date;

@@ -16,7 +16,7 @@ export async function FollowUp({ listingId }: { listingId: string }) {
   const followUps = response.data;
   return (
     <section className="space-y-10">
-      <SectionHeader title="Biens à vendre à Oran" />
+      <SectionHeader title="Suivis de cette annonce" />
 
       <Suspense fallback={<TableSkeleton />}>
         <FollowUpTimeline followUps={followUps} />

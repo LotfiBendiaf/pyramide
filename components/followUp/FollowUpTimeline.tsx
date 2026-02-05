@@ -30,7 +30,7 @@ const CHANNEL_ICONS: Record<string, LucideIcon> = {
   VISIT: Home,
 };
 
-export async function FollowUpTimeline({
+export function FollowUpTimeline({
   followUps,
 }: {
   followUps: FollowUp[];

@@ -30,95 +30,122 @@ import {
   ChevronUp,
   UserCircle,
   PlusCircle,
-  Award,
-  Briefcase,
-  Building,
-  DollarSign,
-  FileText,
   Home,
-  KeyRound,
-  List,
-  MonitorCog,
-  Settings,
   Users,
   ListCheck,
   UserPlus,
   CalendarArrowUp,
+  LayoutDashboard,
+  Building2,
+  ClipboardList,
+  FileText,
+  UsersRound,
 } from "lucide-react";
-import { ROLE_LABELS } from "@/constants/values";
+import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 
-const sidebarConfig = [
+type SidebarItem = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles?: Role[];
+};
+
+type SidebarGroup = {
+  label: string;
+  roles?: Role[];
+  items: SidebarItem[];
+};
+
+const sidebarConfig: SidebarGroup[] = [
   {
     label: "Menu Principal",
-    roles: ["admin"],
-    items: [{ title: "Tableau de bord", url: ROUTES.DASHBOARD, icon: Home }], // Assuming '/dashboard' and an 'Home' icon component
-  },
-  {
-    label: "Propriétés",
-    roles: ["admin", "agent", "assistant"],
     items: [
       {
-        title: "Toutes les Annonces",
-        url: ROUTES.LISTINGS_DASHBOARD,
-        icon: ListCheck,
-      }, // List of all properties for sale/rent
+        title: "Tableau de bord",
+        url: ROUTES.DASHBOARD,
+        icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    label: "Biens Immobiliers",
+    items: [
       {
-        title: "Ajouter une Propriété",
-        url: ROUTES.LISTING_ADD,
-        icon: PlusCircle,
+        title: "Liste des biens",
+        url: ROUTES.LISTINGS_DASHBOARD,
+        icon: Building2,
       },
       {
-        title: "Ventes et Transactions",
-        url: "/transactions/sales",
-        icon: DollarSign,
-      }, // Sales pipeline/completed sales
-      { title: "Locations", url: "/transactions/rentals", icon: KeyRound }, // Rental properties and leases
+        title: "Ajouter un bien",
+        url: ROUTES.LISTING_ADD,
+        icon: PlusCircle,
+        roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
     ],
   },
   {
-    label: "Clients & Suivies",
+    label: "Gestion Clients",
     items: [
       {
-        title: "Suivies Clients",
-        url: ROUTES.FOLLOWUPS,
-        icon: CalendarArrowUp,
-      }, // General clients/buyers
-      {
-        title: "Clients Acquéreurs",
+        title: "Tous les clients",
         url: ROUTES.CLIENTS_DASHBOARD,
         icon: Users,
-      }, // General clients/buyers
+      },
       {
-        title: "Ajouter un Client",
+        title: "Ajouter un client",
         url: ROUTES.CLIENT_ADD,
         icon: UserPlus,
-      }, // General clients/buyers
-      { title: "Liste d'Attente", url: "/clients/waiting-list", icon: List }, // Waiting list for specific property types
-      { title: "Propriétaires", url: "/clients/owners", icon: Building }, // Sellers/Landlords
-      { title: "Contrats & Mandats", url: "/contracts", icon: FileText }, // Management of contracts (mandats)
+        roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
     ],
   },
   {
-    label: "Ressources Humaines",
+    label: "Suivis",
     items: [
-      { title: "Agents Immobiliers", url: "/agents", icon: Briefcase }, // Real Estate Agents list
-      { title: "Commissions", url: "/agents/commissions", icon: Award },
+      {
+        title: "Tous les suivis",
+        url: ROUTES.FOLLOWUPS,
+        icon: ClipboardList,
+      },
+      {
+        title: "Nouveau suivi",
+        url: ROUTES.NEW_FOLLOWUP,
+        icon: CalendarArrowUp,
+        roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
     ],
   },
   {
-    label: "Système",
+    label: "Rapports",
     items: [
-      { title: "Paramètres", url: "/settings", icon: Settings },
-      { title: "Utilisateurs & Accès", url: "/users", icon: MonitorCog },
+      {
+        title: "Mon rapport quotidien",
+        url: ROUTES.DAILY_REPORT,
+        icon: FileText,
+        roles: ["ADMIN", "MANAGER", "AGENT"],
+      },
+      {
+        title: "Rapport d'équipe",
+        url: ROUTES.TEAM_REPORT,
+        icon: UsersRound,
+        roles: ["ADMIN", "MANAGER"],
+      },
     ],
   },
 ];
 
+function canAccess(userRole: Role | undefined, allowedRoles?: Role[]): boolean {
+  if (!allowedRoles || allowedRoles.length === 0) return true;
+  if (!userRole) return false;
+  return allowedRoles.includes(userRole);
+}
+
 export function AppSidebar() {
   const { data, status } = useSession();
   const user = data?.user;
-  const pathname = usePathname(); // ✅ get current route
+  const userRole = user?.role as Role | undefined;
+  const pathname = usePathname();
 
   return (
     <Sidebar variant="floating">
@@ -126,35 +153,44 @@ export function AppSidebar() {
         <Logo />
       </SidebarHeader>
       <SidebarContent>
-        {sidebarConfig.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const isActive = pathname === item.url;
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <Link
-                          href={item.url}
-                          className={`flex items-center gap-2 px-2 py-1 ${
-                            isActive
-                              ? "bg-primary text-white" // ✅ active style
-                              : ""
-                          }`}
-                        >
-                          <item.icon className="w-4 h-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {sidebarConfig.map((group) => {
+          // Filter items based on user role
+          const visibleItems = group.items.filter((item) =>
+            canAccess(userRole, item.roles)
+          );
+
+          // Skip rendering group if no items are visible
+          if (visibleItems.length === 0) return null;
+
+          // Skip rendering group if group-level role check fails
+          if (!canAccess(userRole, group.roles)) return null;
+
+          return (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {visibleItems.map((item) => {
+                    const isActive =
+                      pathname === item.url ||
+                      (item.url !== ROUTES.DASHBOARD &&
+                        pathname.startsWith(item.url));
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive}>
+                          <Link href={item.url}>
+                            <item.icon className="w-4 h-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
