@@ -143,7 +143,7 @@ async function DashboardContent() {
       />
 
       {/* Global KPI cards — admin/manager only */}
-      <SectionCards />
+      <SectionCards stats={stats} />
 
       <hr className="border-muted-foreground" />
 

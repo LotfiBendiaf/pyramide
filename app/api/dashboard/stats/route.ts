@@ -382,6 +382,11 @@ export async function GET(request: NextRequest) {
           completedFollowUpsThisMonth,
           listingsChange,
           clientsChange,
+          // For SectionCards
+          listingsThisMonth,
+          listingsLastMonth,
+          clientsThisMonth,
+          clientsLastMonth,
         },
         // Agent-specific stats
         agentStats: {
