@@ -64,7 +64,7 @@ export default function ContactSection() {
 
               <div className="flex items-center gap-4">
                 <Mail className="text-blue-600" />
-                contact@pyramide.dz
+                contact@pyramideimmobilier.com
               </div>
 
               <div className="flex items-center gap-4">
