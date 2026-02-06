@@ -21,7 +21,7 @@ const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
   const params = await searchParams;
   const result = await fetchListings({
     city: params?.city,
-    status: params?.status as "En Vente" | "En Location",
+    status: params?.status as "En Vente" | "En Location" | undefined,
     minPrice: params?.minPrice ? Number(params.minPrice) : undefined,
     maxPrice: params?.maxPrice ? Number(params.maxPrice) : undefined,
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
