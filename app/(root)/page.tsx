@@ -3,6 +3,8 @@ import GlobalImpactSection from "@/components/sections/GlobalImpactSection";
 import Hero from "@/components/sections/Hero";
 import ListingsSection from "@/components/sections/Listings";
 import PremiumListings from "@/components/sections/PremiumListings";
+import AboutSection from "@/components/sections/AboutSection";
+import ExpertiseSection from "@/components/sections/ExpertiseSection";
 
 import React from "react";
 
@@ -23,7 +25,9 @@ const page = ({ searchParams }: ListingsSectionProps) => {
       <div className="container mx-auto">
         <ListingsSection searchParams={searchParams} />
       </div>
+      <ExpertiseSection />
       <GlobalImpactSection />
+      <AboutSection />
       <div className="container mx-auto space-y-10">
         <PremiumListings />
         <ContactSection />

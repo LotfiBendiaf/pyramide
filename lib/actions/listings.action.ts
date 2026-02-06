@@ -76,7 +76,7 @@ export async function createListing(
 
 interface FetchListingsParams {
   published?: boolean;
-  status?: "À Vendre" | "À Louer";
+  status?: "En Vente" | "En Location";
   city?: string;
   propertyType?: string;
   minPrice?: number;

@@ -1,71 +1,60 @@
 "use client";
 
-import { Globe } from "lucide-react";
+import { Home, Key, Award, Users, LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 interface NavLinksProps {
   closeMenu?: () => void;
 }
 
-const categories = [
+interface NavCategory {
+  name: string;
+  href: string;
+  icon?: LucideIcon;
+}
+
+const categories: NavCategory[] = [
   {
-    name: "Vente",
-    href: "/#newprojects",
-    icon: Globe,
-    sublinks: [],
+    name: "Acheter",
+    href: "/listings?status=En%20Vente",
+    icon: Home,
   },
   {
-    name: "Locations",
-    href: "/promotions-immobilieres",
-    subLinks: [
-      // {
-      //   name: "Bouhadiba",
-      //   href: "/#bouhadiba",
-      //   logo: "/images/bouhadiba.png",
-      // },
-      // {
-      //   name: "El Gharb",
-      //   href: "/#elgharb",
-      //   logo: "/images/ElGharb.png",
-      // },
-      // {
-      //   name: "Eco Prom",
-      //   href: "/#ecoprom",
-      //   logo: "/images/EcoProm.png",
-      // },
-    ],
+    name: "Louer",
+    href: "/listings?status=En%20Location",
+    icon: Key,
   },
   {
     name: "Notre Expertise",
-    href: "/#savoirfaire",
-    subLinks: [],
+    href: "/#expertise",
+    icon: Award,
   },
-  // {
-  //   name: "A propos",
-  //   href: "/#apropos",
-  //   subLinks: [],
-  // },
   {
-    name: "Qui sommes nous ?",
-    href: "/#apropos",
-    subLinks: [],
+    name: "Qui sommes-nous",
+    href: "/#about",
+    icon: Users,
   },
 ];
 
 const NavLinks: React.FC<NavLinksProps> = ({ closeMenu }) => {
   return (
     <nav className="mx-5">
-      <ul className="flex flex-col lg:flex-row gap-4 md:gap-6 lg:gap-12 lg:border lg:px-10 lg:py-3 lg:rounded-full">
+      <ul className="flex flex-col lg:flex-row gap-4 md:gap-6 lg:gap-10 lg:border lg:border-white/20 lg:px-8 lg:py-3 lg:rounded-full lg:bg-white/5 lg:backdrop-blur-sm">
         {categories.map((category) => (
           <li
             key={category.name}
-            className="relative z-100 flex items-center gap-2 text-white"
+            className="relative flex items-center gap-2 text-white group"
           >
-            {category.icon && <category.icon size={16} />}
+            {category.icon && (
+              <category.icon
+                size={16}
+                className="text-white/70 group-hover:text-orange-600 transition-colors"
+              />
+            )}
             <Link
               href={category.href}
               onClick={closeMenu}
-              className=" text-sm transition-all hover:text-tertiary text-nowrap"
+              className="text-sm font-medium transition-all hover:text-orange-600 text-nowrap"
             >
               {category.name}
             </Link>

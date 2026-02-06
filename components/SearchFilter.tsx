@@ -97,8 +97,8 @@ export default function SearchFilter() {
           <SelectValue placeholder="Statut" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="À Vendre">À vendre</SelectItem>
-          <SelectItem value="À Louer">À louer</SelectItem>
+          <SelectItem value="En Vente">À vendre</SelectItem>
+          <SelectItem value="En Location">À louer</SelectItem>
         </SelectContent>
       </Select>
 
