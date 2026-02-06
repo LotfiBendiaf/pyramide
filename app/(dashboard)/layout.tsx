@@ -2,7 +2,6 @@ import { SiteHeader } from "@/components/dashboard/Header";
 import { AppSidebar } from "@/components/dashboard/Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Metadata } from "next";
-import { SessionProvider } from "next-auth/react";
 import React, { ReactNode } from "react";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,17 +16,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const layout = ({ children }: { children: ReactNode }) => {
   return (
-    <SessionProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <main className="w-full overflow-hidden">
-          <header>
-            <SiteHeader />
-          </header>
-          <div className="w-full p-5">{children}</div>
-        </main>
-      </SidebarProvider>
-    </SessionProvider>
+    <SidebarProvider>
+      <AppSidebar />
+      <main className="w-full overflow-hidden">
+        <header>
+          <SiteHeader />
+        </header>
+        <div className="w-full p-5">{children}</div>
+      </main>
+    </SidebarProvider>
   );
 };
 
