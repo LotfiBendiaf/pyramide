@@ -18,21 +18,20 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useSession } from "next-auth/react";
 import Logo from "../Logo";
 import LogoutButton from "../LogoutButton";
-import { Separator } from "../ui/separator";
 import Link from "next/link";
 import {
-  User2,
   ChevronUp,
-  UserCircle,
+  Settings,
   PlusCircle,
-  Home,
   Users,
-  ListCheck,
   UserPlus,
   CalendarArrowUp,
   LayoutDashboard,
@@ -40,6 +39,8 @@ import {
   ClipboardList,
   FileText,
   UsersRound,
+  BadgeCheck,
+  UserCog,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -133,6 +134,24 @@ const sidebarConfig: SidebarGroup[] = [
       },
     ],
   },
+  {
+    label: "Administration",
+    roles: ["ADMIN", "MANAGER"],
+    items: [
+      {
+        title: "Gestion utilisateurs",
+        url: ROUTES.USERS,
+        icon: UserCog,
+        roles: ["ADMIN", "MANAGER"],
+      },
+      {
+        title: "Ajouter un utilisateur",
+        url: ROUTES.USER_ADD,
+        icon: UserPlus,
+        roles: ["ADMIN", "MANAGER"],
+      },
+    ],
+  },
 ];
 
 function canAccess(userRole: Role | undefined, allowedRoles?: Role[]): boolean {
@@ -192,41 +211,82 @@ export function AppSidebar() {
           );
         })}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger
-                asChild
-                className="shadow-2xl border p-3 rounded-xl h-full"
-              >
-                <SidebarMenuButton className="cursor-pointer flex items-center h-auto">
-                  <div className="p-1 border bg-gray-200 rounded-lg shrink-0">
-                    <User2 className="w-5 h-5" />
-                  </div>
-                  <div className="text-xs overflow-hidden flex flex-col ml-2 text-left">
-                    <span className="font-medium truncate">
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="cursor-pointer w-full bg-gradient-to-r from-sidebar-accent to-sidebar-accent/50 hover:from-sidebar-accent/80 hover:to-sidebar-accent/30 border border-sidebar-border rounded-xl p-3 transition-all duration-200 hover:shadow-md"
+                >
+                  <Avatar className="h-9 w-9 rounded-lg border-2 border-primary/20 shadow-sm">
+                    <AvatarImage
+                      src={user?.image || ""}
+                      alt={user?.name || ""}
+                    />
+                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold text-sm">
+                      {user?.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2) || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col flex-1 text-left text-sm leading-tight ml-2 overflow-hidden">
+                    <span className="font-semibold truncate">
                       {status === "loading" ? "Chargement..." : user?.name}
                     </span>
                     {user?.role && (
-                      <span className="text-muted-foreground text-[10px] truncate">
+                      <span className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                        <BadgeCheck className="h-3 w-3 text-primary" />
                         {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
                       </span>
                     )}
                   </div>
-                  <ChevronUp className="ml-auto w-4 h-4" />
+                  <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent side="top" className="w-56" align="start">
-                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
-                  <UserCircle className="h-4 w-4" />
-                  <span>Compte</span>
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl"
+                align="start"
+                sideOffset={8}
+              >
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-3 px-3 py-3 text-left">
+                    <Avatar className="h-10 w-10 rounded-lg border-2 border-primary/20">
+                      <AvatarImage
+                        src={user?.image || ""}
+                        alt={user?.name || ""}
+                      />
+                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold">
+                        {user?.name
+                          ?.split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col space-y-0.5 leading-none">
+                      <p className="font-semibold text-sm">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[180px]">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg mx-1">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <span>Paramètres</span>
                 </DropdownMenuItem>
-                <Separator className="my-1" />
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  {/* Ensure LogoutButton handles its own styling/clicks */}
-                  <div className="w-full cursor-pointer">
+                  <div className="mx-auto">
                     <LogoutButton />
                   </div>
                 </DropdownMenuItem>

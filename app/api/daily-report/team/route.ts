@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     // Build team report data
     const teamReports = agents.map((agent) => {
-      const report = reportMap.get(agent._id.toString());
+      const report = reportMap.get(agent._id);
 
       return {
         agent: {

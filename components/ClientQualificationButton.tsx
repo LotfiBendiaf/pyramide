@@ -3,7 +3,6 @@
 import {
   Select,
   SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
@@ -38,7 +37,9 @@ export default function ClientQualificationSelect({ clientId, value }: Props) {
     toast.success("Statut mis à jour");
   };
 
-  const currentLabel = CLIENT_QUALIFICATIONS.find((q) => q.value === value)?.label;
+  const currentLabel = CLIENT_QUALIFICATIONS.find(
+    (q) => q.value === value
+  )?.label;
 
   return (
     <Select value={value} onValueChange={handleChange}>
@@ -53,7 +54,9 @@ export default function ClientQualificationSelect({ clientId, value }: Props) {
         {CLIENT_QUALIFICATIONS.map((q) => (
           <SelectItem key={q.value} value={q.value}>
             <span className="flex items-center gap-2">
-              <span className={cn("h-2 w-2 rounded-full", DOT_COLORS[q.value])} />
+              <span
+                className={cn("h-2 w-2 rounded-full", DOT_COLORS[q.value])}
+              />
               {q.label}
             </span>
           </SelectItem>

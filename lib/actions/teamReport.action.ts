@@ -3,9 +3,46 @@
 import dbConnect from "@/lib/mongoose";
 import { DailyReport, User } from "@/models";
 
+interface AgentInfo {
+  _id: string;
+  name: string;
+  email: string;
+  profileImage?: string;
+  role: string;
+}
+
+interface AgentReport {
+  _id: string | null;
+  newClientsCount: number;
+  propertiesVisitedCount: number;
+  followUpsCompletedCount: number;
+  tasksCompletedCount: number;
+  notes?: string;
+}
+
+interface TeamMemberReport {
+  agent: AgentInfo;
+  report: AgentReport;
+}
+
+interface TeamTotals {
+  totalNewClients: number;
+  totalPropertiesVisited: number;
+  totalFollowUpsCompleted: number;
+  totalTasksCompleted: number;
+  activeAgents: number;
+  totalAgents: number;
+}
+
+interface TeamReportData {
+  date: Date;
+  teamReports: TeamMemberReport[];
+  teamTotals: TeamTotals;
+}
+
 interface TeamReportResponse {
   success: boolean;
-  data?: any;
+  data?: TeamReportData;
   error?: { message: string };
 }
 

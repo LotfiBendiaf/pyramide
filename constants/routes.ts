@@ -22,6 +22,10 @@ const ROUTES = {
   LISTING_DETAIL_DASHBOARD: (id: string) => `/dashboard/listings/${id}`,
   DAILY_REPORT: "/dashboard/daily-report",
   TEAM_REPORT: "/dashboard/team-report",
+  // User management
+  USERS: "/dashboard/users",
+  USER_ADD: "/dashboard/users/add",
+  USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
 };
 
 export default ROUTES;
