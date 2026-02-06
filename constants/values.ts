@@ -80,6 +80,9 @@ export const routeTitles: Record<string, string> = {
   // === Admin / Dashboard ===
   "/dashboard": "Tableau de Bord",
 
+  // === Dashboard Main Sections ===
+  "/dashboard/schedule": "Planning",
+
   // Listings Management
   "/dashboard/listings": "Gestion des Annonces",
   "/dashboard/listings/add": "Nouvelle Annonce",

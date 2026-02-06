@@ -41,6 +41,7 @@ import {
   UsersRound,
   BadgeCheck,
   UserCog,
+  CalendarDays,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -66,6 +67,17 @@ const sidebarConfig: SidebarGroup[] = [
         title: "Tableau de bord",
         url: ROUTES.DASHBOARD,
         icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    label: "Planning",
+    items: [
+      {
+        title: "Mon planning",
+        url: ROUTES.SCHEDULE,
+        icon: CalendarDays,
+        roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
       },
     ],
   },
