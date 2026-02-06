@@ -19,7 +19,7 @@ export const RolePermissions = {
     "manage_listings",
     "manage_followups",
   ],
-  ASSISTANT: ["manage_clients", "manage_followups"],
+  ASSISTANT: ["view_dashboard", "manage_clients", "manage_followups"],
 };
 
 export type Permission =

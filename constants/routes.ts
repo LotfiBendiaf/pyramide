@@ -30,6 +30,8 @@ const ROUTES = {
   SCHEDULE: "/dashboard/schedule",
   SCHEDULE_TODAY: "/dashboard/schedule?view=today",
   CALENDAR_SETTINGS: "/dashboard/settings/calendar",
+  // Documents
+  DOCUMENTS: "/dashboard/documents",
 };
 
 export default ROUTES;

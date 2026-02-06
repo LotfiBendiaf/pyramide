@@ -180,6 +180,48 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // 6.5 Get today's events for agent dashboard
+    interface TodayEvent {
+      _id: string;
+      type: string;
+      reminderAt: Date;
+      client?: { firstName: string; lastName: string };
+      listing?: { title: string };
+    }
+
+    const todayEvents = (await FollowUp.find({
+      ...followUpFilter,
+      reminderAt: { $gte: startOfDay, $lte: endOfDay },
+    })
+      .populate("client", "firstName lastName")
+      .populate("listing", "title")
+      .sort({ reminderAt: 1 })
+      .lean()) as unknown as TodayEvent[];
+
+    const formattedTodayEvents = todayEvents.map((event) => ({
+      id: event._id.toString(),
+      title:
+        event.listing?.title ||
+        (event.client
+          ? `${event.client.firstName} ${event.client.lastName}`
+          : event.type),
+      time: new Date(event.reminderAt).toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      type: event.type === "VISIT" ? "visit" : "followup",
+      clientName: event.client
+        ? `${event.client.firstName} ${event.client.lastName}`
+        : undefined,
+    }));
+
+    // 6.6 Get completed today count
+    const completedToday = await FollowUp.countDocuments({
+      ...followUpFilter,
+      status: "DONE",
+      updatedAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+
     // 7. Get recent activities (scoped by role)
     const [recentListings, recentClients, recentFollowUps, recentSales] =
       await Promise.all([
@@ -341,6 +383,15 @@ export async function GET(request: NextRequest) {
           listingsChange,
           clientsChange,
         },
+        // Agent-specific stats
+        agentStats: {
+          myClients: totalClients,
+          myListings: totalListings,
+          myFollowUps: pendingFollowUps,
+          completedToday,
+          pendingToday: todayFollowUps,
+        },
+        todayEvents: formattedTodayEvents,
         agentPerformance,
         recentActivities,
         charts: {

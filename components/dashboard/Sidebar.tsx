@@ -130,6 +130,17 @@ const sidebarConfig: SidebarGroup[] = [
     ],
   },
   {
+    label: "Documents",
+    items: [
+      {
+        title: "Générer un document",
+        url: ROUTES.DOCUMENTS,
+        icon: FileText,
+        roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
+    ],
+  },
+  {
     label: "Rapports",
     items: [
       {

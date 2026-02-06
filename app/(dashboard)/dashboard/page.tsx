@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { DashboardStatsCards } from "@/components/dashboard/StatsCards";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { AgentPerformance } from "@/components/dashboard/AgentPerformance";
+import { AgentDashboard } from "@/components/dashboard/AgentDashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -15,7 +16,19 @@ async function getDashboardData() {
   const isAuthorized = hasPermission(user.data?.role || "", "view_dashboard");
 
   if (!isAuthorized) {
-    throw new Error("Accès non autorisé");
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-destructive">
+            Accès non autorisé
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Vous n&apos;avez pas les permissions nécessaires pour accéder au
+            tableau de bord
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const role = user.data?.role || "";
@@ -76,28 +89,63 @@ async function DashboardContent() {
     );
   }
 
-  const { stats, agentPerformance, recentActivities, role, userName } =
-    response.data
-      ? { ...response.data, role: response.role, userName: response.userName }
-      : response;
+  const {
+    stats,
+    agentStats,
+    todayEvents,
+    agentPerformance,
+    recentActivities,
+    role,
+    userName,
+  } = response.data
+    ? { ...response.data, role: response.role, userName: response.userName }
+    : response;
+
   const isAdmin = role === "ADMIN" || role === "MANAGER";
 
+  // Show personalized dashboard for agents and assistants
+  if (!isAdmin) {
+    return (
+      <AgentDashboard
+        userName={userName || ""}
+        stats={agentStats || {
+          myClients: 0,
+          myListings: 0,
+          myFollowUps: 0,
+          completedToday: 0,
+          pendingToday: 0,
+        }}
+        todayEvents={todayEvents || []}
+        recentActivities={(recentActivities || []).map(
+          (activity: {
+            type: string;
+            title: string;
+            description: string;
+            timestamp: string;
+          }) => ({
+            id: activity.type + activity.timestamp,
+            action: activity.title,
+            target: activity.description,
+            createdAt: activity.timestamp,
+          })
+        )}
+      />
+    );
+  }
+
+  // Admin/Manager dashboard
   return (
     <div className="space-y-8">
       {/* Header */}
       <SectionHeader
         title="Tableau de Bord"
-        subtitle={
-          isAdmin
-            ? "Vue d'ensemble de votre activité immobilière"
-            : `Bonjour ${userName || ""} — vos activités personnelles`
-        }
+        subtitle="Vue d'ensemble de votre activité immobilière"
       />
 
       {/* Global KPI cards — admin/manager only */}
-      {isAdmin && <SectionCards />}
+      <SectionCards />
 
-      {isAdmin && <hr className="border-muted-foreground" />}
+      <hr className="border-muted-foreground" />
 
       {/* Stats Cards — scoped by role via API */}
       <DashboardStatsCards stats={stats} />
@@ -106,19 +154,13 @@ async function DashboardContent() {
       <Chart />
 
       {/* Activity feed + Agent performance */}
-      <div
-        className={`grid gap-6 ${
-          isAdmin ? "lg:grid-cols-3" : "lg:grid-cols-1"
-        }`}
-      >
-        <div className={isAdmin ? "lg:col-span-2" : ""}>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
           <RecentActivity activities={recentActivities} />
         </div>
-        {isAdmin && (
-          <div className="lg:col-span-1">
-            <AgentPerformance agents={agentPerformance} />
-          </div>
-        )}
+        <div className="lg:col-span-1">
+          <AgentPerformance agents={agentPerformance} />
+        </div>
       </div>
     </div>
   );
