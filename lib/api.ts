@@ -12,10 +12,11 @@ export const api = {
       user,
       provider,
       providerAccountId,
+      tokenData,
     }: SignInWithOAuthParams) =>
       fetchHandler(`${API_BASE_URL}/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`, {
         method: "POST",
-        body: JSON.stringify({ user, provider, providerAccountId }),
+        body: JSON.stringify({ user, provider, providerAccountId, tokenData }),
       }),
   },
   users: {

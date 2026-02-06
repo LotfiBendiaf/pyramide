@@ -54,8 +54,8 @@ async function getDashboardData() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(8)].map((_, i) => (
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
           <Card key={i}>
             <CardContent className="p-6">
               <Skeleton className="h-24 w-full" />
@@ -108,13 +108,15 @@ async function DashboardContent() {
     return (
       <AgentDashboard
         userName={userName || ""}
-        stats={agentStats || {
-          myClients: 0,
-          myListings: 0,
-          myFollowUps: 0,
-          completedToday: 0,
-          pendingToday: 0,
-        }}
+        stats={
+          agentStats || {
+            myClients: 0,
+            myListings: 0,
+            myFollowUps: 0,
+            completedToday: 0,
+            pendingToday: 0,
+          }
+        }
         todayEvents={todayEvents || []}
         recentActivities={(recentActivities || []).map(
           (activity: {

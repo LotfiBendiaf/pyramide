@@ -13,7 +13,16 @@ import { Role } from "./constants/values";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GitHub,
-    Google,
+    Google({
+      authorization: {
+        params: {
+          scope:
+            "openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    }),
     Credentials({
       async authorize(credentials) {
         const validatedFields = SignInSchema.safeParse(credentials);
@@ -98,10 +107,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         role: "VIEWER" as Role,
       };
 
+      // Capture OAuth tokens for Google Calendar integration
+      const tokenData =
+        account.provider === "google"
+          ? {
+              accessToken: account.access_token,
+              refreshToken: account.refresh_token,
+              tokenExpiresAt: account.expires_at
+                ? new Date(account.expires_at * 1000)
+                : undefined,
+              calendarScope: account.scope,
+            }
+          : undefined;
+
       const response = await api.auth.oAuthSignIn({
         user: userInfo,
         provider: account.provider as "github" | "google",
         providerAccountId: account.providerAccountId,
+        tokenData,
       });
 
       return response.success;

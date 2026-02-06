@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { startOfWeek, endOfWeek, format } from "date-fns";
 import { CalendarDays } from "lucide-react";

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 import {
   Sidebar,
@@ -42,6 +43,7 @@ import {
   BadgeCheck,
   UserCog,
   CalendarDays,
+  Loader2,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -188,6 +190,19 @@ export function AppSidebar() {
   const user = data?.user;
   const userRole = user?.role as Role | undefined;
   const pathname = usePathname();
+  const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
+
+  // Reset loading state when pathname changes (navigation complete)
+  useEffect(() => {
+    setLoadingUrl(null);
+  }, [pathname]);
+
+  const handleNavClick = (url: string) => {
+    // Only show loading if navigating to a different page
+    if (url !== pathname) {
+      setLoadingUrl(url);
+    }
+  };
 
   return (
     <Sidebar variant="floating">
@@ -217,11 +232,19 @@ export function AppSidebar() {
                       pathname === item.url ||
                       (item.url !== ROUTES.DASHBOARD &&
                         pathname.startsWith(item.url));
+                    const isLoading = loadingUrl === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild isActive={isActive}>
-                          <Link href={item.url}>
-                            <item.icon className="w-4 h-4" />
+                          <Link
+                            href={item.url}
+                            onClick={() => handleNavClick(item.url)}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <item.icon className="w-4 h-4" />
+                            )}
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>

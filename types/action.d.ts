@@ -7,6 +7,12 @@ interface SignInWithOAuthParams {
     image: string;
     username: string;
   };
+  tokenData?: {
+    accessToken?: string;
+    refreshToken?: string;
+    tokenExpiresAt?: Date;
+    calendarScope?: string;
+  };
 }
 interface AuthCredentials {
   username?: string;
