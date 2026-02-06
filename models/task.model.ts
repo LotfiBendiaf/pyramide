@@ -14,6 +14,10 @@ export interface ITask {
   completedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  // Calendar sync fields
+  calendarEventId?: Schema.Types.ObjectId;
+  scheduledTime?: Date; // Specific time for the task
+  estimatedDuration?: number; // Duration in minutes
 }
 
 const TaskSchema = new Schema<ITask>(
@@ -48,6 +52,13 @@ const TaskSchema = new Schema<ITask>(
     },
     dueDate: Date,
     completedAt: Date,
+    // Calendar sync fields
+    calendarEventId: {
+      type: Schema.Types.ObjectId,
+      ref: "CalendarEvent",
+    },
+    scheduledTime: Date,
+    estimatedDuration: { type: Number, default: 30 }, // Default 30 minutes
   },
   { timestamps: true }
 );

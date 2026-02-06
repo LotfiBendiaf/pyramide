@@ -6,6 +6,8 @@ import { FollowUp } from "./followUp.model";
 import { FollowUpTemplate } from "./followUpTemplate";
 import { Task } from "./task.model";
 import { DailyReport } from "./dailyReport.model";
+import CalendarEvent from "./calendarEvent.model";
+
 export {
   Account,
   User,
@@ -15,4 +17,5 @@ export {
   FollowUpTemplate,
   Task,
   DailyReport,
+  CalendarEvent,
 };

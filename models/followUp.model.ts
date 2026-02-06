@@ -12,6 +12,10 @@ export interface IFollowUp {
   reminderAt?: Date;
   channel?: "CALL" | "WHATSAPP" | "EMAIL" | "VISIT";
   status?: "PENDING" | "DONE" | "OVERDUE";
+  // Calendar sync fields
+  calendarEventId?: Schema.Types.ObjectId;
+  duration?: number; // Duration in minutes
+  startTime?: Date; // Specific start time (if different from reminderAt)
 }
 
 const FollowUpSchema = new Schema<IFollowUp>(
@@ -55,6 +59,13 @@ const FollowUpSchema = new Schema<IFollowUp>(
       enum: ["PENDING", "DONE", "OVERDUE"],
       default: "PENDING",
     },
+    // Calendar sync fields
+    calendarEventId: {
+      type: Schema.Types.ObjectId,
+      ref: "CalendarEvent",
+    },
+    duration: { type: Number, default: 60 }, // Default 60 minutes
+    startTime: Date,
   },
   { timestamps: true }
 );

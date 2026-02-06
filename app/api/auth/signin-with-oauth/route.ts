@@ -9,7 +9,7 @@ import { SignInWithOAuthSchema } from "@/lib/validators/auth";
 import { Account } from "@/models";
 import { User } from "@/models";
 export async function POST(request: Request) {
-  const { provider, providerAccountId, user } = await request.json();
+  const { provider, providerAccountId, user, tokenData } = await request.json();
 
   await dbConnect();
 
@@ -61,6 +61,17 @@ export async function POST(request: Request) {
       providerAccountId,
     }).session(session);
 
+    // Prepare token fields for Google provider
+    const googleTokenFields =
+      provider === "google" && tokenData
+        ? {
+            accessToken: tokenData.accessToken,
+            refreshToken: tokenData.refreshToken,
+            tokenExpiresAt: tokenData.tokenExpiresAt,
+            calendarScope: tokenData.calendarScope,
+          }
+        : {};
+
     if (!existingAccount) {
       await Account.create(
         [
@@ -70,10 +81,17 @@ export async function POST(request: Request) {
             image,
             provider,
             providerAccountId,
+            ...googleTokenFields,
           },
         ],
         { session }
       );
+    } else if (provider === "google" && tokenData) {
+      // Update existing account with new tokens
+      await Account.updateOne(
+        { _id: existingAccount._id },
+        { $set: googleTokenFields }
+      ).session(session);
     }
 
     await session.commitTransaction();

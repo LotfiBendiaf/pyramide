@@ -23,7 +23,7 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
 
   const result = await fetchListings({
     city: params?.city,
-    status: params?.status as "À Vendre" | "À Louer",
+    status: params?.status as "En Vente" | "En Location" | undefined,
     minPrice: params?.minPrice ? Number(params.minPrice) : undefined,
     maxPrice: params?.maxPrice ? Number(params.maxPrice) : undefined,
     minScore: params?.minScore ? Number(params.minScore) : undefined,

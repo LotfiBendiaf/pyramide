@@ -7,6 +7,11 @@ export interface IAccount {
   password?: string; // Optional field
   provider: string; // Optional field
   providerAccountId: string; // Optional field
+  // Google Calendar OAuth tokens
+  accessToken?: string;
+  refreshToken?: string;
+  tokenExpiresAt?: Date;
+  calendarScope?: string;
 }
 export interface IAccountDoc extends IAccount, Document {}
 const AccountSchema = new Schema<IAccount>(
@@ -17,6 +22,11 @@ const AccountSchema = new Schema<IAccount>(
     password: { type: String },
     provider: { type: String, required: true },
     providerAccountId: { type: String, required: true },
+    // Google Calendar OAuth tokens
+    accessToken: { type: String },
+    refreshToken: { type: String },
+    tokenExpiresAt: { type: Date },
+    calendarScope: { type: String },
   },
   { timestamps: true }
 );
