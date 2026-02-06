@@ -16,7 +16,7 @@ export default function AboutSection() {
           <div className="relative">
             <div className="aspect-[4/3] relative rounded-2xl overflow-hidden shadow-xl">
               <Image
-                src="/images/about-team.jpg"
+                src="/pyramide-img.jpg"
                 alt="Notre équipe Pyramide Immobilier"
                 fill
                 className="object-cover"
@@ -36,8 +36,8 @@ export default function AboutSection() {
               </h2>
               <p className="text-muted-foreground leading-relaxed">
                 Pyramide Immobilier est une agence immobilière de premier plan,
-                dédiée à vous accompagner dans tous vos projets immobiliers.
-                Que vous souhaitiez acheter, vendre ou louer, notre équipe
+                dédiée à vous accompagner dans tous vos projets immobiliers. Que
+                vous souhaitiez acheter, vendre ou louer, notre équipe
                 d&apos;experts est là pour vous guider à chaque étape.
               </p>
             </div>
@@ -54,7 +54,8 @@ export default function AboutSection() {
             <p className="text-muted-foreground leading-relaxed">
               Notre mission est de rendre l&apos;expérience immobilière simple,
               transparente et satisfaisante pour tous nos clients. Nous croyons
-              en des relations durables basées sur la confiance et l&apos;intégrité.
+              en des relations durables basées sur la confiance et
+              l&apos;intégrité.
             </p>
           </div>
         </div>

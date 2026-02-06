@@ -114,7 +114,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {contactInfo.map((info, index) => (
                 <li key={index} className="flex items-center gap-3">
-                  <info.icon className="h-5 w-5 text-primary flex-shrink-0" />
+                  <info.icon className="h-5 w-5 text-secondary flex-shrink-0" />
                   {info.href ? (
                     <a
                       href={info.href}
