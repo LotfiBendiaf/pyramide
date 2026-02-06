@@ -1,6 +1,8 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import User from "@/models/user.model";
+import Account from "@/models/account.model";
 import handleError from "../handlers/error";
 import dbConnect from "../mongoose";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
@@ -10,6 +12,7 @@ import {
   UpdateUserInput,
 } from "../validators/user";
 import { revalidatePath } from "next/cache";
+import mongoose from "mongoose";
 
 export async function fetchUsers(): Promise<ActionResponse<User[]>> {
   try {
@@ -165,20 +168,57 @@ export async function createUser(
       );
     const name = `${data.firstname} ${data.lastname}`;
 
-    const user = await User.create({
-      ...data,
-      email: data.email.toLowerCase(),
-      username,
-      name,
-    });
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(data.password, 12);
 
-    revalidatePath("/dashboard/users");
+    // Use a transaction to create both User and Account
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    return {
-      success: true,
-      data: JSON.parse(JSON.stringify(user)),
-      status: 201,
-    };
+    try {
+      const [user] = await User.create(
+        [
+          {
+            firstname: data.firstname,
+            lastname: data.lastname,
+            email: data.email.toLowerCase(),
+            phone: data.phone,
+            role: data.role,
+            username,
+            name,
+          },
+        ],
+        { session }
+      );
+
+      await Account.create(
+        [
+          {
+            userId: user._id,
+            name: username,
+            provider: "credentials",
+            providerAccountId: data.email.toLowerCase(),
+            password: hashedPassword,
+          },
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+
+      revalidatePath("/dashboard/users");
+
+      return {
+        success: true,
+        data: JSON.parse(JSON.stringify(user)),
+        status: 201,
+      };
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

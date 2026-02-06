@@ -34,6 +34,7 @@ import { Loader2, UserPlus, Save } from "lucide-react";
 
 import {
   CreateUserSchema,
+  UpdateUserSchema,
   CreateUserInput,
   UpdateUserInput,
 } from "@/lib/validators/user";
@@ -53,18 +54,19 @@ export default function UserForm({ user, mode = "create" }: UserFormProps) {
   const router = useRouter();
   const isEditing = mode === "edit" && user;
 
-  const form = useForm<CreateUserInput>({
-    resolver: zodResolver(CreateUserSchema),
+  const form = useForm<CreateUserInput | UpdateUserInput>({
+    resolver: zodResolver(isEditing ? UpdateUserSchema : CreateUserSchema),
     defaultValues: {
       firstname: user?.firstname || "",
       lastname: user?.lastname || "",
       email: user?.email || "",
       phone: user?.phone || "",
       role: (user?.role as Role) || "AGENT",
+      ...(isEditing ? {} : { password: "", confirmPassword: "" }),
     },
   });
 
-  const onSubmit = (data: CreateUserInput) => {
+  const onSubmit = (data: CreateUserInput | UpdateUserInput) => {
     startTransition(async () => {
       try {
         let result;
@@ -75,7 +77,7 @@ export default function UserForm({ user, mode = "create" }: UserFormProps) {
             data as UpdateUserInput
           );
         } else {
-          result = await createUser(data);
+          result = await createUser(data as CreateUserInput);
         }
 
         if (result.success) {
@@ -129,7 +131,7 @@ export default function UserForm({ user, mode = "create" }: UserFormProps) {
                   <FormItem>
                     <FormLabel>Prénom</FormLabel>
                     <FormControl>
-                      <Input placeholder="Jean" {...field} />
+                      <Input placeholder="Prenom..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,7 +145,7 @@ export default function UserForm({ user, mode = "create" }: UserFormProps) {
                   <FormItem>
                     <FormLabel>Nom</FormLabel>
                     <FormControl>
-                      <Input placeholder="Dupont" {...field} />
+                      <Input placeholder="Nom..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -160,7 +162,7 @@ export default function UserForm({ user, mode = "create" }: UserFormProps) {
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="jean.dupont@exemple.com"
+                      placeholder="...@pyramideimmobiler.com"
                       {...field}
                     />
                   </FormControl>
@@ -211,6 +213,48 @@ export default function UserForm({ user, mode = "create" }: UserFormProps) {
                 </FormItem>
               )}
             />
+
+            {!isEditing && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mot de passe</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmer le mot de passe</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button
