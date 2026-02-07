@@ -10,6 +10,7 @@ import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
 import { PropertyStatus } from "@/constants/values";
 import ROUTES from "@/constants/routes";
+import { listingPrefix, ListingStatus, PropertyType } from "../utils";
 
 export async function createListing(
   params: ListingInput
@@ -53,9 +54,24 @@ export async function createListing(
       : undefined;
 
     await dbConnect();
-    // 3. Create listing
+
+    // 3. Generate reference code (VA-0001, LV-0001, etc.)
+    const { status, propertyType } = validationResult.params!;
+    const isVente = status === "En Vente";
+    // Count listings with same transaction type (Vente or Location)
+    const count = await Listing.countDocuments({
+      status: { $in: isVente ? ["En Vente", "Vendu"] : ["En Location", "Loué"] },
+    });
+    const prefix = listingPrefix(
+      status as ListingStatus,
+      propertyType as PropertyType
+    );
+    const referenceCode = `${prefix}-${String(count + 1).padStart(4, "0")}`;
+
+    // 4. Create listing
     const listing = await Listing.create({
       ...validationResult.params,
+      referenceCode,
       evaluation,
       agent: user.data._id, // Best practice: store only ObjectId
     });

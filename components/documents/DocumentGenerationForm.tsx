@@ -70,7 +70,8 @@ export function DocumentGenerationForm({
   prefillData = {},
 }: DocumentGenerationFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [generatedDoc, setGeneratedDoc] = useState<GenerateDocumentResult | null>(null);
+  const [generatedDoc, setGeneratedDoc] =
+    useState<GenerateDocumentResult | null>(null);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [listings, setListings] = useState<ListingOption[]>([]);
   const [agents, setAgents] = useState<AgentOption[]>([]);
@@ -86,13 +87,21 @@ export function DocumentGenerationForm({
     if (open && (needsClients || needsListings || needsAgents)) {
       setIsLoadingData(true);
       Promise.all([
-        needsClients ? fetchClientsForSelect() : Promise.resolve({ success: true, data: [] }),
-        needsListings ? fetchListingsForSelect() : Promise.resolve({ success: true, data: [] }),
-        needsAgents ? fetchAgentsForSelect() : Promise.resolve({ success: true, data: [] }),
+        needsClients
+          ? fetchClientsForSelect()
+          : Promise.resolve({ success: true, data: [] }),
+        needsListings
+          ? fetchListingsForSelect()
+          : Promise.resolve({ success: true, data: [] }),
+        needsAgents
+          ? fetchAgentsForSelect()
+          : Promise.resolve({ success: true, data: [] }),
       ])
         .then(([clientsRes, listingsRes, agentsRes]) => {
-          if (clientsRes.success && clientsRes.data) setClients(clientsRes.data);
-          if (listingsRes.success && listingsRes.data) setListings(listingsRes.data);
+          if (clientsRes.success && clientsRes.data)
+            setClients(clientsRes.data);
+          if (listingsRes.success && listingsRes.data)
+            setListings(listingsRes.data);
           if (agentsRes.success && agentsRes.data) setAgents(agentsRes.data);
         })
         .finally(() => setIsLoadingData(false));
@@ -204,7 +213,9 @@ export function DocumentGenerationForm({
 
   const getListingLabel = (listingId: string) => {
     const listing = listings.find((l) => l.value === listingId);
-    return listing ? `${listing.label}${listing.address ? ` - ${listing.address}` : ""}` : "";
+    return listing
+      ? `${listing.label}${listing.address ? ` - ${listing.address}` : ""}`
+      : "";
   };
 
   const getAgentLabel = (agentId: string) => {
@@ -262,7 +273,10 @@ export function DocumentGenerationForm({
                             </FormControl>
                             <SelectContent>
                               {clients.map((client) => (
-                                <SelectItem key={client.value} value={client.value}>
+                                <SelectItem
+                                  key={client.value}
+                                  value={client.value}
+                                >
                                   <div className="flex flex-col">
                                     <span>{client.label}</span>
                                     {client.phone && (
@@ -292,7 +306,10 @@ export function DocumentGenerationForm({
                             </FormControl>
                             <SelectContent>
                               {listings.map((listing) => (
-                                <SelectItem key={listing.value} value={listing.value}>
+                                <SelectItem
+                                  key={listing.value}
+                                  value={listing.value}
+                                >
                                   <div className="flex flex-col">
                                     <span>{listing.label}</span>
                                     {listing.address && (
@@ -322,7 +339,10 @@ export function DocumentGenerationForm({
                             </FormControl>
                             <SelectContent>
                               {agents.map((agent) => (
-                                <SelectItem key={agent.value} value={agent.value}>
+                                <SelectItem
+                                  key={agent.value}
+                                  value={agent.value}
+                                >
                                   <div className="flex flex-col">
                                     <span>{agent.label}</span>
                                     {agent.email && (
@@ -341,7 +361,9 @@ export function DocumentGenerationForm({
                         {variable.type === "text" && (
                           <FormControl>
                             <Input
-                              placeholder={variable.description || variable.label}
+                              placeholder={
+                                variable.description || variable.label
+                              }
                               {...field}
                               value={field.value as string}
                             />
@@ -412,7 +434,9 @@ export function DocumentGenerationForm({
                                 >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   {field.value ? (
-                                    format(field.value as Date, "PPP", { locale: fr })
+                                    format(field.value as Date, "PPP", {
+                                      locale: fr,
+                                    })
                                   ) : (
                                     <span>Sélectionner une date</span>
                                   )}
@@ -480,11 +504,7 @@ export function DocumentGenerationForm({
             </div>
 
             <div className="flex flex-col gap-3">
-              <a
-                href={generatedDoc.docxPath}
-                download
-                className="inline-block"
-              >
+              <a href={generatedDoc.docxPath} download className="inline-block">
                 <Button className="w-full" size="lg">
                   <Download className="mr-2 h-4 w-4" />
                   Télécharger le document Word

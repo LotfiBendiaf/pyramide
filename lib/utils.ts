@@ -74,3 +74,25 @@ export function clientPrefix(type: ClientType) {
     INVESTOR: "INV",
   }[type];
 }
+
+export type ListingStatus = "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
+export type PropertyType =
+  | "Appartement"
+  | "Maison"
+  | "Villa"
+  | "Studio"
+  | "Terrain"
+  | "Commercial";
+
+export function listingPrefix(status: ListingStatus, propertyType: PropertyType) {
+  const statusPrefix = status === "En Vente" ? "V" : "L";
+  const propertyPrefix: Record<PropertyType, string> = {
+    Appartement: "A",
+    Maison: "M",
+    Villa: "V",
+    Studio: "S",
+    Terrain: "T",
+    Commercial: "C",
+  };
+  return `${statusPrefix}${propertyPrefix[propertyType]}`;
+}

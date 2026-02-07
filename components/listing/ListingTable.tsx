@@ -46,7 +46,7 @@ export function ListingTable({ listings }: ListingTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Titre</TableHead>
+              <TableHead>Reference</TableHead>
               <TableHead>Image</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Prix</TableHead>
@@ -64,7 +64,9 @@ export function ListingTable({ listings }: ListingTableProps) {
                 key={listing._id}
                 onClick={() => setSelectedListing(listing)}
               >
-                <TableCell className="font-medium">{listing.title}</TableCell>
+                <TableCell className="font-medium">
+                  {listing.referenceCode}
+                </TableCell>
                 <TableCell>
                   <Image
                     src={listing.images[0]}

@@ -4,6 +4,7 @@ import { Schema, model, models } from "mongoose";
    TypeScript Interface
 ----------------------------------*/
 export interface IListing {
+  referenceCode: string; // VA-0001 (Vente Appartement), LV-0001 (Location Villa)
   title?: string;
   slug?: string;
 
@@ -74,6 +75,7 @@ export interface IListing {
 ----------------------------------*/
 const listingSchema = new Schema<IListing>(
   {
+    referenceCode: { type: String, unique: true },
     title: { type: String, trim: true },
 
     slug: {
@@ -179,6 +181,7 @@ const listingSchema = new Schema<IListing>(
 /* ---------------------------------
    Indexes (important for performance)
 ----------------------------------*/
+listingSchema.index({ referenceCode: 1 });
 listingSchema.index({ "location.city": 1 });
 listingSchema.index({ price: 1 });
 listingSchema.index({ status: 1 });

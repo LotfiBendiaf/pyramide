@@ -7,6 +7,7 @@ import AboutSection from "@/components/sections/AboutSection";
 import ExpertiseSection from "@/components/sections/ExpertiseSection";
 
 import React from "react";
+import Navbar from "@/components/navigation/Navbar";
 
 type ListingsSectionProps = {
   searchParams?: {
@@ -21,6 +22,8 @@ type ListingsSectionProps = {
 const page = ({ searchParams }: ListingsSectionProps) => {
   return (
     <main>
+      <Navbar />
+
       <Hero />
       <div className="container mx-auto">
         <ListingsSection searchParams={searchParams} />

@@ -46,6 +46,7 @@ interface PaginatedSearchParams {
 interface Listing {
   _id: string;
   title?: string;
+  referenceCode: string; // REF-032
   slug?: string;
 
   description: string;
