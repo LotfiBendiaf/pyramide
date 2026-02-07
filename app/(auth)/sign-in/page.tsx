@@ -19,7 +19,7 @@ export default function LoginPage() {
             <div className="flex flex-col gap-6 p-10">
               <div className="flex flex-col">
                 <Logo />
-                <h1 className="text-2xl syncopate-bold mt-10 text-secondary">
+                <h1 className="text-2xl syncopate-bold mt-10">
                   Tableau de bord
                 </h1>
                 <p className="text-muted-foreground text-balance text-sm">
@@ -49,7 +49,7 @@ export default function LoginPage() {
               fetchPriority="high"
               style={{ objectFit: "cover" }}
               alt="Image"
-              className="absolute dark:brightness-[0.2] dark:grayscale"
+              className="absolute dark:brightness-[0.8]"
             />
           </SlideIn>
         </CardContent>

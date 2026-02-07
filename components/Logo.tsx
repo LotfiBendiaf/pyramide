@@ -10,8 +10,8 @@ const Logo: React.FC<LogoProps> = ({ format = "medium" }) => {
     format === "mini"
       ? { width: 100, height: 20 }
       : format === "medium"
-      ? { width: 200, height: 30 }
-      : { width: 250, height: 50 };
+        ? { width: 200, height: 30 }
+        : { width: 250, height: 50 };
 
   return (
     <>
@@ -20,6 +20,15 @@ const Logo: React.FC<LogoProps> = ({ format = "medium" }) => {
         width={dimensions.width}
         height={dimensions.height}
         alt="BI Logo 1"
+        className="dark:hidden"
+        priority
+      />
+      <Image
+        src="/pyramide-logo2Light.svg"
+        width={dimensions.width}
+        height={dimensions.height}
+        alt="BI Logo 1"
+        className="hidden dark:block"
         priority
       />
     </>
