@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import DailySchedule from "@/components/schedule/DailySchedule";
 import EventCreationDialog from "@/components/schedule/EventCreationDialog";
+import GoogleCalendarConnect from "@/components/schedule/GoogleCalendarConnect";
 import {
   ScheduleEvent,
   deleteCalendarEvent,
@@ -191,6 +192,9 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Google Calendar Connection */}
+          <GoogleCalendarConnect />
         </div>
 
         {/* Right Content - Daily Schedule */}

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
-import { startOfWeek, endOfWeek, format } from "date-fns";
+import { startOfWeek, endOfWeek, addWeeks, format } from "date-fns";
 import { CalendarDays } from "lucide-react";
 
 import { SectionHeader } from "@/components/SectionHeader";
@@ -16,7 +16,8 @@ export const metadata = {
 async function ScheduleContent() {
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  // Fetch 4 weeks of events (current week + 3 more) to allow navigation to future dates
+  const weekEnd = endOfWeek(addWeeks(today, 3), { weekStartsOn: 1 });
 
   const result = await getSchedule({
     startDate: weekStart,
@@ -32,9 +33,15 @@ async function ScheduleContent() {
       format(today, "yyyy-MM-dd")
   );
 
+  // Calculate current week events for the "This week" stat
+  const currentWeekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  const thisWeekEvents = events.filter(
+    (e) => new Date(e.startTime) <= currentWeekEnd
+  );
+
   const stats = {
     todayCount: todayEvents.length,
-    weekCount: events.length,
+    weekCount: thisWeekEvents.length,
     visits: events.filter((e) => e.channel === "VISIT").length,
     calls: events.filter(
       (e) => e.channel === "CALL" || e.channel === "WHATSAPP"

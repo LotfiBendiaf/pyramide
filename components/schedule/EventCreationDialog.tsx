@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -70,6 +70,11 @@ export default function EventCreationDialog({
     },
   });
 
+  // Update form date when selectedDate changes
+  useEffect(() => {
+    form.setValue("date", defaultDate);
+  }, [defaultDate, form]);
+
   const onSubmit = async (values: EventFormValues) => {
     setIsSubmitting(true);
 
@@ -90,13 +95,21 @@ export default function EventCreationDialog({
         return;
       }
 
+      console.log("Submitting event:", {
+        title: values.title,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+      });
+
       const result = await createManualEvent({
         title: values.title,
-        description: values.description,
+        description: values.description || undefined,
         startTime,
         endTime,
-        location: values.location,
+        location: values.location || undefined,
       });
+
+      console.log("Create event result:", result);
 
       if (result.success) {
         toast.success("Événement créé avec succès");
@@ -106,7 +119,8 @@ export default function EventCreationDialog({
       } else {
         toast.error(result.error?.message || "Erreur lors de la création");
       }
-    } catch {
+    } catch (error) {
+      console.error("Error in onSubmit:", error);
       toast.error("Une erreur est survenue");
     } finally {
       setIsSubmitting(false);

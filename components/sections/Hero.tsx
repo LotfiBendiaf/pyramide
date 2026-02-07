@@ -3,6 +3,7 @@ import React from "react";
 import HeroBgCarousel from "../HeroBgCarousel";
 import HeroSplitWord from "../HeroSplitWord";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 const Hero = () => {
   return (
@@ -21,13 +22,17 @@ const Hero = () => {
             </p>
           </div>
           <div className="lg:flex gap-4 space-y-3">
-            <Button>
-              Voir nos offres <ArrowDownRight />
-            </Button>
-            <Button variant={"outline"} className="text-black">
-              Contactez-nous
-              <Calendar />
-            </Button>
+            <Link href="#listings">
+              <Button>
+                Voir nos offres <ArrowDownRight />
+              </Button>
+            </Link>
+            <Link href="#contact">
+              <Button variant={"outline"} className="text-black">
+                Contactez-nous
+                <Calendar />
+              </Button>
+            </Link>
           </div>
           {/* <h2 className="syncopate-bold text-2xl">Real Estate Agency</h2> */}
         </div>

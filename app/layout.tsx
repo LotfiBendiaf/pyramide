@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning className="!scroll-smooth">
       <SessionProvider>
         <body
           className={`${montserrat.variable} ${montserrat.className} ${inter.className} ${spaceGrotesk.variable} montserrat tracking-wide antialiased`}

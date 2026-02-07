@@ -6,6 +6,10 @@ import { CalendarEvent, FollowUp, Task, User } from "@/models";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
+import {
+  syncEventToGoogle,
+  hasGoogleCalendarConnected,
+} from "@/lib/googleCalendar";
 
 // Types for populated documents from lean queries
 interface PopulatedClient {
@@ -403,11 +407,21 @@ export async function createManualEvent(data: {
   try {
     const session = await auth();
     if (!session?.user?.id) {
+      console.error("createManualEvent: No session or user ID");
       return { success: false, error: { message: "Non autorisé" } };
     }
 
     await dbConnect();
 
+    // Check if user has Google Calendar connected
+    const hasGoogleConnected = await hasGoogleCalendarConnected(
+      session.user.id
+    );
+
+    console.log("Creating event for user:", session.user.id);
+    console.log("Google Calendar connected:", hasGoogleConnected);
+
+    // Create the event first (always create locally)
     const event = await CalendarEvent.create({
       agent: session.user.id,
       title: data.title,
@@ -418,8 +432,25 @@ export async function createManualEvent(data: {
       isAllDay: data.isAllDay || false,
       reminderMinutes: data.reminderMinutes || 30,
       sourceType: "MANUAL",
-      syncStatus: "PENDING",
+      syncStatus: hasGoogleConnected ? "PENDING" : "SYNCED",
     });
+
+    console.log("Event created locally:", event._id.toString());
+
+    // Immediately sync to Google Calendar if connected
+    // Always sync when Google is connected (user explicitly connected it)
+    if (hasGoogleConnected) {
+      try {
+        console.log("Attempting to sync event to Google Calendar...");
+        const syncResult = await syncEventToGoogle(event._id.toString());
+        console.log("Sync result:", syncResult);
+      } catch (syncError) {
+        // Don't fail the whole operation if sync fails
+        console.error("Failed to sync to Google Calendar:", syncError);
+      }
+    } else {
+      console.log("Google Calendar not connected, skipping sync");
+    }
 
     revalidatePath("/dashboard/schedule");
     return { success: true, data: { eventId: event._id.toString() } };

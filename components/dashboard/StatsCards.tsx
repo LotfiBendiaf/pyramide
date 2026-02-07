@@ -35,7 +35,7 @@ function StatCard({
 }: StatCardProps) {
   const variantStyles = {
     default: "border-border",
-    success: "border-green-200 bg-green-50/50",
+    success: "border-green-200",
     warning: "border-orange-200 bg-orange-50/50",
     danger: "border-red-200 bg-red-50/50",
   };

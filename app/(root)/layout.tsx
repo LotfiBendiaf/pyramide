@@ -4,7 +4,7 @@ import React, { ReactNode } from "react";
 
 const layout = ({ children }: { children: ReactNode }) => {
   return (
-    <main className="relative">
+    <main className="relative scroll-smooth">
       <Navbar />
       {children}
       <Footer />
