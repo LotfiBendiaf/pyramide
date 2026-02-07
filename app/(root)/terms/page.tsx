@@ -24,10 +24,10 @@ export default function TermsPage() {
               1. Acceptation des Conditions
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              En accédant et en utilisant le site web de Pyramide Immobilier, vous
-              acceptez d&apos;être lié par ces conditions d&apos;utilisation. Si
-              vous n&apos;acceptez pas ces conditions, veuillez ne pas utiliser
-              notre site.
+              En accédant et en utilisant le site web de Pyramide Immobilier,
+              vous acceptez d&apos;être lié par ces conditions
+              d&apos;utilisation. Si vous n&apos;acceptez pas ces conditions,
+              veuillez ne pas utiliser notre site.
             </p>
           </section>
 
@@ -36,8 +36,8 @@ export default function TermsPage() {
               2. Description des Services
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Pyramide Immobilier est une agence immobilière proposant des services
-              de :
+              Pyramide Immobilier est une agence immobilière proposant des
+              services de :
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
               <li>Vente de biens immobiliers</li>
@@ -56,7 +56,9 @@ export default function TermsPage() {
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
               <li>Fournir des informations exactes et à jour</li>
-              <li>Ne pas utiliser le site à des fins illégales ou non autorisées</li>
+              <li>
+                Ne pas utiliser le site à des fins illégales ou non autorisées
+              </li>
               <li>Ne pas tenter de compromettre la sécurité du site</li>
               <li>Ne pas reproduire ou copier le contenu sans autorisation</li>
               <li>Respecter les droits de propriété intellectuelle</li>
@@ -68,12 +70,13 @@ export default function TermsPage() {
               4. Informations sur les Biens
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Les informations concernant les biens immobiliers présentés sur notre
-              site (prix, surface, caractéristiques) sont fournies à titre
+              Les informations concernant les biens immobiliers présentés sur
+              notre site (prix, surface, caractéristiques) sont fournies à titre
               indicatif. Bien que nous nous efforcions de maintenir ces
               informations à jour et exactes, elles ne constituent pas une offre
               contractuelle. Les caractéristiques définitives seront confirmées
-              lors de la visite du bien et de la signature des documents officiels.
+              lors de la visite du bien et de la signature des documents
+              officiels.
             </p>
           </section>
 
@@ -85,7 +88,8 @@ export default function TermsPage() {
               L&apos;ensemble du contenu présent sur ce site (textes, images,
               logos, graphiques, vidéos) est la propriété exclusive de Pyramide
               Immobilier ou de ses partenaires. Toute reproduction, distribution
-              ou utilisation sans autorisation préalable est strictement interdite.
+              ou utilisation sans autorisation préalable est strictement
+              interdite.
             </p>
           </section>
 
@@ -94,16 +98,20 @@ export default function TermsPage() {
               6. Responsabilité
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Pyramide Immobilier s&apos;efforce d&apos;assurer l&apos;exactitude
-              des informations diffusées sur ce site. Toutefois, nous ne pouvons
-              garantir l&apos;exhaustivité ou l&apos;exactitude de ces
-              informations. Nous déclinons toute responsabilité pour :
+              Pyramide Immobilier s&apos;efforce d&apos;assurer
+              l&apos;exactitude des informations diffusées sur ce site.
+              Toutefois, nous ne pouvons garantir l&apos;exhaustivité ou
+              l&apos;exactitude de ces informations. Nous déclinons toute
+              responsabilité pour :
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
               <li>Les erreurs ou omissions dans le contenu du site</li>
               <li>Les dommages résultant de l&apos;utilisation du site</li>
               <li>L&apos;indisponibilité temporaire du site</li>
-              <li>Les contenus des sites tiers auxquels nous pouvons faire référence</li>
+              <li>
+                Les contenus des sites tiers auxquels nous pouvons faire
+                référence
+              </li>
             </ul>
           </section>
 
@@ -126,8 +134,8 @@ export default function TermsPage() {
               8. Protection des Données
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              La collecte et le traitement de vos données personnelles sont régis
-              par notre{" "}
+              La collecte et le traitement de vos données personnelles sont
+              régis par notre{" "}
               <a href="/privacy" className="text-primary hover:underline">
                 Politique de Confidentialité
               </a>
@@ -141,9 +149,9 @@ export default function TermsPage() {
             </h2>
             <p className="text-gray-600 leading-relaxed">
               Pyramide Immobilier se réserve le droit de modifier ces conditions
-              d&apos;utilisation à tout moment. Les modifications prendront effet
-              dès leur publication sur le site. Nous vous encourageons à consulter
-              régulièrement cette page.
+              d&apos;utilisation à tout moment. Les modifications prendront
+              effet dès leur publication sur le site. Nous vous encourageons à
+              consulter régulièrement cette page.
             </p>
           </section>
 
@@ -152,10 +160,10 @@ export default function TermsPage() {
               10. Droit Applicable
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Ces conditions d&apos;utilisation sont régies par le droit algérien.
-              Tout litige relatif à l&apos;interprétation ou à l&apos;exécution de
-              ces conditions sera soumis à la compétence exclusive des tribunaux
-              d&apos;Oran.
+              Ces conditions d&apos;utilisation sont régies par le droit
+              algérien. Tout litige relatif à l&apos;interprétation ou à
+              l&apos;exécution de ces conditions sera soumis à la compétence
+              exclusive des tribunaux d&apos;Oran.
             </p>
           </section>
 
@@ -168,7 +176,7 @@ export default function TermsPage() {
               vous pouvez nous contacter :
             </p>
             <ul className="list-none text-gray-600 space-y-2 ml-4">
-              <li>Email : contact@pyramide.dz</li>
+              <li>Email : contact@pyramideimmobilier.com</li>
               <li>Téléphone : +213 00 00 00 00</li>
               <li>Adresse : Oran, Algérie</li>
             </ul>

@@ -26,8 +26,8 @@ export default function PrivacyPage() {
             <p className="text-gray-600 leading-relaxed">
               Pyramide Immobilier s&apos;engage à protéger la vie privée des
               utilisateurs de son site web. Cette politique de confidentialité
-              explique comment nous collectons, utilisons, stockons et protégeons
-              vos informations personnelles.
+              explique comment nous collectons, utilisons, stockons et
+              protégeons vos informations personnelles.
             </p>
           </section>
 
@@ -44,8 +44,8 @@ export default function PrivacyPage() {
                 numéro de téléphone
               </li>
               <li>
-                Informations de navigation : adresse IP, type de navigateur, pages
-                visitées
+                Informations de navigation : adresse IP, type de navigateur,
+                pages visitées
               </li>
               <li>
                 Préférences immobilières : types de biens recherchés, budget,
@@ -66,9 +66,14 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
               <li>Répondre à vos demandes de renseignements</li>
-              <li>Vous proposer des biens immobiliers correspondant à vos critères</li>
+              <li>
+                Vous proposer des biens immobiliers correspondant à vos critères
+              </li>
               <li>Améliorer nos services et notre site web</li>
-              <li>Vous envoyer des informations sur nos nouveaux biens (avec votre consentement)</li>
+              <li>
+                Vous envoyer des informations sur nos nouveaux biens (avec votre
+                consentement)
+              </li>
               <li>Respecter nos obligations légales</li>
             </ul>
           </section>
@@ -81,8 +86,8 @@ export default function PrivacyPage() {
               Nous mettons en œuvre des mesures de sécurité appropriées pour
               protéger vos données personnelles contre tout accès non autorisé,
               modification, divulgation ou destruction. Ces mesures incluent le
-              chiffrement des données, des pare-feu et des contrôles d&apos;accès
-              stricts.
+              chiffrement des données, des pare-feu et des contrôles
+              d&apos;accès stricts.
             </p>
           </section>
 
@@ -91,26 +96,26 @@ export default function PrivacyPage() {
               5. Partage des Données
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Nous ne vendons pas vos données personnelles. Nous pouvons partager
-              vos informations uniquement dans les cas suivants :
+              Nous ne vendons pas vos données personnelles. Nous pouvons
+              partager vos informations uniquement dans les cas suivants :
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
               <li>Avec votre consentement explicite</li>
-              <li>Avec nos partenaires de confiance pour fournir nos services</li>
+              <li>
+                Avec nos partenaires de confiance pour fournir nos services
+              </li>
               <li>Pour répondre à des obligations légales</li>
             </ul>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              6. Cookies
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900">6. Cookies</h2>
             <p className="text-gray-600 leading-relaxed">
               Notre site utilise des cookies pour améliorer votre expérience de
-              navigation. Les cookies nous permettent de mémoriser vos préférences
-              et d&apos;analyser le trafic de notre site. Vous pouvez configurer
-              votre navigateur pour refuser les cookies, mais cela pourrait
-              affecter certaines fonctionnalités du site.
+              navigation. Les cookies nous permettent de mémoriser vos
+              préférences et d&apos;analyser le trafic de notre site. Vous
+              pouvez configurer votre navigateur pour refuser les cookies, mais
+              cela pourrait affecter certaines fonctionnalités du site.
             </p>
           </section>
 
@@ -119,8 +124,8 @@ export default function PrivacyPage() {
               7. Vos Droits
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Conformément à la réglementation en vigueur, vous disposez des droits
-              suivants :
+              Conformément à la réglementation en vigueur, vous disposez des
+              droits suivants :
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
               <li>Droit d&apos;accès à vos données personnelles</li>
@@ -140,22 +145,20 @@ export default function PrivacyPage() {
               8. Conservation des Données
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Nous conservons vos données personnelles uniquement pendant la durée
-              nécessaire aux finalités pour lesquelles elles ont été collectées,
-              ou conformément aux exigences légales applicables.
+              Nous conservons vos données personnelles uniquement pendant la
+              durée nécessaire aux finalités pour lesquelles elles ont été
+              collectées, ou conformément aux exigences légales applicables.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              9. Contact
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900">9. Contact</h2>
             <p className="text-gray-600 leading-relaxed">
-              Pour toute question concernant cette politique de confidentialité ou
-              vos données personnelles, vous pouvez nous contacter :
+              Pour toute question concernant cette politique de confidentialité
+              ou vos données personnelles, vous pouvez nous contacter :
             </p>
             <ul className="list-none text-gray-600 space-y-2 ml-4">
-              <li>Email : contact@pyramide.dz</li>
+              <li>Email : contact@pyramideimmobilier.com</li>
               <li>Téléphone : +213 00 00 00 00</li>
               <li>Adresse : Oran, Algérie</li>
             </ul>

@@ -28,7 +28,7 @@ const Hero = () => {
               </Button>
             </Link>
             <Link href="#contact">
-              <Button variant={"outline"} className="text-black">
+              <Button variant={"secondary"}>
                 Contactez-nous
                 <Calendar />
               </Button>

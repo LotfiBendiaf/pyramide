@@ -27,8 +27,8 @@ const contactInfo = [
   { icon: Phone, text: "+213 00 00 00 00", href: "tel:+21300000000" },
   {
     icon: Mail,
-    text: "contact@pyramide.dz",
-    href: "mailto:contact@pyramide.dz",
+    text: "contact@pyramideimmobilier.com",
+    href: "mailto:contact@pyramideimmobilier.com",
   },
   { icon: MapPin, text: "Oran, Algérie", href: null },
 ];
@@ -114,7 +114,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {contactInfo.map((info, index) => (
                 <li key={index} className="flex items-center gap-3">
-                  <info.icon className="h-5 w-5 text-secondary flex-shrink-0" />
+                  <info.icon className="h-5 w-5 flex-shrink-0" />
                   {info.href ? (
                     <a
                       href={info.href}

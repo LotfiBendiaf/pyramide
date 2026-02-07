@@ -11,7 +11,7 @@ import AddToWishlistButton from "./AddToWishlistButton";
 export default function ListingCard({ listing }: { listing: Listing }) {
   const { title, images, price, location, status, features } = listing;
   return (
-    <div className="relative group rounded-xl overflow-hidden shadow-md bg-white border hover:shadow-xl transition-all duration-300">
+    <div className="relative group rounded-xl overflow-hidden shadow-md bg-background border hover:shadow-xl transition-all duration-300">
       <div className="absolute right-1 top-1 z-50">
         <AddToWishlistButton product={listing} />
       </div>
@@ -31,17 +31,17 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         </div>
 
         {/* Content */}
-        <div className=" absolute bottom-3 left-5 space-y-2 z-20">
+        <div className=" absolute bottom-3 left-5 space-y-2 z-20 text-white">
           {/* Title + Location */}
-          <Badge variant={"clear"}>{formatPrice(price)}</Badge>
-          <h3 className="font-serif text-lg text-secondary mb-1">{title}</h3>
-          <div className="flex items-center text-muted text-sm mb-3">
+          <Badge variant={"default"}>{formatPrice(price)}</Badge>
+          <h3 className="font-serif text-lg text-white mb-1">{title}</h3>
+          <div className="flex items-center text-sm mb-3">
             <MapPin className="w-4 h-4 mr-1" />
             {location.city}
           </div>
 
           {/* Features */}
-          <div className="flex justify-between items-center gap-4 text-sm text-muted mb-3">
+          <div className="flex justify-between items-center gap-4 text-sm mb-3">
             <div className="flex items-center gap-1">
               <Bed className="w-4 h-4" /> {features.bedrooms}
             </div>

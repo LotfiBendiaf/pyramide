@@ -25,7 +25,7 @@ export default function Navbar() {
   const user = session?.user;
 
   return (
-    <nav className="absolute top-0 w-full px-4 md:px-6 lg:px-20 py-10 shadow-sm z-50">
+    <nav className="absolute top-0 w-full px-4 md:px-6 lg:px-20 py-10 z-50">
       <div className="flex items-center justify-between">
         {/* Logo */}
         <Link href={ROUTES.HOME} className="flex-1">

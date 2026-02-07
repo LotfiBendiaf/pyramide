@@ -78,7 +78,7 @@ export default function ContactSection() {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="bg-white rounded-2xl shadow-md p-6 space-y-4"
+              className="bg-background rounded-2xl shadow-md p-6 space-y-4"
             >
               <div className="grid md:grid-cols-2 gap-4">
                 <FormField

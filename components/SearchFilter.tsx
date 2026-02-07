@@ -62,7 +62,7 @@ export default function SearchFilter() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[10%] md:-translate-y-[50%] bg-white rounded-4xl shadow-md px-8 py-5 flex flex-wrap justify-between gap-3 items-center max-w-6xl w-full z-40"
+      className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[10%] md:-translate-y-[50%] bg-background rounded-4xl shadow-md px-8 py-5 flex flex-wrap justify-between gap-3 items-center max-w-6xl w-full z-40"
     >
       <Icon format="mini" />
 
