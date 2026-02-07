@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
@@ -33,7 +35,9 @@ async function FollowUpsContent() {
     );
   }
 
-  return <FollowUpFeed followUps={followUps} userRole={currentUser.data?.role} />;
+  return (
+    <FollowUpFeed followUps={followUps} userRole={currentUser.data?.role} />
+  );
 }
 
 export default function FollowUpsPage() {

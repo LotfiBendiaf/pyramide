@@ -75,7 +75,7 @@ export interface IListing {
 ----------------------------------*/
 const listingSchema = new Schema<IListing>(
   {
-    referenceCode: { type: String, unique: true },
+    referenceCode: { type: String },
     title: { type: String, trim: true },
 
     slug: {

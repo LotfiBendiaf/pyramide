@@ -63,11 +63,17 @@ export interface AgentOption extends SelectOption {
 /**
  * Fetch clients for select dropdown
  */
-export async function fetchClientsForSelect(): Promise<ActionResponse<ClientOption[]>> {
+export async function fetchClientsForSelect(): Promise<
+  ActionResponse<ClientOption[]>
+> {
   try {
     const user = await getUserBySessionEmail();
     if (!user?.data) {
-      return { success: false, error: { message: "Non autorisé" }, status: 401 };
+      return {
+        success: false,
+        error: { message: "Non autorisé" },
+        status: 401,
+      };
     }
 
     await dbConnect();
@@ -93,11 +99,17 @@ export async function fetchClientsForSelect(): Promise<ActionResponse<ClientOpti
 /**
  * Fetch listings for select dropdown
  */
-export async function fetchListingsForSelect(): Promise<ActionResponse<ListingOption[]>> {
+export async function fetchListingsForSelect(): Promise<
+  ActionResponse<ListingOption[]>
+> {
   try {
     const user = await getUserBySessionEmail();
     if (!user?.data) {
-      return { success: false, error: { message: "Non autorisé" }, status: 401 };
+      return {
+        success: false,
+        error: { message: "Non autorisé" },
+        status: 401,
+      };
     }
 
     await dbConnect();
@@ -123,16 +135,24 @@ export async function fetchListingsForSelect(): Promise<ActionResponse<ListingOp
 /**
  * Fetch agents for select dropdown
  */
-export async function fetchAgentsForSelect(): Promise<ActionResponse<AgentOption[]>> {
+export async function fetchAgentsForSelect(): Promise<
+  ActionResponse<AgentOption[]>
+> {
   try {
     const user = await getUserBySessionEmail();
     if (!user?.data) {
-      return { success: false, error: { message: "Non autorisé" }, status: 401 };
+      return {
+        success: false,
+        error: { message: "Non autorisé" },
+        status: 401,
+      };
     }
 
     await dbConnect();
 
-    const agents = await User.find({ role: { $in: ["ADMIN", "MANAGER", "AGENT"] } })
+    const agents = await User.find({
+      role: { $in: ["ADMIN", "MANAGER", "AGENT"] },
+    })
       .select("firstname lastname email")
       .sort({ firstname: 1 })
       .lean();
@@ -183,7 +203,12 @@ export async function generateDocument(
 
     // 3. Prepare directories
     const templatesDir = path.join(process.cwd(), "public", "templates");
-    const outputDir = path.join(process.cwd(), "public", "documents", "generated");
+    const outputDir = path.join(
+      process.cwd(),
+      "public",
+      "documents",
+      "generated"
+    );
     await fs.mkdir(outputDir, { recursive: true });
 
     // 4. Generate unique filename
@@ -203,7 +228,10 @@ export async function generateDocument(
 
       if (!rawValue && rawValue !== 0) {
         formattedValue = "";
-      } else if (variable.type === "date" && (rawValue instanceof Date || typeof rawValue === "string")) {
+      } else if (
+        variable.type === "date" &&
+        (rawValue instanceof Date || typeof rawValue === "string")
+      ) {
         formattedValue = formatDate(rawValue);
       } else if (variable.type === "number" && typeof rawValue === "number") {
         formattedValue = formatNumber(rawValue);
@@ -273,56 +301,56 @@ function formatNumber(num: number): string {
 /**
  * Get list of generated documents
  */
-export async function fetchGeneratedDocuments(filters?: {
-  templateId?: string;
-  clientId?: string;
-  listingId?: string;
-  startDate?: Date;
-  endDate?: Date;
-}): Promise<ActionResponse<GeneratedDocumentRecord[]>> {
-  try {
-    const user = await getUserBySessionEmail();
-    if (!user?.data) {
-      return {
-        success: false,
-        error: { message: "Non autorisé" },
-        status: 401,
-      };
-    }
+// export async function fetchGeneratedDocuments(filters?: {
+//   templateId?: string;
+//   clientId?: string;
+//   listingId?: string;
+//   startDate?: Date;
+//   endDate?: Date;
+// }): Promise<ActionResponse<GeneratedDocumentRecord[]>> {
+//   try {
+//     const user = await getUserBySessionEmail();
+//     if (!user?.data) {
+//       return {
+//         success: false,
+//         error: { message: "Non autorisé" },
+//         status: 401,
+//       };
+//     }
 
-    // TODO: Query GeneratedDocument model from database
-    return {
-      success: true,
-      data: [],
-      status: 200,
-    };
-  } catch (error) {
-    return handleError(error) as ErrorResponse;
-  }
-}
+//     // TODO: Query GeneratedDocument model from database
+//     return {
+//       success: true,
+//       data: [],
+//       status: 200,
+//     };
+//   } catch (error) {
+//     return handleError(error) as ErrorResponse;
+//   }
+// }
 
 /**
  * Delete a generated document
  */
-export async function deleteGeneratedDocument(
-  documentId: string
-): Promise<ActionResponse<void>> {
-  try {
-    const user = await getUserBySessionEmail();
-    if (!user?.data) {
-      return {
-        success: false,
-        error: { message: "Non autorisé" },
-        status: 401,
-      };
-    }
+// export async function deleteGeneratedDocument(
+//   documentId: string
+// ): Promise<ActionResponse<void>> {
+//   try {
+//     const user = await getUserBySessionEmail();
+//     if (!user?.data) {
+//       return {
+//         success: false,
+//         error: { message: "Non autorisé" },
+//         status: 401,
+//       };
+//     }
 
-    // TODO: Delete from database and filesystem
-    return {
-      success: true,
-      status: 200,
-    };
-  } catch (error) {
-    return handleError(error) as ErrorResponse;
-  }
-}
+//     // TODO: Delete from database and filesystem
+//     return {
+//       success: true,
+//       status: 200,
+//     };
+//   } catch (error) {
+//     return handleError(error) as ErrorResponse;
+//   }
+// }
