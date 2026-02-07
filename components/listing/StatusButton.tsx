@@ -44,7 +44,7 @@ export function StatusAction({ status, onChange }: StatusActionProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="ghost">
+        <Button size="icon" variant="ghost" aria-label="Modifier le statut">
           <Cog className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

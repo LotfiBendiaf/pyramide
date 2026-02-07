@@ -62,9 +62,10 @@ export default function Navbar() {
             <Loader className="animate-spin" />
           ) : (
             <>
-              <Button variant="secondary" asChild>
+              <Button variant="secondary" asChild aria-label="Se connecter">
                 <Link href={ROUTES.SIGN_IN} className="hidden md:inline-flex">
                   <User />
+                  <span className="sr-only">Se connecter</span>
                 </Link>
               </Button>
             </>
@@ -77,6 +78,7 @@ export default function Navbar() {
                 variant="ghost"
                 size="icon"
                 className="lg:hidden text-white"
+                aria-label="Ouvrir le menu"
               >
                 <Menu className="size-5" />
               </Button>

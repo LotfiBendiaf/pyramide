@@ -67,7 +67,7 @@ export function ClientTable({ clients }: ClientTableProps) {
 
                 {/* Actions */}
                 <TableCell className="text-right">
-                  <Button size="icon" variant="ghost">
+                  <Button size="icon" variant="ghost" aria-label="Modifier le client">
                     <Pencil className="h-4 w-4" />
                   </Button>
                 </TableCell>

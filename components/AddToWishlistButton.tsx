@@ -93,6 +93,7 @@ export default function AddToWishlistButton({
       size="icon"
       disabled={isPending}
       onClick={handleClick}
+      aria-label={inWishlist ? "Retirer des favoris" : "Ajouter aux favoris"}
       className={`rounded-full transition z-20 ${
         inWishlist ? "text-red-500" : light ? "text-gray-500" : "text-white"
       }`}

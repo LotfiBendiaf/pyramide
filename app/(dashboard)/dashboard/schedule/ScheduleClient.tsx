@@ -203,7 +203,7 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-medium">Planning</CardTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={handlePrevDay}>
+                <Button variant="outline" size="icon" onClick={handlePrevDay} aria-label="Jour précédent">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
@@ -217,7 +217,7 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
                 >
                   Aujourd&apos;hui
                 </Button>
-                <Button variant="outline" size="icon" onClick={handleNextDay}>
+                <Button variant="outline" size="icon" onClick={handleNextDay} aria-label="Jour suivant">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>

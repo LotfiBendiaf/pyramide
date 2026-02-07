@@ -39,6 +39,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning className="!scroll-smooth">
+      <head>
+        {/* Preload LCP image for faster discovery */}
+        <link
+          rel="preload"
+          href="/pyramide-img.jpg"
+          as="image"
+          fetchPriority="high"
+        />
+        {/* Preconnect to external domains */}
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+      </head>
       <SessionProvider>
         <body
           className={`${montserrat.variable} ${montserrat.className} ${inter.className} ${spaceGrotesk.variable} montserrat tracking-wide antialiased`}

@@ -24,9 +24,10 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       <div className="relative h-56 w-full overflow-hidden">
         <Image
           src={images?.[0] || "/immo-placeholder.jpg"}
-          alt={title || ""}
+          alt={title || "Image du bien"}
           fill
-          priority={false}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          loading="lazy"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
 
@@ -51,7 +52,10 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         )}
 
         {/* Favorite */}
-        <button className="absolute bottom-4 right-4 rounded-full bg-white/80 p-2 text-gray-700 backdrop-blur transition hover:bg-white hover:text-red-500">
+        <button
+          className="absolute bottom-4 right-4 rounded-full bg-white/80 p-2 text-gray-700 backdrop-blur transition hover:bg-white hover:text-red-500"
+          aria-label="Ajouter aux favoris"
+        >
           <Heart size={18} />
         </button>
 

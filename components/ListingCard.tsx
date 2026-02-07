@@ -23,6 +23,8 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             src={images[0]}
             alt={title || "Property image"}
             fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            loading="lazy"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
           <Badge variant={"secondary"} className="absolute top-3 left-3">

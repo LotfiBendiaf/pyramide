@@ -39,6 +39,8 @@ export default function HeroBgCarousel({
                 src={src}
                 alt={`Background ${i}`}
                 fill
+                priority={i === 0}
+                fetchPriority={i === 0 ? "high" : "auto"}
                 className="object-cover brightness-[0.65] transition-all duration-700"
               />
             </CarouselItem>

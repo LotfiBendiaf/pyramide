@@ -91,6 +91,7 @@ export default function ImageUpload({
               variant="destructive"
               size="icon"
               className="absolute size-8 z-10 top-2 right-2 rounded"
+              aria-label="Supprimer l'image"
             >
               <Trash2 />
             </Button>
