@@ -78,6 +78,7 @@ interface Listing {
     bathrooms: number;
     area: number; // m²
     facade: number;
+    etage?: number;
     furnished?: boolean;
     parking?: boolean;
     balcony?: boolean;

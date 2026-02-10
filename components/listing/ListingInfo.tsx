@@ -37,11 +37,7 @@ export default function ListingInfo({ listing }: { listing: Listing }) {
           value={`${listing.features.area} m²`}
         />
         {listing.features.etage !== undefined && (
-          <Stat
-            icon={Building2}
-            label="Étage"
-            value={listing.features.etage}
-          />
+          <Stat icon={Building2} label="Étage" value={listing.features.etage} />
         )}
       </div>
 
