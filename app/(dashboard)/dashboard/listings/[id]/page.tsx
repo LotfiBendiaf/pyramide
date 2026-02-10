@@ -20,12 +20,12 @@ export default async function ListingDetailsPage({
 
   return (
     <section className="container py-10">
-      {/* Gallery */}
-      <ListingGallery images={listing.images} />
+      {/* Gallery - Staff can see all images */}
+      <ListingGallery images={listing.images} isStaff={true} />
 
       <div className="mt-10 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
         {/* Main content */}
-        <ListingInfo listing={listing} />
+        <ListingInfo listing={listing} isStaff={true} />
 
         {/* Sidebar */}
         <ListingSidebar listing={listing} />

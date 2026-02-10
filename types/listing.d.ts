@@ -39,7 +39,10 @@ interface ListingInput {
     pool?: boolean;
   };
 
-  images?: string[];
+  images?: Array<{
+    url: string;
+    isPublic: boolean;
+  }>;
 
   isFeatured?: boolean;
   published?: boolean;

@@ -9,7 +9,7 @@ const Hero = () => {
   return (
     <section>
       <HeroBgCarousel>
-        <div className="inset-0 absolute bg-gradient-to-b from-transparent to-black/50 rounded-2xl -z-10"></div>
+        <div className="inset-0 absolute bg-gradient-to-b from-transparent to-black/50 -z-10"></div>
 
         <div className="space-y-5 flex flex-col items-center md:justify-center text-center text-white">
           <div className="lg:max-w-2/3 2xl:max-w-1/2 space-y-2 p-2">

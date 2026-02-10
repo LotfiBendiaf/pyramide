@@ -57,7 +57,10 @@ export interface IListing {
     evaluatedAt?: Date;
   };
 
-  images: string[];
+  images: Array<{
+    url: string;
+    isPublic: boolean;
+  }>;
   coverImage?: string;
 
   owner: string; // admin or agent
@@ -157,7 +160,12 @@ const listingSchema = new Schema<IListing>(
       },
     },
 
-    images: [{ type: String, required: true }],
+    images: [
+      {
+        url: { type: String, required: true },
+        isPublic: { type: Boolean, default: true },
+      },
+    ],
     coverImage: { type: String, trim: true },
 
     owner: {

@@ -60,7 +60,9 @@ export async function createListing(
     const isVente = status === "En Vente";
     // Count listings with same transaction type (Vente or Location)
     const count = await Listing.countDocuments({
-      status: { $in: isVente ? ["En Vente", "Vendu"] : ["En Location", "Loué"] },
+      status: {
+        $in: isVente ? ["En Vente", "Vendu"] : ["En Location", "Loué"],
+      },
     });
     const prefix = listingPrefix(
       status as ListingStatus,
@@ -185,7 +187,7 @@ export async function fetchListingById(
 
     // 3️⃣ Fetch listing
     const listing = await Listing.findById(listingId)
-      .populate("agent", "firstName lastName email phone")
+      .populate("agent", "firstname lastname email phone")
       .lean();
 
     if (!listing) {

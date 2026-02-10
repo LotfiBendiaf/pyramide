@@ -40,6 +40,7 @@ import {
 import { listingSchema } from "@/lib/validators/listing";
 import ImageUpload from "../listing/ImageUpload";
 import { createListing } from "@/lib/actions/listings.action";
+import { useRouter } from "next/navigation";
 
 // --- Types ---
 type ListingFormValues = z.infer<typeof listingSchema>;
@@ -55,6 +56,8 @@ const PROPERTY_TYPES = [
 
 export default function ListingForm() {
   const [isPending, startTransition] = useTransition();
+
+  const router = useRouter();
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingSchema),
@@ -108,7 +111,7 @@ export default function ListingForm() {
         }
 
         toast.success("Annonce publiée avec succès");
-        form.reset();
+        router.push("/listings");
       } catch (error) {
         // Global form error
         form.setError("root", {
@@ -224,7 +227,7 @@ export default function ListingForm() {
                           onChange={field.onChange}
                           onRemove={(url) =>
                             field.onChange(
-                              field.value.filter((img) => img !== url)
+                              field.value.filter((img) => img.url !== url)
                             )
                           }
                         />

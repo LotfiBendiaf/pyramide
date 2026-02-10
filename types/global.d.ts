@@ -97,7 +97,10 @@ interface Listing {
     evaluatedAt?: Date;
   };
 
-  images: string[];
+  images: Array<{
+    url: string;
+    isPublic: boolean;
+  }>;
   coverImage?: string;
 
   owner: string; // admin or agent

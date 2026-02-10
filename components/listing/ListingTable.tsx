@@ -69,7 +69,7 @@ export function ListingTable({ listings }: ListingTableProps) {
                 </TableCell>
                 <TableCell>
                   <Image
-                    src={listing.images[0]}
+                    src={listing.images[0]?.url || "/placeholder.png"}
                     alt={listing.title || "Image de l'annonce"}
                     width={64}
                     height={48}
@@ -140,7 +140,7 @@ export function ListingTable({ listings }: ListingTableProps) {
             <ScrollArea className="max-h-[90vh]">
               <div className="relative h-64 w-full">
                 <Image
-                  src={selectedListing.images[0]}
+                  src={selectedListing.images[0]?.url || "/placeholder.png"}
                   alt={selectedListing.title || "Image de l'annonce"}
                   fill
                   className="object-cover"

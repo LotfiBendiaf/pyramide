@@ -2,16 +2,22 @@
 
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone"; // npm install react-dropzone
-import { ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, Trash2, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 import imageCompression from "browser-image-compression";
 
+interface ImageData {
+  url: string;
+  isPublic: boolean;
+}
+
 interface ImageUploadProps {
-  value: string[]; // Current URLs
-  onChange: (value: string[]) => void; // Function to update form
-  onRemove: (value: string) => void; // Function to remove image
+  value: ImageData[]; // Current image objects
+  onChange: (value: ImageData[]) => void; // Function to update form
+  onRemove: (url: string) => void; // Function to remove image
 }
 
 export default function ImageUpload({
@@ -55,11 +61,11 @@ export default function ImageUpload({
           }
 
           const data = await response.json();
-          return data.secure_url;
+          return { url: data.secure_url, isPublic: true };
         });
 
-        const newUrls = await Promise.all(uploadPromises);
-        onChange([...value, ...newUrls]);
+        const newImages = await Promise.all(uploadPromises);
+        onChange([...value, ...newImages]);
       } catch (error) {
         console.error("Upload failed", error);
       } finally {
@@ -68,6 +74,13 @@ export default function ImageUpload({
     },
     [value, onChange]
   );
+
+  const toggleVisibility = (url: string) => {
+    const updated = value.map((img) =>
+      img.url === url ? { ...img, isPublic: !img.isPublic } : img
+    );
+    onChange(updated);
+  };
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -80,22 +93,47 @@ export default function ImageUpload({
     <div>
       {/* 1. Image Previews */}
       <div className="mb-4 flex flex-wrap gap-4">
-        {value.map((url) => (
+        {value.map((image) => (
           <div
-            key={url}
+            key={image.url}
             className="relative w-[200px] h-[200px] rounded-md overflow-hidden border"
           >
+            <Badge
+              variant={image.isPublic ? "default" : "secondary"}
+              className="absolute z-10 top-2 left-2"
+            >
+              {image.isPublic ? "Public" : "Interne"}
+            </Badge>
             <Button
               type="button"
-              onClick={() => onRemove(url)}
+              onClick={() => toggleVisibility(image.url)}
+              variant="outline"
+              size="icon"
+              className="absolute size-8 z-10 top-2 right-12 rounded bg-white/90 hover:bg-white"
+              aria-label="Basculer la visibilité"
+              title={
+                image.isPublic
+                  ? "Cliquez pour rendre cette image interne uniquement"
+                  : "Cliquez pour rendre cette image publique"
+              }
+            >
+              {image.isPublic ? (
+                <Eye className="h-4 w-4" />
+              ) : (
+                <EyeOff className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => onRemove(image.url)}
               variant="destructive"
               size="icon"
               className="absolute size-8 z-10 top-2 right-2 rounded"
               aria-label="Supprimer l'image"
             >
-              <Trash2 />
+              <Trash2 className="h-4 w-4" />
             </Button>
-            <Image fill className="object-cover" alt="Image" src={url} />
+            <Image fill className="object-cover" alt="Image" src={image.url} />
           </div>
         ))}
       </div>
@@ -122,8 +160,10 @@ export default function ImageUpload({
           <p className="text-xs text-gray-500">JPG, PNG, WebP</p>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Veuillez inroduire des photos de qualité.
+      <p className="text-sm text-muted-foreground mt-2">
+        Veuillez introduire des photos de qualité. Cliquez sur l&apos;icône{" "}
+        <Eye className="inline h-4 w-4" /> pour contrôler la visibilité de
+        chaque image.
       </p>
     </div>
   );

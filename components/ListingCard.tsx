@@ -10,6 +10,10 @@ import AddToWishlistButton from "./AddToWishlistButton";
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const { title, images, price, location, status, features } = listing;
+
+  // Get the first public image, or first image if all are private
+  const displayImage = images.find((img) => img.isPublic) || images[0];
+
   return (
     <div className="relative group rounded-xl overflow-hidden shadow-md bg-background border hover:shadow-xl transition-all duration-300">
       <div className="absolute right-1 top-1 z-50">
@@ -20,7 +24,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         {/* Image */}
         <div className=" w-full aspect-6/9">
           <Image
-            src={images[0]}
+            src={displayImage.url}
             alt={title || "Property image"}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

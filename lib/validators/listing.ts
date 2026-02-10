@@ -75,7 +75,12 @@ export const listingSchema = z.object({
   }),
 
   images: z
-    .array(z.string().url("URL image invalide"))
+    .array(
+      z.object({
+        url: z.string().url("URL image invalide"),
+        isPublic: z.boolean().default(true),
+      })
+    )
     .min(1, "Au moins une image requise"),
 
   coverImage: z.string().url().optional(),
