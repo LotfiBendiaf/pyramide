@@ -20,7 +20,7 @@ export default function HeroBgCarousel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-[90vh] w-full">
+    <div className="relative min-h-[90vh] w-full rounded-4xl overflow-hidden">
       {/* BACKGROUND IMAGES CAROUSEL */}
       <Carousel
         opts={{ loop: true }}
