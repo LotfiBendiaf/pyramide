@@ -73,6 +73,7 @@ export default function ListingForm() {
         bedrooms: 0,
         bathrooms: 0,
         area: 0,
+        etage: undefined,
         furnished: false,
         parking: false,
         facade: 1,
@@ -281,6 +282,30 @@ export default function ListingForm() {
                     <FormItem>
                       <FormLabel>Surface (m²)</FormLabel>
                       <Input type="number" {...field} />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="features.etage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Étage</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Ex: 2"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? undefined
+                                : Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

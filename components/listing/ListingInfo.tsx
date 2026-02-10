@@ -1,4 +1,4 @@
-import { MapPin, Bed, Bath, Ruler, LucideIcon } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Building2, LucideIcon } from "lucide-react";
 import AddToWishlistButton from "@/components/AddToWishlistButton";
 
 export default function ListingInfo({ listing }: { listing: Listing }) {
@@ -24,7 +24,7 @@ export default function ListingInfo({ listing }: { listing: Listing }) {
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat icon={Bed} label="Chambres" value={listing.features.bedrooms} />
         <Stat
           icon={Bath}
@@ -36,6 +36,13 @@ export default function ListingInfo({ listing }: { listing: Listing }) {
           label="Surface"
           value={`${listing.features.area} m²`}
         />
+        {listing.features.etage !== undefined && (
+          <Stat
+            icon={Building2}
+            label="Étage"
+            value={listing.features.etage}
+          />
+        )}
       </div>
 
       {/* Description */}

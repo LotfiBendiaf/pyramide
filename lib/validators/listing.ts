@@ -54,6 +54,7 @@ export const listingSchema = z.object({
     bathrooms: z.coerce.number().min(0).max(20),
     facade: z.coerce.number().min(1).max(4),
     area: z.coerce.number().positive("Surface invalide"),
+    etage: z.coerce.number().optional(),
 
     furnished: z.boolean().optional(),
     parking: z.boolean().optional(),

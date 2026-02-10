@@ -37,6 +37,7 @@ export interface IListing {
     bathrooms: number;
     area: number; // m²
     facade: number;
+    etage?: number;
     furnished?: boolean;
     parking?: boolean;
     balcony?: boolean;
@@ -123,6 +124,7 @@ const listingSchema = new Schema<IListing>(
       bathrooms: { type: Number, default: 0 },
       area: { type: Number, required: true },
       facade: { type: Number },
+      etage: { type: Number },
       furnished: { type: Boolean, default: false },
       parking: { type: Boolean, default: false },
       balcony: { type: Boolean, default: false },
