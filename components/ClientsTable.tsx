@@ -12,11 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Card, CardContent } from "./ui/card";
 import ClientQualificationSelect from "./ClientQualificationButton";
+import ClientAgentSelect from "./ClientAgentSelect";
 import ROUTES from "@/constants/routes";
 import { formatDate } from "@/lib/utils";
 
 type ClientsTableProps = {
   clients: Client[];
+  agents?: User[];
+  userRole?: string;
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -33,7 +36,13 @@ const TYPE_COLORS: Record<string, "default" | "secondary" | "outline"> = {
   INVESTOR: "secondary",
 };
 
-export default function ClientsTable({ clients }: ClientsTableProps) {
+export default function ClientsTable({
+  clients,
+  agents = [],
+  userRole,
+}: ClientsTableProps) {
+  const canAssignAgent = userRole === "ADMIN" || userRole === "MANAGER";
+
   return (
     <Card>
       <CardContent>
@@ -46,7 +55,7 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
               <TableHead>Ville</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Créé le</TableHead>
-              <TableHead>Agent</TableHead>
+              {canAssignAgent && <TableHead>Agent</TableHead>}
               <TableHead>Qualification</TableHead>
             </TableRow>
           </TableHeader>
@@ -94,15 +103,15 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
                   {formatDate(client.createdAt)}
                 </TableCell>
                 {/* Agent */}
-                <TableCell>
-                  <Badge variant="outline">
-                    {client.assignedAgent
-                      ? client.assignedAgent.firstname +
-                        " " +
-                        client.assignedAgent.lastname
-                      : "—"}
-                  </Badge>
-                </TableCell>
+                {canAssignAgent && (
+                  <TableCell>
+                    <ClientAgentSelect
+                      clientId={client._id}
+                      agents={agents}
+                      value={client.assignedAgent?._id}
+                    />
+                  </TableCell>
+                )}
                 <TableCell>
                   <ClientQualificationSelect
                     clientId={client._id}

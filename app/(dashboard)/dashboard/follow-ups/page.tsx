@@ -9,13 +9,46 @@ import ROUTES from "@/constants/routes";
 import { Plus } from "lucide-react";
 import { fetchAllFollowUps } from "@/lib/actions/followUp.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
+import { fetchAgents } from "@/lib/actions/users.action";
 import { FollowUpFeed } from "@/components/followUp/FollowUpFeed";
+import FollowUpsFilter from "@/components/FollowUpsFilter";
+import { FollowUpFilters } from "@/types/followUp";
 
-async function FollowUpsContent() {
-  const [result, currentUser] = await Promise.all([
-    fetchAllFollowUps(),
-    getUserBySessionEmail(),
-  ]);
+type SearchParams = {
+  agentId?: string;
+  type?: string;
+  status?: string;
+  channel?: string;
+  search?: string;
+};
+
+async function FollowUpsContent({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const currentUser = await getUserBySessionEmail();
+
+  // Build filter params, excluding "__all__" values
+  const filterParams: FollowUpFilters = {};
+
+  if (searchParams.agentId && searchParams.agentId !== "__all__") {
+    filterParams.agentId = searchParams.agentId;
+  }
+  if (searchParams.type && searchParams.type !== "__all__") {
+    filterParams.type = searchParams.type as FollowUpFilters["type"];
+  }
+  if (searchParams.status && searchParams.status !== "__all__") {
+    filterParams.status = searchParams.status as FollowUpFilters["status"];
+  }
+  if (searchParams.channel && searchParams.channel !== "__all__") {
+    filterParams.channel = searchParams.channel as FollowUpFilters["channel"];
+  }
+  if (searchParams.search) {
+    filterParams.search = searchParams.search;
+  }
+
+  const result = await fetchAllFollowUps(filterParams);
 
   if (!result.success) {
     return (
@@ -40,7 +73,20 @@ async function FollowUpsContent() {
   );
 }
 
-export default function FollowUpsPage() {
+export default async function FollowUpsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const currentUser = await getUserBySessionEmail();
+  const isAdmin =
+    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+
+  const agentsResult = isAdmin
+    ? await fetchAgents()
+    : { success: true, data: [] };
+
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between">
@@ -52,8 +98,13 @@ export default function FollowUpsPage() {
         </Link>
       </div>
 
+      <FollowUpsFilter
+        agents={isAdmin ? agentsResult.data || [] : []}
+        canFilterByAgent={isAdmin}
+      />
+
       <Suspense fallback={<TableSkeleton />}>
-        <FollowUpsContent />
+        <FollowUpsContent searchParams={params} />
       </Suspense>
     </section>
   );

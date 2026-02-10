@@ -1,11 +1,50 @@
 import { Suspense } from "react";
 import { SectionHeader } from "@/components/SectionHeader";
 import { fetchClients } from "@/lib/actions/client.action";
+import { fetchAgents } from "@/lib/actions/users.action";
+import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import ClientsTable from "@/components/ClientsTable";
+import ClientsFilter from "@/components/ClientsFilter";
+import { ClientFilters } from "@/types/client";
 
-async function ClientsContent() {
-  const result = await fetchClients();
+type SearchParams = {
+  agentId?: string;
+  qualification?: string;
+  type?: string;
+  search?: string;
+};
+
+async function ClientsContent({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const currentUser = await getUserBySessionEmail();
+  const isAdmin =
+    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+
+  // Build filter params, excluding "__all__" values
+  const filterParams: ClientFilters = {};
+
+  if (searchParams.agentId && searchParams.agentId !== "__all__") {
+    filterParams.agentId = searchParams.agentId;
+  }
+  if (searchParams.qualification && searchParams.qualification !== "__all__") {
+    filterParams.qualificationStatus =
+      searchParams.qualification as ClientFilters["qualificationStatus"];
+  }
+  if (searchParams.type && searchParams.type !== "__all__") {
+    filterParams.type = searchParams.type as ClientFilters["type"];
+  }
+  if (searchParams.search) {
+    filterParams.search = searchParams.search;
+  }
+
+  const [result, agentsResult] = await Promise.all([
+    fetchClients(filterParams),
+    isAdmin ? fetchAgents() : Promise.resolve({ success: true, data: [] }),
+  ]);
 
   if (!result.success) {
     return (
@@ -25,10 +64,29 @@ async function ClientsContent() {
     );
   }
 
-  return <ClientsTable clients={clients} />;
+  return (
+    <ClientsTable
+      clients={clients}
+      agents={isAdmin ? agentsResult.data || [] : []}
+      userRole={currentUser.data?.role}
+    />
+  );
 }
 
-export default function ClientPage() {
+export default async function ClientPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const currentUser = await getUserBySessionEmail();
+  const isAdmin =
+    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+
+  const agentsResult = isAdmin
+    ? await fetchAgents()
+    : { success: true, data: [] };
+
   return (
     <section className="container py-6 space-y-6">
       <SectionHeader
@@ -36,8 +94,13 @@ export default function ClientPage() {
         subtitle="Gérez et qualifiez vos clients"
       />
 
+      <ClientsFilter
+        agents={isAdmin ? agentsResult.data || [] : []}
+        canFilterByAgent={isAdmin}
+      />
+
       <Suspense fallback={<ListingsSkeleton />}>
-        <ClientsContent />
+        <ClientsContent searchParams={params} />
       </Suspense>
     </section>
   );

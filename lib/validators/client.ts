@@ -36,12 +36,12 @@ export const updateClientSchema = z.object({
   city: z.string().optional(),
   budgetMin: z.number().optional(),
   budgetMax: z.number().optional(),
-  qualificationStatus: z.enum([
-    "NEW",
-    "QUALIFIED",
-    "NOT_RELEVANT",
-    "ARCHIVED",
-  ]),
+  qualificationStatus: z.enum(["NEW", "QUALIFIED", "NOT_RELEVANT", "ARCHIVED"]),
   qualificationNotes: z.string().optional(),
   assignedAgent: z.string().optional(),
+});
+
+export const updateClientAgentSchema = z.object({
+  clientId: z.string().min(1),
+  assignedAgent: z.union([z.string().min(1), z.literal("")]).optional(),
 });

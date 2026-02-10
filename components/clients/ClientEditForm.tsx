@@ -34,17 +34,10 @@ type ClientEditFormValues = z.infer<typeof updateClientSchema>;
 
 interface ClientEditFormProps {
   client: Client;
-  userRole?: string;
-  agents?: User[];
 }
 
-export default function ClientEditForm({
-  client,
-  userRole,
-  agents = [],
-}: ClientEditFormProps) {
+export default function ClientEditForm({ client }: ClientEditFormProps) {
   const router = useRouter();
-  const canAssignAgent = userRole === "ADMIN" || userRole === "MANAGER";
 
   const form = useForm<ClientEditFormValues>({
     resolver: zodResolver(updateClientSchema),
@@ -224,34 +217,6 @@ export default function ClientEditForm({
             )}
           />
         </div>
-
-        {/* Agent assignment (admin/manager only) */}
-        {canAssignAgent && (
-          <FormField
-            control={form.control}
-            name="assignedAgent"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Agent assigné</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un agent" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent._id} value={agent._id}>
-                        {agent.firstname} {agent.lastname}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField

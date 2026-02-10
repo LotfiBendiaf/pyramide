@@ -3,9 +3,11 @@
 import dbConnect from "../mongoose";
 import { FollowUp } from "@/models";
 import action from "../handlers/action";
-import { FollowUpSchema } from "../validators/followUp";
+import { FollowUpSchema, fetchFollowUpsSchema } from "../validators/followUp";
 import handleError from "../handlers/error";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
+import { FollowUpInput, FollowUpFilters } from "@/types/followUp";
+import { FilterQuery } from "mongoose";
 
 export async function createFollowUp(
   params: FollowUpInput
@@ -126,7 +128,19 @@ export async function markFollowUpDone(id: string) {
   });
 }
 
-export async function fetchAllFollowUps(): Promise<ActionResponse<FollowUp[]>> {
+export async function fetchAllFollowUps(
+  params: FollowUpFilters = {}
+): Promise<ActionResponse<FollowUp[]>> {
+  const validationResult = await action({
+    params,
+    schema: fetchFollowUpsSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
   try {
     const user = await getUserBySessionEmail();
 
@@ -142,13 +156,49 @@ export async function fetchAllFollowUps(): Promise<ActionResponse<FollowUp[]>> {
 
     const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
 
-    const query = isAdmin ? {} : { agent: user.data._id };
+    const {
+      agentId,
+      type,
+      status,
+      channel,
+      search,
+      page = 1,
+      limit = 50,
+    } = validationResult.params;
+
+    // Build query
+    const query: FilterQuery<FollowUp> = isAdmin
+      ? {}
+      : { agent: user.data._id };
+
+    // Agent filter (admin/manager only)
+    if (isAdmin && agentId) {
+      query.agent = agentId;
+    }
+
+    if (type) query.type = type;
+    if (status) query.status = status;
+    if (channel) query.channel = channel;
+
+    // Search in notes, title, client name
+    if (search) {
+      // Note: For searching in populated fields, we need to do it after populating
+      // For now, we'll search in title and note only
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { note: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
 
     const followUps = await FollowUp.find(query)
       .populate("agent", "firstname lastname name")
       .populate("client", "firstName lastName referenceCode phone")
       .populate("listing", "title description price images")
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
     return {

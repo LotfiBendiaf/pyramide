@@ -13,3 +13,13 @@ export const FollowUpSchema = z.object({
 });
 
 export type FollowUpFormValues = z.infer<typeof FollowUpSchema>;
+
+export const fetchFollowUpsSchema = z.object({
+  agentId: z.string().optional(),
+  type: z.enum(["COLD", "WARM", "HOT", "CUSTOM"]).optional(),
+  status: z.enum(["PENDING", "DONE", "OVERDUE"]).optional(),
+  channel: z.enum(["CALL", "EMAIL", "WHATSAPP", "VISIT"]).optional(),
+  search: z.string().min(1).optional(),
+  page: z.number().min(1).optional(),
+  limit: z.number().min(1).max(100).optional(),
+});

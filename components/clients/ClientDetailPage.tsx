@@ -55,15 +55,11 @@ const CHANNEL_LABELS: Record<string, string> = {
 interface ClientDetailPageProps {
   client: Client;
   followUps: FollowUp[];
-  userRole?: string;
-  agents?: User[];
 }
 
 export default function ClientDetailPage({
   client,
   followUps,
-  userRole,
-  agents = [],
 }: ClientDetailPageProps) {
   const router = useRouter();
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -152,8 +148,8 @@ export default function ClientDetailPage({
       {/* Archived banner */}
       {client.archived && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-          Ce client est actuellement archivé. Utilisez le bouton &quot;Restaurer&quot; pour
-          le rendre actif.
+          Ce client est actuellement archivé. Utilisez le bouton
+          &quot;Restaurer&quot; pour le rendre actif.
         </div>
       )}
 
@@ -163,7 +159,7 @@ export default function ClientDetailPage({
           <CardTitle>Informations</CardTitle>
         </CardHeader>
         <CardContent>
-          <ClientEditForm client={client} userRole={userRole} agents={agents} />
+          <ClientEditForm client={client} />
         </CardContent>
       </Card>
 
@@ -197,6 +193,10 @@ export default function ClientDetailPage({
                         >
                           {fu.type}
                         </span>
+                        <Badge>
+                          {" "}
+                          {fu.agent.firstname} {fu.agent.lastname}
+                        </Badge>
                         {fu.channel && (
                           <span className="text-xs text-muted-foreground">
                             {CHANNEL_LABELS[fu.channel]}

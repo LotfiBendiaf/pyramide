@@ -43,7 +43,7 @@ export default function ClientQualificationSelect({ clientId, value }: Props) {
 
   return (
     <Select value={value} onValueChange={handleChange}>
-      <SelectTrigger className="w-[180px] h-8">
+      <SelectTrigger className="h-8">
         <span className="flex items-center gap-2">
           <span className={cn("h-2 w-2 rounded-full", DOT_COLORS[value])} />
           {currentLabel}

@@ -6,6 +6,7 @@ import { QualificationStatus } from "@/models/client.model";
 import {
   clientSchema,
   fetchClientsSchema,
+  updateClientAgentSchema,
   updateClientSchema,
 } from "../validators/client";
 import action from "../handlers/action";
@@ -116,6 +117,7 @@ export async function fetchClients(
     const {
       type,
       qualificationStatus,
+      agentId,
       search,
       page = 1,
       limit = 20,
@@ -135,6 +137,11 @@ export async function fetchClients(
 
     if (type) filter.type = type;
     if (qualificationStatus) filter.qualificationStatus = qualificationStatus;
+
+    // Agent filter (admin/manager only)
+    if (isAdmin && agentId) {
+      filter.assignedAgent = agentId;
+    }
 
     // Search (name, phone, email, reference)
     if (search) {
@@ -215,6 +222,79 @@ export async function updateClientQualification(
       success: false,
       error: { message: error || "Échec de mise à jour du statut" },
     };
+  }
+}
+
+export async function updateClientAssignedAgent(
+  clientId: string,
+  assignedAgent?: string
+): Promise<ActionResponse> {
+  const validationResult = await action({
+    params: { clientId, assignedAgent: assignedAgent ?? "" },
+    schema: updateClientAgentSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorise" },
+      status: 401,
+    };
+  }
+
+  const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+  if (!isAdmin) {
+    return {
+      success: false,
+      error: { message: "Acces refuse" },
+      status: 403,
+    };
+  }
+
+  try {
+    const { clientId: validatedClientId, assignedAgent: agentId } =
+      validationResult.params;
+
+    if (!Types.ObjectId.isValid(validatedClientId)) {
+      return {
+        success: false,
+        error: { message: "ID client invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+
+    const normalizedAgentId = agentId?.trim();
+    const update = {
+      assignedAgent: normalizedAgentId ? normalizedAgentId : null,
+    };
+
+    const client = await Client.findByIdAndUpdate(validatedClientId, update, {
+      new: true,
+    });
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(validatedClientId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
   }
 }
 

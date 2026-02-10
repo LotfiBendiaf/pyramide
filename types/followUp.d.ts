@@ -8,3 +8,13 @@ interface FollowUpInput {
   reminderAt?: Date;
   status?: "PENDING" | "DONE" | "OVERDUE";
 }
+
+export type FollowUpFilters = {
+  agentId?: string;
+  type?: "COLD" | "WARM" | "HOT" | "CUSTOM";
+  status?: "PENDING" | "DONE" | "OVERDUE";
+  channel?: "CALL" | "EMAIL" | "WHATSAPP" | "VISIT";
+  search?: string;
+  page?: number;
+  limit?: number;
+};
