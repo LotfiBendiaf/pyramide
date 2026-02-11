@@ -6,6 +6,7 @@ import { ImagePlus, Trash2, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import JSZip from "jszip";
 
 import imageCompression from "browser-image-compression";
 
@@ -26,6 +27,7 @@ export default function ImageUpload({
   onRemove,
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -89,8 +91,68 @@ export default function ImageUpload({
     disabled: uploading,
   });
 
+  const downloadAllImages = useCallback(async () => {
+    if (!value.length || downloading) {
+      return;
+    }
+
+    setDownloading(true);
+
+    try {
+      const zip = new JSZip();
+      const fileAdds = value.map(async (image, index) => {
+        const response = await fetch(image.url);
+        if (!response.ok) {
+          throw new Error("Failed to download image");
+        }
+
+        const blob = await response.blob();
+        const url = new URL(image.url);
+        const fileNameFromUrl = url.pathname.split("/").pop();
+        const extension = blob.type.split("/")[1] || "jpg";
+        const fileName =
+          fileNameFromUrl && fileNameFromUrl.length > 0
+            ? fileNameFromUrl
+            : `listing-image-${index + 1}.${extension}`;
+
+        zip.file(fileName, blob);
+      });
+
+      await Promise.all(fileAdds);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const downloadUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `listing-images-${Date.now()}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Download failed", error);
+    } finally {
+      setDownloading(false);
+    }
+  }, [downloading, value]);
+
   return (
     <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {value.length ? `${value.length} image(s)` : "Aucune image"}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={downloadAllImages}
+          disabled={!value.length || downloading}
+        >
+          {downloading
+            ? "Preparation du ZIP..."
+            : "Telecharger toutes les images"}
+        </Button>
+      </div>
       {/* 1. Image Previews */}
       <div className="mb-4 flex flex-wrap gap-4">
         {value.map((image) => (
