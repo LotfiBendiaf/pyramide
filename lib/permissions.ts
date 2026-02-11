@@ -6,12 +6,14 @@ export const RolePermissions = {
     "manage_clients",
     "manage_listings",
     "manage_followups",
+    "view_all_messages",
   ],
   MANAGER: [
     "view_dashboard",
     "manage_clients",
     "manage_listings",
     "manage_followups",
+    "view_all_messages",
   ],
   AGENT: [
     "view_dashboard",

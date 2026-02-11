@@ -63,9 +63,18 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       // Listings
       Listing.countDocuments(listingFilter),
-      Listing.countDocuments({ ...listingFilter, status: { $in: ["En Vente", "En Location"] } }),
-      Listing.countDocuments({ ...listingFilter, status: { $in: ["Vendu", "Loué"] } }),
-      Listing.countDocuments({ ...listingFilter, createdAt: { $gte: startOfMonth } }),
+      Listing.countDocuments({
+        ...listingFilter,
+        status: { $in: ["En Vente", "En Location"] },
+      }),
+      Listing.countDocuments({
+        ...listingFilter,
+        status: { $in: ["Vendu", "Loué"] },
+      }),
+      Listing.countDocuments({
+        ...listingFilter,
+        createdAt: { $gte: startOfMonth },
+      }),
       Listing.countDocuments({
         ...listingFilter,
         createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
@@ -109,7 +118,9 @@ export async function GET(request: NextRequest) {
         .lean(),
 
       // For charts
-      Listing.find(listingFilter).select("propertyType status price createdAt").lean(),
+      Listing.find(listingFilter)
+        .select("propertyType status price createdAt")
+        .lean(),
       Client.find(clientFilter)
         .select("qualificationStatus type createdAt")
         .lean(),
@@ -248,6 +259,37 @@ export async function GET(request: NextRequest) {
           .lean(),
       ]);
 
+    // Check for late follow-ups (clients without follow-up within 30 minutes)
+    const clientActivitiesWithLateCheck = await Promise.all(
+      recentClients.map(async (c) => {
+        const clientCreatedAt = new Date(c.createdAt);
+        const thirtyMinutesLater = new Date(
+          clientCreatedAt.getTime() + 30 * 60 * 1000
+        );
+
+        // Find if any follow-up was created within 30 minutes of client creation
+        const followUpWithinTime = await FollowUp.findOne({
+          client: c._id,
+          createdAt: {
+            $gte: clientCreatedAt,
+            $lte: thirtyMinutesLater,
+          },
+        }).lean();
+
+        return {
+          type: "client" as const,
+          title: "Nouveau client",
+          description: `${c.firstName} ${c.lastName} - ${c.type}`,
+          timestamp: c.createdAt,
+          user: {
+            name: c.createdBy?.name || "Agent",
+            profileImage: c.createdBy?.profileImage,
+          },
+          isLate: !followUpWithinTime, // Mark as late if no follow-up within 30 min
+        };
+      })
+    );
+
     const recentActivities = [
       ...recentListings.map((l) => ({
         type: "listing" as const,
@@ -258,17 +300,9 @@ export async function GET(request: NextRequest) {
           name: l.agent?.name || "Agent",
           profileImage: l.agent?.profileImage,
         },
+        isLate: false,
       })),
-      ...recentClients.map((c) => ({
-        type: "client" as const,
-        title: "Nouveau client",
-        description: `${c.firstName} ${c.lastName} - ${c.type}`,
-        timestamp: c.createdAt,
-        user: {
-          name: c.createdBy?.name || "Agent",
-          profileImage: c.createdBy?.profileImage,
-        },
-      })),
+      ...clientActivitiesWithLateCheck,
       ...recentFollowUps.map((f) => ({
         type: "followup" as const,
         title: "Suivi créé",
@@ -280,6 +314,7 @@ export async function GET(request: NextRequest) {
           name: f.agent?.name || "Agent",
           profileImage: f.agent?.profileImage,
         },
+        isLate: false,
       })),
       ...recentSales.map((s) => ({
         type: "sale" as const,
@@ -290,6 +325,7 @@ export async function GET(request: NextRequest) {
           name: s.agent?.name || "Agent",
           profileImage: s.agent?.profileImage,
         },
+        isLate: false,
       })),
     ]
       .sort(

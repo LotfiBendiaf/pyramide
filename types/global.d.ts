@@ -157,3 +157,16 @@ interface FollowUp {
   createdAt: Date;
   updatedAt: Date;
 }
+
+interface Message {
+  _id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  message: string;
+  status: "NEW" | "READ" | "REPLIED" | "ARCHIVED";
+  adminNotes?: string;
+  repliedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

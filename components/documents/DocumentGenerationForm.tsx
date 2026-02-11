@@ -57,7 +57,7 @@ import {
 } from "@/lib/actions/document.action";
 import { Combobox } from "@/components/ui/combobox";
 
-type FormFieldValue = string | number | boolean | Date;
+type FormFieldValue = string | number | boolean | Date | undefined;
 
 interface DocumentGenerationFormProps {
   template: DocumentTemplate;
@@ -122,7 +122,10 @@ export function DocumentGenerationForm({
 
       switch (variable.type) {
         case "number":
-          fieldSchema = z.number();
+          // Allow both number and empty string for optional number fields
+          fieldSchema = variable.required
+            ? z.number()
+            : z.union([z.number(), z.string().length(0)]).optional();
           break;
         case "date":
           fieldSchema = z.date();
@@ -138,7 +141,7 @@ export function DocumentGenerationForm({
           break;
       }
 
-      if (!variable.required) {
+      if (!variable.required && variable.type !== "number") {
         fieldSchema = fieldSchema.optional();
       }
 
@@ -153,15 +156,17 @@ export function DocumentGenerationForm({
     const defaults: Record<string, FormFieldValue> = {};
 
     template.variables.forEach((variable) => {
-      if (prefillData[variable.key]) {
+      if (prefillData[variable.key] !== undefined) {
         defaults[variable.key] = prefillData[variable.key];
       } else if (variable.defaultValue !== undefined) {
         defaults[variable.key] = variable.defaultValue;
       } else if (variable.type === "date") {
-        defaults[variable.key] = new Date();
+        // For optional date fields, use undefined but handle in the schema
+        defaults[variable.key] = variable.required ? new Date() : undefined;
       } else if (variable.type === "number") {
-        defaults[variable.key] = 0;
+        defaults[variable.key] = variable.required ? 0 : "";
       } else {
+        // Always use empty string for text, select, and other string-based fields
         defaults[variable.key] = "";
       }
     });
@@ -380,7 +385,7 @@ export function DocumentGenerationForm({
                             onValueChange={(value) => {
                               field.onChange(getAgentLabel(value));
                             }}
-                            defaultValue=""
+                            value={(field.value as string) || ""}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -415,7 +420,7 @@ export function DocumentGenerationForm({
                                 variable.description || variable.label
                               }
                               {...field}
-                              value={field.value as string}
+                              value={(field.value as string) || ""}
                             />
                           </FormControl>
                         )}
@@ -427,10 +432,14 @@ export function DocumentGenerationForm({
                               type="number"
                               placeholder={variable.description}
                               {...field}
-                              value={field.value as number}
+                              value={
+                                field.value === ""
+                                  ? ""
+                                  : (field.value as number)
+                              }
                               onChange={(e) =>
                                 field.onChange(
-                                  e.target.value ? Number(e.target.value) : 0
+                                  e.target.value ? Number(e.target.value) : ""
                                 )
                               }
                             />
@@ -444,7 +453,7 @@ export function DocumentGenerationForm({
                               placeholder={variable.description}
                               className="min-h-[100px]"
                               {...field}
-                              value={field.value as string}
+                              value={(field.value as string) || ""}
                             />
                           </FormControl>
                         )}
@@ -453,7 +462,7 @@ export function DocumentGenerationForm({
                         {variable.type === "select" && variable.options && (
                           <Select
                             onValueChange={field.onChange}
-                            value={field.value as string}
+                            value={(field.value as string) || ""}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -483,8 +492,9 @@ export function DocumentGenerationForm({
                                   )}
                                 >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? (
-                                    format(field.value as Date, "PPP", {
+                                  {field.value &&
+                                  field.value instanceof Date ? (
+                                    format(field.value, "PPP", {
                                       locale: fr,
                                     })
                                   ) : (
@@ -499,7 +509,11 @@ export function DocumentGenerationForm({
                             >
                               <Calendar
                                 mode="single"
-                                selected={field.value as Date}
+                                selected={
+                                  field.value instanceof Date
+                                    ? field.value
+                                    : undefined
+                                }
                                 onSelect={field.onChange}
                                 initialFocus
                                 locale={fr}

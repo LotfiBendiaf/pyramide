@@ -44,6 +44,7 @@ import {
   UserCog,
   CalendarDays,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -163,6 +164,12 @@ const sidebarConfig: SidebarGroup[] = [
     label: "Administration",
     roles: ["ADMIN", "MANAGER"],
     items: [
+      {
+        title: "Messages",
+        url: ROUTES.MESSAGES,
+        icon: Mail,
+        roles: ["ADMIN", "MANAGER"],
+      },
       {
         title: "Gestion utilisateurs",
         url: ROUTES.USERS,

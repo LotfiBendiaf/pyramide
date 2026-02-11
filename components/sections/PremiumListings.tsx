@@ -42,7 +42,7 @@ export default function PremiumListings() {
     <section className="relative container py-10 px-3 pt-20">
       {/* Client component */}
       <SectionHeader
-        title="Biens Premiums"
+        title="Biens Exclusifs"
         subtitle="Trouvez notre sélection de biens d'exception"
         buttonHref={ROUTES.LISTINGS}
         buttonLabel="Voir tous les biens"

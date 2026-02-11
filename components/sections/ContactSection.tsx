@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ContactFormValues, contactSchema } from "@/lib/validators/contact";
 import { SectionHeader } from "../SectionHeader";
+import { submitContactMessage } from "@/lib/actions/contact.action";
 
 export default function ContactSection() {
   const form = useForm<ContactFormValues>({
@@ -30,11 +31,22 @@ export default function ContactSection() {
     },
   });
 
+  const isSubmitting = form.formState.isSubmitting;
+
   const onSubmit = async (data: ContactFormValues) => {
     try {
-      console.log(data); // server action later
-      toast.success("Message envoyé avec succès");
-      form.reset();
+      const result = await submitContactMessage(data);
+
+      if (result.success) {
+        toast.success("Message envoyé avec succès", {
+          description: "Nous vous répondrons dans les plus brefs délais.",
+        });
+        form.reset();
+      } else {
+        toast.error("Erreur lors de l'envoi", {
+          description: result.error?.message || "Veuillez réessayer plus tard.",
+        });
+      }
     } catch {
       toast.error("Erreur lors de l’envoi du message");
     }
@@ -146,8 +158,11 @@ export default function ContactSection() {
                 )}
               />
 
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Envoyer le message
+              <Button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Envoi en cours..." : "Envoyer le message"}
               </Button>
             </form>
           </Form>

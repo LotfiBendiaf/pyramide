@@ -3,15 +3,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getTimeAgo } from "@/lib/utils";
 import {
   Building2,
   UserPlus,
   Calendar,
   CheckCircle2,
+  AlertCircle,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface Activity {
   type: "listing" | "client" | "followup" | "sale";
@@ -22,6 +25,7 @@ interface Activity {
     name: string;
     profileImage?: string;
   };
+  isLate?: boolean;
 }
 
 interface RecentActivityProps {
@@ -68,13 +72,22 @@ function ActivityItem({ activity }: { activity: Activity }) {
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <p className="text-sm font-medium leading-tight">
                 {activity.title}
               </p>
               <Badge variant="secondary" className="text-xs">
                 {activityLabels[activity.type]}
               </Badge>
+              {activity.isLate && (
+                <Badge
+                  variant="destructive"
+                  className="text-xs flex items-center gap-1"
+                >
+                  <AlertCircle className="h-3 w-3" />
+                  En retard
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground line-clamp-1">
               {activity.description}
@@ -107,18 +120,54 @@ function ActivityItem({ activity }: { activity: Activity }) {
 }
 
 export function RecentActivity({ activities }: RecentActivityProps) {
+  const [filter, setFilter] = useState<"all" | "late">("all");
+
+  const filteredActivities =
+    filter === "late"
+      ? activities.filter((activity) => activity.isLate)
+      : activities;
+
+  const lateCount = activities.filter((activity) => activity.isLate).length;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Activité Récente</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Les dernières actions dans votre CRM
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Activité Récente</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Les dernières actions dans votre CRM
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={filter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter("all")}
+            >
+              Tout
+            </Button>
+            <Button
+              variant={filter === "late" ? "destructive" : "outline"}
+              size="sm"
+              onClick={() => setFilter("late")}
+              className="gap-1"
+            >
+              <AlertCircle className="h-4 w-4" />
+              En retard
+              {lateCount > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                  {lateCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        {activities.length > 0 ? (
+        {filteredActivities.length > 0 ? (
           <div className="space-y-0">
-            {activities.map((activity, index) => (
+            {filteredActivities.map((activity, index) => (
               <ActivityItem key={index} activity={activity} />
             ))}
           </div>
@@ -126,7 +175,9 @@ export function RecentActivity({ activities }: RecentActivityProps) {
           <div className="text-center py-12">
             <Calendar className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
             <p className="text-sm text-muted-foreground">
-              Aucune activité récente
+              {filter === "late"
+                ? "Aucune activité en retard"
+                : "Aucune activité récente"}
             </p>
           </div>
         )}
