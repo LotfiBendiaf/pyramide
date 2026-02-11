@@ -49,10 +49,13 @@ import {
   fetchClientsForSelect,
   fetchListingsForSelect,
   fetchAgentsForSelect,
+  fetchClientByReferenceCode,
+  fetchListingByReferenceCode,
   ClientOption,
   ListingOption,
   AgentOption,
 } from "@/lib/actions/document.action";
+import { Combobox } from "@/components/ui/combobox";
 
 type FormFieldValue = string | number | boolean | Date;
 
@@ -76,6 +79,8 @@ export function DocumentGenerationForm({
   const [listings, setListings] = useState<ListingOption[]>([]);
   const [agents, setAgents] = useState<AgentOption[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [selectedListingId, setSelectedListingId] = useState<string>("");
 
   // Check if template needs any entity data
   const needsClients = template.variables.some((v) => v.type === "client");
@@ -169,6 +174,83 @@ export function DocumentGenerationForm({
     defaultValues: buildDefaultValues(),
   });
 
+  // Handle client selection and autofill
+  const handleClientSelect = async (clientId: string) => {
+    setSelectedClientId(clientId);
+    const client = clients.find((c) => c.value === clientId);
+    if (!client?.referenceCode) return;
+
+    // Fetch full client data
+    const result = await fetchClientByReferenceCode(client.referenceCode);
+    if (result.success && result.data) {
+      const clientData = result.data;
+
+      // Autofill all client-related fields
+      template.variables.forEach((variable) => {
+        if (variable.key.toLowerCase().includes("client")) {
+          const key = variable.key.toLowerCase();
+          if (key.includes("name") || key.includes("nom")) {
+            form.setValue(
+              variable.key,
+              `${clientData.firstName} ${clientData.lastName}`
+            );
+          } else if (key.includes("phone") || key.includes("telephone")) {
+            form.setValue(variable.key, clientData.phone || "");
+          } else if (key.includes("email")) {
+            form.setValue(variable.key, clientData.email || "");
+          } else if (key.includes("address") || key.includes("adresse")) {
+            form.setValue(variable.key, clientData.city || "");
+          } else if (key.includes("city") || key.includes("ville")) {
+            form.setValue(variable.key, clientData.city || "");
+          }
+        }
+      });
+    }
+  };
+
+  // Handle listing selection and autofill
+  const handleListingSelect = async (listingId: string) => {
+    setSelectedListingId(listingId);
+    const listing = listings.find((l) => l.value === listingId);
+    if (!listing?.referenceCode) return;
+
+    // Fetch full listing data
+    const result = await fetchListingByReferenceCode(listing.referenceCode);
+    if (result.success && result.data) {
+      const listingData = result.data;
+
+      // Autofill all listing-related fields
+      template.variables.forEach((variable) => {
+        if (
+          variable.key.toLowerCase().includes("listing") ||
+          variable.key.toLowerCase().includes("bien") ||
+          variable.key.toLowerCase().includes("property")
+        ) {
+          const key = variable.key.toLowerCase();
+          if (key.includes("title") || key.includes("titre")) {
+            form.setValue(variable.key, listingData.title || "");
+          } else if (key.includes("address") || key.includes("adresse")) {
+            form.setValue(variable.key, listingData.location?.address || "");
+          } else if (key.includes("city") || key.includes("ville")) {
+            form.setValue(variable.key, listingData.location?.city || "");
+          } else if (key.includes("type")) {
+            form.setValue(variable.key, listingData.propertyType || "");
+          } else if (key.includes("price") || key.includes("prix")) {
+            form.setValue(variable.key, listingData.price || 0);
+          } else if (key.includes("description")) {
+            form.setValue(variable.key, listingData.description || "");
+          } else if (key.includes("bedroom") || key.includes("chambre")) {
+            form.setValue(variable.key, listingData.features?.bedrooms || 0);
+          } else if (key.includes("bathroom") || key.includes("salle")) {
+            form.setValue(variable.key, listingData.features?.bathrooms || 0);
+          } else if (key.includes("area") || key.includes("surface")) {
+            form.setValue(variable.key, listingData.features?.area || 0);
+          }
+        }
+      });
+    }
+  };
+
   const onSubmit = (data: Record<string, FormFieldValue>) => {
     startTransition(async () => {
       try {
@@ -206,18 +288,6 @@ export function DocumentGenerationForm({
   };
 
   // Get selected entity label for display
-  const getClientLabel = (clientId: string) => {
-    const client = clients.find((c) => c.value === clientId);
-    return client?.label || "";
-  };
-
-  const getListingLabel = (listingId: string) => {
-    const listing = listings.find((l) => l.value === listingId);
-    return listing
-      ? `${listing.label}${listing.address ? ` - ${listing.address}` : ""}`
-      : "";
-  };
-
   const getAgentLabel = (agentId: string) => {
     const agent = agents.find((a) => a.value === agentId);
     return agent?.label || "";
@@ -225,7 +295,7 @@ export function DocumentGenerationForm({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{template.name}</DialogTitle>
           <DialogDescription>{template.description}</DialogDescription>
@@ -239,18 +309,14 @@ export function DocumentGenerationForm({
         ) : !generatedDoc ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4">
                 {template.variables.map((variable) => (
                   <FormField
                     key={variable.key}
                     control={form.control}
                     name={variable.key}
                     render={({ field }) => (
-                      <FormItem
-                        className={
-                          variable.type === "textarea" ? "md:col-span-2" : ""
-                        }
-                      >
+                      <FormItem>
                         <FormLabel>
                           {variable.label}
                           {variable.required && (
@@ -260,68 +326,52 @@ export function DocumentGenerationForm({
 
                         {/* Client Select */}
                         {variable.type === "client" && (
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(getClientLabel(value));
-                            }}
-                            defaultValue=""
-                          >
+                          <>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner un client..." />
-                              </SelectTrigger>
+                              <Combobox
+                                options={clients.map((client) => ({
+                                  value: client.value,
+                                  label: client.label,
+                                  searchableText: `${client.referenceCode} ${client.label} ${client.phone || ""}`,
+                                  metadata: `${client.referenceCode}${client.phone ? ` • ${client.phone}` : ""}`,
+                                }))}
+                                value={selectedClientId}
+                                onSelect={handleClientSelect}
+                                placeholder="Rechercher par code ou nom..."
+                                searchPlaceholder="Code référence, nom, téléphone..."
+                                emptyText="Aucun client trouvé"
+                              />
                             </FormControl>
-                            <SelectContent>
-                              {clients.map((client) => (
-                                <SelectItem
-                                  key={client.value}
-                                  value={client.value}
-                                >
-                                  <div className="flex flex-col">
-                                    <span>{client.label}</span>
-                                    {client.phone && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {client.phone}
-                                      </span>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            <FormDescription className="text-xs">
+                              Recherchez par code référence (ex: BUY-001) pour
+                              remplir automatiquement les champs
+                            </FormDescription>
+                          </>
                         )}
 
                         {/* Listing Select */}
                         {variable.type === "listing" && (
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(getListingLabel(value));
-                            }}
-                            defaultValue=""
-                          >
+                          <>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner un bien..." />
-                              </SelectTrigger>
+                              <Combobox
+                                options={listings.map((listing) => ({
+                                  value: listing.value,
+                                  label: listing.label,
+                                  searchableText: `${listing.referenceCode} ${listing.label} ${listing.address || ""}`,
+                                  metadata: `${listing.referenceCode}${listing.address ? ` • ${listing.address}` : ""}`,
+                                }))}
+                                value={selectedListingId}
+                                onSelect={handleListingSelect}
+                                placeholder="Rechercher par code référence..."
+                                searchPlaceholder="Code référence, titre, adresse..."
+                                emptyText="Aucun bien trouvé"
+                              />
                             </FormControl>
-                            <SelectContent>
-                              {listings.map((listing) => (
-                                <SelectItem
-                                  key={listing.value}
-                                  value={listing.value}
-                                >
-                                  <div className="flex flex-col">
-                                    <span>{listing.label}</span>
-                                    {listing.address && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {listing.address}
-                                      </span>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            <FormDescription className="text-xs">
+                              Recherchez par code référence (ex: VA-001) pour
+                              remplir automatiquement les champs
+                            </FormDescription>
+                          </>
                         )}
 
                         {/* Agent Select */}

@@ -49,11 +49,13 @@ export interface SelectOption {
 export interface ClientOption extends SelectOption {
   phone?: string;
   address?: string;
+  referenceCode?: string;
 }
 
 export interface ListingOption extends SelectOption {
   address?: string;
   type?: string;
+  referenceCode?: string;
 }
 
 export interface AgentOption extends SelectOption {
@@ -79,8 +81,8 @@ export async function fetchClientsForSelect(): Promise<
     await dbConnect();
 
     const clients = await Client.find()
-      .select("firstName lastName phone address")
-      .sort({ firstName: 1 })
+      .select("firstName lastName phone address referenceCode")
+      .sort({ referenceCode: 1 })
       .lean();
 
     const options: ClientOption[] = clients.map((client) => ({
@@ -88,6 +90,7 @@ export async function fetchClientsForSelect(): Promise<
       label: `${client.firstName} ${client.lastName}`,
       phone: client.phone,
       address: client.address,
+      referenceCode: client.referenceCode,
     }));
 
     return { success: true, data: options };
@@ -115,15 +118,16 @@ export async function fetchListingsForSelect(): Promise<
     await dbConnect();
 
     const listings = await Listing.find({ status: { $ne: "ARCHIVED" } })
-      .select("title address propertyType")
-      .sort({ createdAt: -1 })
+      .select("title location.address propertyType referenceCode")
+      .sort({ referenceCode: 1 })
       .lean();
 
     const options: ListingOption[] = listings.map((listing) => ({
       value: (listing._id as string).toString(),
       label: listing.title,
-      address: listing.address,
+      address: listing.location?.address || "",
       type: listing.propertyType,
+      referenceCode: listing.referenceCode,
     }));
 
     return { success: true, data: options };
@@ -164,6 +168,80 @@ export async function fetchAgentsForSelect(): Promise<
     }));
 
     return { success: true, data: options };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/**
+ * Fetch client details by reference code for autofill
+ */
+export async function fetchClientByReferenceCode(
+  referenceCode: string
+): Promise<ActionResponse<Client>> {
+  try {
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const client = await Client.findOne({ referenceCode })
+      .select("firstName lastName phone email address city referenceCode")
+      .lean();
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client non trouvé" },
+        status: 404,
+      };
+    }
+
+    return { success: true, data: JSON.parse(JSON.stringify(client)) };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/**
+ * Fetch listing details by reference code for autofill
+ */
+export async function fetchListingByReferenceCode(
+  referenceCode: string
+): Promise<ActionResponse<Listing>> {
+  try {
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const listing = await Listing.findOne({ referenceCode })
+      .select(
+        "title referenceCode location.address location.city propertyType price features description"
+      )
+      .lean();
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Bien non trouvé" },
+        status: 404,
+      };
+    }
+
+    return { success: true, data: JSON.parse(JSON.stringify(listing)) };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

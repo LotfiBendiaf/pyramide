@@ -82,7 +82,6 @@ export const DOCUMENT_TEMPLATES: DocumentTemplate[] = [
         label: "Détails du bien",
         type: "text",
         required: false,
-        description: "Ex: F4 résidence Antares",
       },
       {
         key: "remitterName",
