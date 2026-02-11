@@ -30,7 +30,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (validatedFields.success) {
           const { email, password } = validatedFields.data;
           const { data: existingAccount } = (await api.accounts.getByProvider(
-            email
+            email.toLowerCase()
           )) as ActionResponse<IAccountDoc>;
 
           if (!existingAccount) return null;

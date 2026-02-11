@@ -13,7 +13,8 @@ export async function getUserBySessionEmail(): Promise<ActionResponse<User>> {
 
   await dbConnect();
 
-  const user = await User.findOne({ email: session.user.email }).lean();
+  const normalizedEmail = session.user.email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail }).lean();
 
   return { success: true, data: JSON.parse(JSON.stringify(user)) };
 }

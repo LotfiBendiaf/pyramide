@@ -28,17 +28,20 @@ export async function POST(request: Request) {
 
     const { name, username, email, image } = user;
 
+    // Normalize email to lowercase for consistency
+    const normalizedEmail = email.toLowerCase();
+
     const slugifiedUsername = slugify(username, {
       lower: true,
       strict: true,
       trim: true,
     });
 
-    let existingUser = await User.findOne({ email }).session(session);
+    let existingUser = await User.findOne({ email: normalizedEmail }).session(session);
 
     if (!existingUser) {
       [existingUser] = await User.create(
-        [{ name, username: slugifiedUsername, email, image }],
+        [{ name, username: slugifiedUsername, email: normalizedEmail, image }],
         { session }
       );
     } else {
