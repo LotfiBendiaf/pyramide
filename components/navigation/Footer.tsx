@@ -24,7 +24,9 @@ const propertyTypes = [
 ];
 
 const contactInfo = [
-  { icon: Phone, text: "+213 00 00 00 00", href: "tel:+21300000000" },
+  { icon: Phone, text: "0770 82 33 00", href: "tel:+213770823300" },
+  { icon: Phone, text: "0779 07 97 06", href: "tel:+213779079706" },
+  { icon: Phone, text: "0792 11 65 96", href: "tel:+213792116596" },
   {
     icon: Mail,
     text: "contact@pyramideimmobilier.com",
@@ -34,8 +36,16 @@ const contactInfo = [
 ];
 
 const socialLinks = [
-  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
-  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+  {
+    icon: Facebook,
+    href: "https://www.facebook.com/p/Agence-Pyramide-immobilier-100084715556211/",
+    label: "Facebook",
+  },
+  {
+    icon: Instagram,
+    href: "https://www.instagram.com/pyramide_immobilier/",
+    label: "Instagram",
+  },
   { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
 ];
 
@@ -62,7 +72,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.label}
-                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors"
+                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-secontext-secondary transition-colors"
                 >
                   <social.icon className="h-5 w-5" />
                 </a>
@@ -80,7 +90,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm hover:text-primary transition-colors"
+                    className="text-sm hover:text-secondary transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -99,7 +109,7 @@ export default function Footer() {
                 <li key={type.name}>
                   <Link
                     href={type.href}
-                    className="text-sm hover:text-primary transition-colors"
+                    className="text-sm hover:text-secondary transition-colors"
                   >
                     {type.name}
                   </Link>
@@ -118,7 +128,7 @@ export default function Footer() {
                   {info.href ? (
                     <a
                       href={info.href}
-                      className="text-sm hover:text-primary transition-colors"
+                      className="text-sm hover:text-secondary transition-colors"
                     >
                       {info.text}
                     </a>
@@ -133,19 +143,19 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             &copy; {currentYear} Pyramide Immobilier. Tous droits réservés.
           </p>
-          <div className="flex gap-6 text-sm text-gray-500">
+          <div className="flex gap-6 text-sm text-muted-foreground">
             <Link
               href="/privacy"
-              className="hover:text-primary transition-colors"
+              className="hover:text-secondary transition-colors"
             >
               Politique de confidentialité
             </Link>
             <Link
               href="/terms"
-              className="hover:text-primary transition-colors"
+              className="hover:text-secondary transition-colors"
             >
               Conditions d&apos;utilisation
             </Link>
