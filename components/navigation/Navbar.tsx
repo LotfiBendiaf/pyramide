@@ -20,13 +20,26 @@ import Theme from "./Theme";
 import Logo2 from "../Logo2";
 import LogoutButton from "@/components/LogoutButton";
 
-export default function Navbar() {
+type NavbarVariant = "overlay" | "solid";
+
+interface NavbarProps {
+  variant?: NavbarVariant;
+}
+
+export default function Navbar({ variant = "overlay" }: NavbarProps) {
   const { data: session, status } = useSession();
   const user = session?.user;
+  const isOverlay = variant === "overlay";
 
   return (
-    <nav className="absolute top-0 w-full px-4 md:px-6 lg:px-20 py-10 z-50">
-      <div className="flex items-center justify-between">
+    <nav
+      className={
+        isOverlay
+          ? "absolute top-0 w-full px-4 md:px-6 lg:px-20 py-10 z-50"
+          : "relative w-full px-4 md:px-6 lg:px-20 py-5 z-50 bg-black/95 backdrop-blur border-b border-white/10"
+      }
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between">
         {/* Logo */}
         <Link href={ROUTES.HOME} className="flex-1">
           <Logo2 />

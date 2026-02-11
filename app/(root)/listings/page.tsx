@@ -3,6 +3,7 @@ import { fetchListings } from "@/lib/actions/listings.action";
 import ListingCard from "@/components/ListingCard";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import SearchFilter from "@/components/SearchFilter";
+import Navbar from "@/components/navigation/Navbar";
 
 type SearchParams = {
   city?: string;
@@ -25,9 +26,15 @@ async function ListingsContent({
   const result = await fetchListings({
     city: searchParams?.city,
     status: searchParams?.status as "En Vente" | "En Location",
-    minPrice: searchParams?.minPrice ? Number(searchParams.minPrice) : undefined,
-    maxPrice: searchParams?.maxPrice ? Number(searchParams.maxPrice) : undefined,
-    bedrooms: searchParams?.bedrooms ? Number(searchParams.bedrooms) : undefined,
+    minPrice: searchParams?.minPrice
+      ? Number(searchParams.minPrice)
+      : undefined,
+    maxPrice: searchParams?.maxPrice
+      ? Number(searchParams.maxPrice)
+      : undefined,
+    bedrooms: searchParams?.bedrooms
+      ? Number(searchParams.bedrooms)
+      : undefined,
     propertyType: searchParams?.propertyType,
     isPremium: false,
   });
@@ -59,7 +66,9 @@ async function ListingsContent({
   );
 }
 
-export default async function ListingsPage({ searchParams }: ListingsPageProps) {
+export default async function ListingsPage({
+  searchParams,
+}: ListingsPageProps) {
   const params = await searchParams;
   const statusLabel =
     params.status === "En Vente"
@@ -70,7 +79,10 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
 
   return (
     <main className="min-h-screen">
-      <section className="relative container py-10 px-3 pt-32 md:pt-40">
+      <div className="bg-black">
+        <Navbar variant="solid" />
+      </div>
+      <section className="relative container mx-auto py-10 px-3 pt-32 md:pt-40">
         <div className="mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-2">
             {statusLabel
@@ -83,8 +95,8 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
         </div>
 
         <Suspense fallback={<ListingsSkeleton />}>
-          <SearchFilter />
           <div className="mt-8">
+            <SearchFilter variant="inline" className="mb-8" />
             <ListingsContent searchParams={params} />
           </div>
         </Suspense>

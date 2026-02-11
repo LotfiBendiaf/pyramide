@@ -12,6 +12,9 @@ const bgImages = [
   "/pyramide-img.jpg",
   "/pyramide-img2.jpg",
   "/pyramide-img3.jpg",
+  "/pyramide-img4.jpg",
+  "/pyramide-img5.jpg",
+  "/pyramide-img6.jpg",
 ];
 
 export default function HeroBgCarousel({

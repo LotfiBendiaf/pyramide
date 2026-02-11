@@ -14,9 +14,20 @@ import {
 } from "./ui/select";
 import Icon from "./Icon";
 
-export default function SearchFilter() {
+type SearchFilterVariant = "overlay" | "inline";
+
+interface SearchFilterProps {
+  variant?: SearchFilterVariant;
+  className?: string;
+}
+
+export default function SearchFilter({
+  variant = "overlay",
+  className,
+}: SearchFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isOverlay = variant === "overlay";
 
   /* ---------------- State hydrated from URL ---------------- */
   const [city, setCity] = useState(searchParams.get("city") ?? "");
@@ -62,7 +73,11 @@ export default function SearchFilter() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[10%] md:-translate-y-[50%] bg-background rounded-4xl shadow-md px-8 py-5 flex flex-wrap justify-between gap-3 items-center max-w-6xl w-full z-40"
+      className={
+        isOverlay
+          ? `absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[10%] md:-translate-y-[50%] bg-background rounded-4xl shadow-md px-8 py-5 flex flex-wrap justify-between gap-3 items-center max-w-6xl w-full z-40 ${className ?? ""}`
+          : `relative bg-background rounded-4xl shadow-md px-6 md:px-8 py-5 flex flex-wrap justify-between gap-3 items-center w-full ${className ?? ""}`
+      }
     >
       <Icon format="mini" />
 

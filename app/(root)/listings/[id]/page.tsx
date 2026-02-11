@@ -38,10 +38,10 @@ export default async function ListingDetailsPage({
   return (
     <main>
       <div className="bg-black">
-        <Navbar />
+        <Navbar variant="solid" />
       </div>
 
-      <section className="container mx-auto p-4 lg:p-10 pt-32">
+      <section className="container mx-auto p-4 lg:p-10 pt-52">
         {/* Breadcrumbs */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
