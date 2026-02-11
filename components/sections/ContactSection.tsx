@@ -69,14 +69,29 @@ export default function ContactSection() {
             <h3 className="text-xl font-semibold">Parlons de votre projet</h3>
 
             <div className="space-y-4 text-sm">
-              <div className="flex items-center gap-4">
-                <Phone className="text-blue-600" />
-                +213 00 00 00 00
+              <div className="flex items-start gap-4">
+                <Phone className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex flex-col gap-1">
+                  <a href="tel:0779079706" className="hover:underline">
+                    0779 07 97 06
+                  </a>
+                  <a href="tel:0792116596" className="hover:underline">
+                    0792 11 65 96
+                  </a>
+                  <a href="tel:0770823300" className="hover:underline">
+                    0770 82 33 00
+                  </a>
+                </div>
               </div>
 
               <div className="flex items-center gap-4">
                 <Mail className="text-blue-600" />
-                contact@pyramideimmobilier.com
+                <a
+                  href="mailto:contact@pyramideimmobilier.com"
+                  className="hover:underline"
+                >
+                  contact@pyramideimmobilier.com
+                </a>
               </div>
 
               <div className="flex items-center gap-4">
