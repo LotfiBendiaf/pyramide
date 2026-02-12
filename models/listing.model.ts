@@ -12,7 +12,6 @@ export interface IListing {
 
   price: number;
   priceLabel?: string; // ex: "80 000 DA / mois"
-  wantedPrice?: number; // Seller's asking price
   offeredPrice?: number; // Final agreed price
 
   status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
@@ -95,7 +94,6 @@ const listingSchema = new Schema<IListing>(
 
     price: { type: Number, required: true },
     priceLabel: { type: String, trim: true },
-    wantedPrice: { type: Number },
     offeredPrice: { type: Number },
 
     status: {

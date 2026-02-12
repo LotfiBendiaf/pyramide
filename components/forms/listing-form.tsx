@@ -53,7 +53,10 @@ const PROPERTY_TYPES = [
   "Villa",
   "Studio",
   "Terrain",
-  "Commercial",
+  "Duplex",
+  "Hangar",
+  "Penthouse",
+  "Local Commercial",
 ] as const;
 
 export default function ListingForm() {
@@ -67,7 +70,6 @@ export default function ListingForm() {
       title: "",
       description: "",
       price: 0,
-      wantedPrice: undefined,
       offeredPrice: undefined,
       status: "En Vente",
       propertyType: "Appartement",
@@ -734,31 +736,6 @@ export default function ListingForm() {
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="wantedPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prix demandé (DZD)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Prix demandé par le vendeur"
-                          value={field.value ?? ""}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value === ""
-                                ? undefined
-                                : Number(e.target.value)
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />

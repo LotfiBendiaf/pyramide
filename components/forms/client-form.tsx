@@ -37,6 +37,27 @@ import { WILAYAS } from "@/constants/values";
 
 type ClientFormValues = z.infer<typeof clientSchema>;
 
+const WANTED_PROPERTY_TYPES = [
+  "Appartement",
+  "Maison",
+  "Villa",
+  "Studio",
+  "Terrain",
+  "Duplex",
+  "Hangar",
+  "Penthouse",
+  "Local Commercial",
+] as const;
+
+const PREFERRED_LOCATIONS = [
+  "Oran Est",
+  "Maraval",
+  "Belgaid",
+  "Senia",
+  "Canastel",
+  "Millenium",
+] as const;
+
 export default function ClientCreateForm() {
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -49,6 +70,10 @@ export default function ClientCreateForm() {
       city: "",
       budgetMin: undefined,
       budgetMax: undefined,
+      wantedPropertyType: "",
+      rooms: undefined,
+      preferredLocation: "",
+      extraNotes: "",
       qualificationNotes: "",
     },
   });
@@ -239,6 +264,101 @@ export default function ClientCreateForm() {
                 )}
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="wantedPropertyType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de bien souhaité</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {WANTED_PROPERTY_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rooms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre de pièces</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 3"
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? Number(e.target.value) : undefined
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="preferredLocation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Zone préférée</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une zone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PREFERRED_LOCATIONS.map((location) => (
+                          <SelectItem key={location} value={location}>
+                            {location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="extraNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes supplémentaires</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Autres besoins, critères, remarques..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Qualification Notes */}
             <FormField

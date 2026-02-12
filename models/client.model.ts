@@ -19,6 +19,10 @@ export interface IClient {
   budgetMin?: number;
   budgetMax?: number;
   city?: string;
+  wantedPropertyType?: string;
+  rooms?: number;
+  preferredLocation?: string;
+  extraNotes?: string;
 
   qualificationStatus: QualificationStatus;
   qualificationNotes?: string;
@@ -49,6 +53,10 @@ const clientSchema = new Schema<IClient>(
     budgetMin: Number,
     budgetMax: Number,
     city: String,
+    wantedPropertyType: String,
+    rooms: Number,
+    preferredLocation: String,
+    extraNotes: String,
 
     qualificationStatus: {
       type: String,

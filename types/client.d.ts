@@ -8,6 +8,10 @@ export type ClientInput = {
   city?: string;
   budgetMin?: number;
   budgetMax?: number;
+  wantedPropertyType?: string;
+  rooms?: number;
+  preferredLocation?: string;
+  extraNotes?: string;
 
   qualificationNotes?: string;
   assignedAgent?: string;
@@ -22,6 +26,10 @@ export type ClientUpdateInput = {
   city?: string;
   budgetMin?: number;
   budgetMax?: number;
+  wantedPropertyType?: string;
+  rooms?: number;
+  preferredLocation?: string;
+  extraNotes?: string;
   qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
   qualificationNotes?: string;
   assignedAgent?: string;

@@ -87,7 +87,10 @@ export type PropertyType =
   | "Villa"
   | "Studio"
   | "Terrain"
-  | "Commercial";
+  | "Duplex"
+  | "Hangar"
+  | "Penthouse"
+  | "Local Commercial";
 
 export function listingPrefix(
   status: ListingStatus,
@@ -100,7 +103,10 @@ export function listingPrefix(
     Villa: "V",
     Studio: "S",
     Terrain: "T",
-    Commercial: "C",
+    Duplex: "D",
+    Hangar: "H",
+    Penthouse: "P",
+    "Local Commercial": "L",
   };
   return `${statusPrefix}${propertyPrefix[propertyType]}`;
 }
@@ -115,7 +121,7 @@ export function listingPrefix(
  * - 50,000,000 DZD → "5 milliards centimes"
  */
 export function formatPriceAlgeria(value: number): string {
-  if (value === 0) return "0 centimes";
+  if (value === 0) return "0";
 
   // Convert DZD to centimes (1 DZD = 100 centimes)
   const centimes = value * 100;
@@ -128,17 +134,17 @@ export function formatPriceAlgeria(value: number): string {
   if (centimes >= billion) {
     const billions = centimes / billion;
     return billions % 1 === 0
-      ? `${Math.round(billions)} Milliards centimes`
-      : `${billions.toFixed(2)} Milliards centimes`;
+      ? `${Math.round(billions)} Milliards`
+      : `${billions.toFixed(3)} Milliards`;
   }
 
   if (centimes >= million) {
     const millions = centimes / million;
     return millions % 1 === 0
-      ? `${Math.round(millions)} Millions centimes`
-      : `${millions.toFixed(2)} Millions centimes`;
+      ? `${Math.round(millions)} Millions`
+      : `${millions.toFixed(2)} Millions`;
   }
 
   // For values less than 1 million centimes, use comma-separated format
-  return `${centimes.toLocaleString("fr-DZ")} centimes`;
+  return `${centimes.toLocaleString("fr-DZ")}`;
 }

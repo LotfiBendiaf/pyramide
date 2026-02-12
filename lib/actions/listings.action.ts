@@ -164,9 +164,11 @@ export async function fetchListings(
 
     const skip = (page - 1) * limit;
 
-    const query: FilterQuery<Listing> = {
-      isPublished: isPublished !== undefined ? isPublished : true, // By default, only fetch published listings
-    };
+    const query: FilterQuery<Listing> = {};
+
+    if (isPublished !== undefined) {
+      query.isPublished = isPublished;
+    }
 
     if (status) query.status = status;
     if (propertyType) query.propertyType = propertyType;

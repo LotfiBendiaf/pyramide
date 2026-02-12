@@ -31,10 +31,6 @@ export const listingSchema = z.object({
   price: z.number().positive("Le prix doit être positif"),
 
   priceLabel: z.string().optional(),
-  wantedPrice: z
-    .number()
-    .positive("Le prix demandé doit être positif")
-    .optional(),
   offeredPrice: z
     .number()
     .positive("Le prix offert doit être positif")
