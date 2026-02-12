@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -169,7 +168,7 @@ export function ListingTable({ listings }: ListingTableProps) {
                 </TableCell>
 
                 <TableCell>
-                  <div 
+                  <div
                     className="flex items-center gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -393,14 +392,16 @@ export function ListingTable({ listings }: ListingTableProps) {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog 
-        open={confirmDialog?.open || false} 
+      <AlertDialog
+        open={confirmDialog?.open || false}
         onOpenChange={(open) => !open && setConfirmDialog(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirmDialog?.currentStatus ? "Dépublier l'annonce" : "Publier l'annonce"}
+              {confirmDialog?.currentStatus
+                ? "Dépublier l'annonce"
+                : "Publier l'annonce"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDialog?.currentStatus
