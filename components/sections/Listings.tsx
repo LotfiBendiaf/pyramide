@@ -30,6 +30,7 @@ const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
     propertyType: params?.propertyType,
     isPremium: false,
+    isPublished: true,
   });
 
   if (!result.success) {

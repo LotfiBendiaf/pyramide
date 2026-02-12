@@ -10,10 +10,24 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Bed,
   Car,
   CheckCircle2,
+  Eye,
+  EyeOff,
   Home,
   MapPin,
   Maximize2,
@@ -24,11 +38,15 @@ import {
 import Image from "next/image";
 import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
 import { StatusAction } from "./StatusButton";
-import { updateListingStatus } from "@/lib/actions/listings.action";
+import {
+  updateListingStatus,
+  toggleListingPublished,
+} from "@/lib/actions/listings.action";
 import { STATUS_COLORS } from "@/constants/values";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
+import { toast } from "sonner";
 
 interface ListingTableProps {
   listings: Listing[];
@@ -36,6 +54,41 @@ interface ListingTableProps {
 
 export function ListingTable({ listings }: ListingTableProps) {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [publishingStates, setPublishingStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    listingId: string;
+    currentStatus: boolean;
+  } | null>(null);
+
+  const handleTogglePublish = async (
+    listingId: string,
+    currentStatus: boolean
+  ) => {
+    setPublishingStates((prev) => ({ ...prev, [listingId]: true }));
+
+    const result = await toggleListingPublished(listingId, currentStatus);
+
+    if (result.success) {
+      toast.success(
+        result.data?.isPublished
+          ? "Annonce publiée avec succès"
+          : "Annonce dépubliée avec succès"
+      );
+    } else {
+      toast.error("Erreur lors de la modification du statut");
+    }
+
+    setPublishingStates((prev) => ({ ...prev, [listingId]: false }));
+    setConfirmDialog(null);
+  };
+
+  const openConfirmDialog = (listingId: string, currentStatus: boolean) => {
+    setConfirmDialog({ open: true, listingId, currentStatus });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -52,6 +105,7 @@ export function ListingTable({ listings }: ListingTableProps) {
               <TableHead>Prix</TableHead>
               <TableHead>Superficie & Specifications</TableHead>
               <TableHead>Agent</TableHead>
+              <TableHead>Publication</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Date d&apos;ajout</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -115,12 +169,44 @@ export function ListingTable({ listings }: ListingTableProps) {
                 </TableCell>
 
                 <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={STATUS_COLORS[listing.status]}
+                  <div 
+                    className="flex items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {listing.status}
-                  </Badge>
+                    <Switch
+                      checked={listing.isPublished}
+                      onCheckedChange={() => {
+                        openConfirmDialog(listing._id, listing.isPublished);
+                      }}
+                      disabled={publishingStates[listing._id]}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {listing.isPublished ? (
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          Publié
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <EyeOff className="h-3 w-3" />
+                          Non publié
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </TableCell>
+
+                <TableCell>
+                  {listing.isPublished ? (
+                    <Badge
+                      variant="outline"
+                      className={STATUS_COLORS[listing.status]}
+                    >
+                      {listing.status}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">-</Badge>
+                  )}
                 </TableCell>
 
                 <TableCell>{formatDate(listing.createdAt || "-")}</TableCell>
@@ -306,6 +392,39 @@ export function ListingTable({ listings }: ListingTableProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog 
+        open={confirmDialog?.open || false} 
+        onOpenChange={(open) => !open && setConfirmDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDialog?.currentStatus ? "Dépublier l'annonce" : "Publier l'annonce"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog?.currentStatus
+                ? "Êtes-vous sûr de vouloir dépublier cette annonce ? Elle ne sera plus visible sur le site."
+                : "Êtes-vous sûr de vouloir publier cette annonce ? Elle sera visible par tous les visiteurs du site."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDialog) {
+                  handleTogglePublish(
+                    confirmDialog.listingId,
+                    confirmDialog.currentStatus
+                  );
+                }
+              }}
+            >
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

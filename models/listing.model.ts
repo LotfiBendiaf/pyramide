@@ -12,6 +12,8 @@ export interface IListing {
 
   price: number;
   priceLabel?: string; // ex: "80 000 DA / mois"
+  wantedPrice?: number; // Seller's asking price
+  offeredPrice?: number; // Final agreed price
 
   status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
   propertyType:
@@ -65,7 +67,8 @@ export interface IListing {
 
   owner: string; // admin or agent
   agent: Schema.Types.ObjectId; // admin or agent
-  published: boolean;
+  sellerClient?: Schema.Types.ObjectId; // Reference to the seller client created for this listing
+  isPublished: boolean;
   publishedAt?: Date;
 
   views: number;
@@ -92,6 +95,8 @@ const listingSchema = new Schema<IListing>(
 
     price: { type: Number, required: true },
     priceLabel: { type: String, trim: true },
+    wantedPrice: { type: Number },
+    offeredPrice: { type: Number },
 
     status: {
       type: String,
@@ -176,10 +181,12 @@ const listingSchema = new Schema<IListing>(
       ref: "User",
       required: true,
     },
-
-    published: { type: Boolean, default: false },
+    sellerClient: {
+      type: Schema.Types.ObjectId,
+      ref: "Client",
+    },
+    isPublished: { type: Boolean, default: false },
     publishedAt: { type: Date, default: new Date() },
-
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },

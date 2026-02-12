@@ -31,6 +31,14 @@ export const listingSchema = z.object({
   price: z.number().positive("Le prix doit être positif"),
 
   priceLabel: z.string().optional(),
+  wantedPrice: z
+    .number()
+    .positive("Le prix demandé doit être positif")
+    .optional(),
+  offeredPrice: z
+    .number()
+    .positive("Le prix offert doit être positif")
+    .optional(),
 
   status: ListingStatusEnum,
 
@@ -85,9 +93,15 @@ export const listingSchema = z.object({
 
   coverImage: z.string().url().optional(),
 
-  published: z.boolean().optional(),
+  isPublished: z.boolean(),
   isFeatured: z.boolean().optional(),
   isPremium: z.boolean().optional(),
+
+  // Seller information
+  sellerFirstName: z.string().min(2, "Prénom requis").optional(),
+  sellerLastName: z.string().min(2, "Nom requis").optional(),
+  sellerPhone: z.string().min(8, "Téléphone requis").optional(),
+  sellerEmail: z.string().email("Email invalide").or(z.literal("")).optional(),
 });
 
 /* ---------------------------------

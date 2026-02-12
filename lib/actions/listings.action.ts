@@ -1,6 +1,6 @@
 "use server";
 
-import { Listing } from "@/models";
+import { Listing, Client } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import action from "../handlers/action";
 import handleError from "../handlers/error";
@@ -10,7 +10,12 @@ import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
 import { PropertyStatus } from "@/constants/values";
 import ROUTES from "@/constants/routes";
-import { listingPrefix, ListingStatus, PropertyType } from "../utils";
+import {
+  listingPrefix,
+  ListingStatus,
+  PropertyType,
+  clientPrefix,
+} from "../utils";
 
 export async function createListing(
   params: ListingInput
@@ -70,12 +75,45 @@ export async function createListing(
     );
     const referenceCode = `${prefix}-${String(count + 1).padStart(4, "0")}`;
 
-    // 4. Create listing
+    // 4. Create seller client if seller information is provided
+    let sellerClientId: Types.ObjectId | undefined = undefined;
+    const { sellerFirstName, sellerLastName, sellerPhone, sellerEmail } =
+      validationResult.params!;
+
+    if (sellerFirstName && sellerLastName && sellerPhone) {
+      // Generate seller client reference code
+      const sellerCount = await Client.countDocuments({ type: "SELLER" });
+      const sellerReferenceCode = `${clientPrefix("SELLER")}-${String(
+        sellerCount + 1
+      ).padStart(3, "0")}`;
+
+      // Create seller client
+      const sellerClient = await Client.create({
+        referenceCode: sellerReferenceCode,
+        type: "SELLER",
+        firstName: sellerFirstName,
+        lastName: sellerLastName,
+        phone: sellerPhone,
+        email: sellerEmail || undefined,
+        city: validationResult.params!.location.city,
+        qualificationStatus: "NEW",
+        archived: false,
+        createdBy: user.data._id,
+        assignedAgent: user.data._id,
+      });
+
+      if (sellerClient) {
+        sellerClientId = sellerClient._id as Types.ObjectId;
+      }
+    }
+
+    // 5. Create listing with seller client reference
     const listing = await Listing.create({
       ...validationResult.params,
       referenceCode,
       evaluation,
-      agent: user.data._id, // Best practice: store only ObjectId
+      agent: user.data._id,
+      sellerClient: sellerClientId,
     });
 
     if (!listing) {
@@ -93,7 +131,7 @@ export async function createListing(
 }
 
 interface FetchListingsParams {
-  published?: boolean;
+  isPublished?: boolean;
   status?: "En Vente" | "En Location";
   city?: string;
   propertyType?: string;
@@ -111,7 +149,7 @@ export async function fetchListings(
 ): Promise<ActionResponse<Listing[]>> {
   try {
     const {
-      published = true,
+      isPublished,
       status,
       city,
       propertyType,
@@ -127,7 +165,7 @@ export async function fetchListings(
     const skip = (page - 1) * limit;
 
     const query: FilterQuery<Listing> = {
-      published,
+      isPublished: isPublished !== undefined ? isPublished : true, // By default, only fetch published listings
     };
 
     if (status) query.status = status;
@@ -275,5 +313,27 @@ export async function updateListingStatus(
   } catch (error) {
     handleError(error);
     return { success: false };
+  }
+}
+
+export async function toggleListingPublished(
+  listingId: string,
+  currentStatus: boolean
+): Promise<ActionResponse<{ isPublished: boolean }>> {
+  try {
+    await dbConnect();
+    const newStatus = !currentStatus;
+    await Listing.findByIdAndUpdate(listingId, {
+      isPublished: newStatus,
+      publishedAt: newStatus ? new Date() : undefined,
+    });
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    return {
+      success: true,
+      data: { isPublished: newStatus },
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
   }
 }

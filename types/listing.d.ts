@@ -43,9 +43,8 @@ interface ListingInput {
     url: string;
     isPublic: boolean;
   }>;
-
   isFeatured?: boolean;
-  published?: boolean;
+  isPublished: boolean;
 }
 interface ListingItem {
   id: string;

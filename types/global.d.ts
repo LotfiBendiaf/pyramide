@@ -105,7 +105,7 @@ interface Listing {
 
   owner: string; // admin or agent
   agent: Schema.Types.ObjectId; // admin or agent
-  published: boolean;
+  isPublished: boolean;
   publishedAt?: Date;
 
   views: number;

@@ -38,6 +38,7 @@ async function ListingsContent({
       : undefined,
     propertyType: searchParams?.propertyType,
     isPremium: false,
+    isPublished: true,
   });
 
   if (!result.success) {

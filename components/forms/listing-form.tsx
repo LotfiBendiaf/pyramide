@@ -41,6 +41,8 @@ import { listingSchema } from "@/lib/validators/listing";
 import ImageUpload from "../listing/ImageUpload";
 import { createListing } from "@/lib/actions/listings.action";
 import { useRouter } from "next/navigation";
+import { WILAYAS } from "@/constants/values";
+import ROUTES from "@/constants/routes";
 
 // --- Types ---
 type ListingFormValues = z.infer<typeof listingSchema>;
@@ -65,6 +67,8 @@ export default function ListingForm() {
       title: "",
       description: "",
       price: 0,
+      wantedPrice: undefined,
+      offeredPrice: undefined,
       status: "En Vente",
       propertyType: "Appartement",
       location: {
@@ -92,7 +96,12 @@ export default function ListingForm() {
       },
       images: [],
       isFeatured: false,
-      published: true,
+      isPublished: false,
+      // Seller information
+      sellerFirstName: "",
+      sellerLastName: "",
+      sellerPhone: "",
+      sellerEmail: "",
     },
   });
 
@@ -111,7 +120,7 @@ export default function ListingForm() {
         }
 
         toast.success("Annonce publiée avec succès");
-        router.push("/listings");
+        router.push(ROUTES.LISTINGS_DASHBOARD);
       } catch (error) {
         // Global form error
         form.setError("root", {
@@ -168,7 +177,23 @@ export default function ListingForm() {
                     <FormItem>
                       <FormLabel>Ville</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ville..." {...field} />
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choisir une ville" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {WILAYAS.map((wilaya) => (
+                              <SelectItem key={wilaya} value={wilaya}>
+                                {wilaya}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -206,6 +231,78 @@ export default function ListingForm() {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Seller Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations du Vendeur</CardTitle>
+                <CardDescription>
+                  Ces informations créeront automatiquement un client vendeur
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="sellerFirstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prénom du vendeur</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Prénom" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="sellerLastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom du vendeur</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nom" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="sellerPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Téléphone du vendeur</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Téléphone" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="sellerEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email du vendeur</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Email (optionnel)"
+                            type="email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -563,7 +660,7 @@ export default function ListingForm() {
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="published"
+                  name="isPublished"
                   render={({ field }) => (
                     <FormItem className="flex justify-between items-center border p-3 rounded-lg">
                       <div>
@@ -637,6 +734,56 @@ export default function ListingForm() {
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="wantedPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prix demandé (DZD)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Prix demandé par le vendeur"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? undefined
+                                : Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="offeredPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prix offert (DZD)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Prix offert / Accord final"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? undefined
+                                : Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
