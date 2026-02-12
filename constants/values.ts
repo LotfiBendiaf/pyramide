@@ -3,6 +3,7 @@ export const ROLES = [
   "ADMIN",
   "ASSISTANT",
   "AGENT",
+  "DEVELOPER",
   "EMPLOYEE",
   "VIEWER",
 ] as const;
@@ -10,11 +11,12 @@ export const ROLES = [
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS = {
-  MANAGER: "Gestionnaire",
+  MANAGER: "Gérant",
   ADMIN: "Administrateur",
   ASSISTANT: "Assistant",
   AGENT: "Agent",
   EMPLOYEE: "Employé",
+  DEVELOPER: "Développeur",
   VIEWER: "Lecteur",
 } as const;
 

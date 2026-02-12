@@ -47,7 +47,14 @@ interface UserFormProps {
   mode?: "create" | "edit";
 }
 
-const ASSIGNABLE_ROLES: Role[] = ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"];
+const ASSIGNABLE_ROLES: Role[] = [
+  "ADMIN",
+  "MANAGER",
+  "AGENT",
+  "ASSISTANT",
+  "EMPLOYEE",
+  "DEVELOPER",
+];
 
 export default function UserForm({ user, mode = "create" }: UserFormProps) {
   const [isPending, startTransition] = useTransition();

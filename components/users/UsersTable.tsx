@@ -49,10 +49,10 @@ const ROLE_COLORS: Record<Role, string> = {
   MANAGER: "bg-blue-100 text-blue-700 border-blue-200",
   AGENT: "bg-green-100 text-green-700 border-green-200",
   ASSISTANT: "bg-orange-100 text-orange-700 border-orange-200",
+  DEVELOPER: "bg-gray-300 text-gray-700 border-gray-400",
   EMPLOYEE: "bg-gray-100 text-gray-700 border-gray-200",
   VIEWER: "bg-slate-100 text-slate-700 border-slate-200",
 };
-
 export default function UsersTable({
   users,
   currentUserId,

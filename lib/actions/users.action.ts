@@ -95,7 +95,16 @@ export async function fetchTeamMembers(): Promise<ActionResponse<User[]>> {
     await dbConnect();
 
     const users = await User.find({
-      role: { $in: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"] },
+      role: {
+        $in: [
+          "ADMIN",
+          "MANAGER",
+          "AGENT",
+          "ASSISTANT",
+          "EMPLOYEE",
+          "DEVELOPER",
+        ],
+      },
     })
       .select("-twoFactorSecret")
       .sort({ createdAt: -1 })

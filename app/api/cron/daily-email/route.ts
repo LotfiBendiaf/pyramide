@@ -5,10 +5,8 @@ import { toZonedTime } from "date-fns-tz";
 
 import dbConnect from "@/lib/mongoose";
 import { User, CalendarEvent, FollowUp, Task } from "@/models";
-import {
-  sendDailyScheduleEmail,
-  ScheduleItem,
-} from "@/lib/email/emailService";
+import { ScheduleItem } from "@/lib/email/emailService";
+import { emailQueue } from "@/lib/email/emailQueue";
 
 const TIMEZONE = "Africa/Algiers";
 
@@ -35,8 +33,8 @@ export async function GET(request: NextRequest) {
 
     const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
 
-    let sent = 0;
-    let failed = 0;
+    // Build queue items for all agents
+    const queueItems = [];
 
     for (const agent of agents) {
       try {
@@ -166,34 +164,37 @@ export async function GET(request: NextRequest) {
           tasks: items.filter((i) => i.type === "task").length,
         };
 
-        // Send email
-        const result = await sendDailyScheduleEmail(agent.email, {
-          agentName: agent.firstname || agent.name,
-          date: dateStr,
-          items,
-          stats,
+        // Add to queue
+        queueItems.push({
+          type: "daily-schedule" as const,
+          to: agent.email,
+          data: {
+            agentName: agent.firstname || agent.name,
+            date: dateStr,
+            items,
+            stats,
+          },
         });
-
-        if (result.success) {
-          sent++;
-        } else {
-          failed++;
-          console.error(
-            `Failed to send email to ${agent.email}:`,
-            result.error
-          );
-        }
       } catch (error) {
-        failed++;
         console.error(`Error processing agent ${agent.email}:`, error);
       }
     }
 
+    console.log(
+      `Starting to send ${queueItems.length} daily schedule emails at 1 per minute...`
+    );
+
+    // Add items to queue and process
+    emailQueue.addToQueue(queueItems);
+    const stats = await emailQueue.processQueue();
+
     return NextResponse.json({
       success: true,
-      sent,
-      failed,
-      total: agents.length,
+      sent: stats.sent,
+      failed: stats.failed,
+      total: stats.total,
+      failedEmails: stats.failedEmails,
+      message: `Emails sent sequentially at 1 per minute. Sent: ${stats.sent}, Failed: ${stats.failed}`,
     });
   } catch (error) {
     console.error("Daily email cron error:", error);
