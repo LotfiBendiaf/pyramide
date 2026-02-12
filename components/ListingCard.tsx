@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { MapPin, Bed, Bath, Home, Building2 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 import Link from "next/link";
 import ROUTES from "@/constants/routes";
@@ -39,7 +39,8 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         {/* Content */}
         <div className=" absolute bottom-3 left-5 space-y-2 z-20 text-white">
           {/* Title + Location */}
-          <Badge variant={"default"}>{formatPrice(price)}</Badge>
+          <Badge variant={"default"}>{formatPriceAlgeria(price)}</Badge>
+          <p className="text-muted text-xs">{formatPrice(price)}</p>
           <h3 className="font-serif text-lg text-white mb-1">{title}</h3>
           <div className="flex items-center text-sm mb-3">
             <MapPin className="w-4 h-4 mr-1" />

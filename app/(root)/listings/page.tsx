@@ -4,6 +4,7 @@ import ListingCard from "@/components/ListingCard";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import SearchFilter from "@/components/SearchFilter";
 import Navbar from "@/components/navigation/Navbar";
+import { SectionHeader } from "@/components/SectionHeader";
 
 type SearchParams = {
   city?: string;
@@ -82,16 +83,16 @@ export default async function ListingsPage({
       <div className="bg-black">
         <Navbar variant="solid" />
       </div>
-      <section className="relative container mx-auto py-10 px-3 pt-32 md:pt-40">
+      <section className="relative container mx-auto py-10 px-3">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-2">
-            {statusLabel
-              ? `Biens immobiliers ${statusLabel}`
-              : "Tous nos biens immobiliers"}
-          </h1>
-          <p className="text-muted-foreground">
-            Découvrez notre sélection de propriétés
-          </p>
+          <SectionHeader
+            title={
+              statusLabel
+                ? `Biens immobiliers ${statusLabel}`
+                : "Tous nos biens immobiliers"
+            }
+            subtitle="Découvrez notre sélection de propriétés"
+          />
         </div>
 
         <Suspense fallback={<ListingsSkeleton />}>

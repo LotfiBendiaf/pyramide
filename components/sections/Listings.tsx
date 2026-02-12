@@ -63,7 +63,7 @@ export default function ListingsSection({
   searchParams,
 }: ListingsSectionProps) {
   return (
-    <section className="relative container py-10 px-3 pt-20">
+    <section id="listings" className="relative container py-10 px-3 pt-20">
       {/* Client component */}
       <SectionHeader
         title="Biens immobiliers"

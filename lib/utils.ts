@@ -75,7 +75,12 @@ export function clientPrefix(type: ClientType) {
   }[type];
 }
 
-export type ListingStatus = "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
+export type ListingStatus =
+  | "En Vente"
+  | "En Location"
+  | "Vendu"
+  | "Loué"
+  | "Retiré";
 export type PropertyType =
   | "Appartement"
   | "Maison"
@@ -84,7 +89,10 @@ export type PropertyType =
   | "Terrain"
   | "Commercial";
 
-export function listingPrefix(status: ListingStatus, propertyType: PropertyType) {
+export function listingPrefix(
+  status: ListingStatus,
+  propertyType: PropertyType
+) {
   const statusPrefix = status === "En Vente" ? "V" : "L";
   const propertyPrefix: Record<PropertyType, string> = {
     Appartement: "A",
@@ -95,4 +103,42 @@ export function listingPrefix(status: ListingStatus, propertyType: PropertyType)
     Commercial: "C",
   };
   return `${statusPrefix}${propertyPrefix[propertyType]}`;
+}
+
+/**
+ * Converts a price in DZD to a human-readable format using Algerian naming conventions
+ * 1 DZD = 100 centimes
+ * Examples:
+ * - 1,000,000 DZD → "100 millions centimes"
+ * - 10,000,000 DZD → "1 milliard centimes"
+ * - 500,000 DZD → "50 millions centimes"
+ * - 50,000,000 DZD → "5 milliards centimes"
+ */
+export function formatPriceAlgeria(value: number): string {
+  if (value === 0) return "0 centimes";
+
+  // Convert DZD to centimes (1 DZD = 100 centimes)
+  const centimes = value * 100;
+
+  // 1 billion centimes = 1,000,000,000 centimes
+  const billion = 1_000_000_000;
+  // 1 million centimes = 1,000,000 centimes
+  const million = 1_000_000;
+
+  if (centimes >= billion) {
+    const billions = centimes / billion;
+    return billions % 1 === 0
+      ? `${Math.round(billions)} Milliards centimes`
+      : `${billions.toFixed(2)} Milliards centimes`;
+  }
+
+  if (centimes >= million) {
+    const millions = centimes / million;
+    return millions % 1 === 0
+      ? `${Math.round(millions)} Millions centimes`
+      : `${millions.toFixed(2)} Millions centimes`;
+  }
+
+  // For values less than 1 million centimes, use comma-separated format
+  return `${centimes.toLocaleString("fr-DZ")} centimes`;
 }

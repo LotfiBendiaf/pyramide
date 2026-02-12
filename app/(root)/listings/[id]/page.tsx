@@ -41,7 +41,7 @@ export default async function ListingDetailsPage({
         <Navbar variant="solid" />
       </div>
 
-      <section className="container mx-auto p-4 lg:p-10 pt-52">
+      <section className="container mx-auto p-4 lg:p-10">
         {/* Breadcrumbs */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>

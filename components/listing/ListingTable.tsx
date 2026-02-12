@@ -22,7 +22,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { formatDate, formatPrice } from "@/lib/utils";
+import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
 import { StatusAction } from "./StatusButton";
 import { updateListingStatus } from "@/lib/actions/listings.action";
 import { STATUS_COLORS } from "@/constants/values";
@@ -83,7 +83,14 @@ export function ListingTable({ listings }: ListingTableProps) {
                 </TableCell>
                 {/* <TableCell>{listing.location.city}</TableCell> */}
 
-                <TableCell>{formatPrice(listing.price)}</TableCell>
+                <TableCell>
+                  <div>
+                    {formatPriceAlgeria(listing.price)}
+                    <p className="text-muted-foreground text-xs">
+                      {formatPrice(listing.price)}
+                    </p>
+                  </div>
+                </TableCell>
                 <TableCell>
                   <Badge variant="outline">{listing.features.area} m²</Badge>
                   <div className="flex gap-2 items-center mt-2">
@@ -135,7 +142,7 @@ export function ListingTable({ listings }: ListingTableProps) {
         open={!!selectedListing}
         onOpenChange={() => setSelectedListing(null)}
       >
-        <DialogContent className="max-w-5xl p-0 overflow-hidden border-none bg-slate-50">
+        <DialogContent className="max-w-6xl p-0 overflow-hidden border-none bg-slate-50">
           {selectedListing && (
             <ScrollArea className="max-h-[90vh]">
               <div className="relative h-64 w-full">
@@ -161,19 +168,23 @@ export function ListingTable({ listings }: ListingTableProps) {
               </div>
 
               <div className="p-6 md:p-8 space-y-4">
-                <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+                <div className="space-y-4">
                   <div>
                     <DialogHeader>
-                      <DialogTitle>{selectedListing.title}</DialogTitle>
+                      <DialogTitle>
+                        <Badge variant="outline" className="text-2xl">
+                          {selectedListing.referenceCode}
+                        </Badge>
+                      </DialogTitle>
                     </DialogHeader>
                   </div>
-                  <div className="text-right">
-                    <p className="text-3xl font-black text-primary">
-                      {formatPrice(selectedListing.price)}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                      Prix de l&apos;offre
-                    </p>
+                  <div>
+                    <div className="text-xl font-black text-primary">
+                      {formatPriceAlgeria(selectedListing.price)}
+                      <p className="text-muted-foreground text-sm">
+                        {formatPrice(selectedListing.price)}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center text-muted-foreground my-1">

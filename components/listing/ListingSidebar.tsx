@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
 
 export default function ListingSidebar({ listing }: { listing: Listing }) {
   const agentName = listing.agent
@@ -11,8 +12,11 @@ export default function ListingSidebar({ listing }: { listing: Listing }) {
     <aside className="sticky top-24 space-y-6">
       <div className="rounded-2xl border p-6 space-y-4">
         <h3 className="text-xl font-semibold">
-          {listing.price.toLocaleString()} DZD
+          {formatPriceAlgeria(listing.price)}
         </h3>
+        <p className="text-muted-foreground text-sm">
+          {formatPrice(listing.price)}
+        </p>
 
         <Button className="w-full">Demander une visite</Button>
 

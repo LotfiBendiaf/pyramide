@@ -11,15 +11,21 @@ import {
   Zap,
   Trees,
   Waves,
+  Hash,
 } from "lucide-react";
 import AddToWishlistButton from "@/components/AddToWishlistButton";
+import { Badge } from "../ui/badge";
+import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
 
 interface ListingInfoProps {
   listing: Listing;
   isStaff?: boolean;
 }
 
-export default function ListingInfo({ listing, isStaff = false }: ListingInfoProps) {
+export default function ListingInfo({
+  listing,
+  isStaff = false,
+}: ListingInfoProps) {
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -27,9 +33,14 @@ export default function ListingInfo({ listing, isStaff = false }: ListingInfoPro
         <span className="inline-block mb-2 px-3 py-1 rounded-full text-xs bg-primary text-white">
           {listing.status}
         </span>
-
-        <h1 className="text-3xl font-bold">{listing.title}</h1>
-
+        <p className="text-muted-foreground mb-1">Code reference</p>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Hash className="w-4 h-4 inline-block mr-2 text-primary" />
+          <Badge className="text-3xl font-bold" variant={"outline"}>
+            {listing.referenceCode}
+          </Badge>
+        </h1>
+        <p className="text-muted-foreground mt-2">{listing.title}</p>
         <div className="flex items-center gap-2 text-muted-foreground mt-2">
           <MapPin className="w-4 h-4" />
           {listing.location.city}
@@ -38,7 +49,10 @@ export default function ListingInfo({ listing, isStaff = false }: ListingInfoPro
 
       {/* Price */}
       <div className="text-3xl font-bold text-primary">
-        {listing.price.toLocaleString()} DZD
+        {formatPriceAlgeria(listing.price)}
+        <p className="text-muted-foreground text-sm">
+          {formatPrice(listing.price)}
+        </p>
       </div>
 
       {/* Quick stats */}
@@ -118,7 +132,8 @@ export default function ListingInfo({ listing, isStaff = false }: ListingInfoPro
                   ></div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Note de qualité globalele
+                  Note de qualité globale basée sur l&apos;état du bien, son
+                  prix, et son potentiel de vente/location.
                 </p>
               </div>
             </div>
