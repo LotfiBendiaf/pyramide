@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import dynamic from "next/dynamic";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -59,6 +60,12 @@ const PROPERTY_TYPES = [
   "Local Commercial",
 ] as const;
 
+const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
+
+const LocationPicker = dynamic(() => import("../listing/LocationPicker"), {
+  ssr: false,
+});
+
 export default function ListingForm() {
   const [isPending, startTransition] = useTransition();
 
@@ -77,6 +84,7 @@ export default function ListingForm() {
         city: "",
         district: "",
         address: "",
+        coordinates: undefined,
       },
       features: {
         bedrooms: 0,
@@ -210,6 +218,27 @@ export default function ListingForm() {
                       <FormLabel>Adresse</FormLabel>
                       <FormControl>
                         <Input placeholder="Adresse..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location.coordinates"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Localisation exacte</FormLabel>
+                      <FormDescription>
+                        Choisissez l&apos;emplacement sur la carte (optionnel).
+                      </FormDescription>
+                      <FormControl>
+                        <LocationPicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          defaultCenter={ORAN_CENTER}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

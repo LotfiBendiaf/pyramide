@@ -1,3 +1,5 @@
+"use client";
+
 import {
   MapPin,
   Bed,
@@ -13,9 +15,12 @@ import {
   Waves,
   Hash,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import AddToWishlistButton from "@/components/AddToWishlistButton";
 import { Badge } from "../ui/badge";
 import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
+
+const LocationMap = dynamic(() => import("./LocationMap"), { ssr: false });
 
 interface ListingInfoProps {
   listing: Listing;
@@ -80,6 +85,13 @@ export default function ListingInfo({
           {listing.description}
         </p>
       </section>
+
+      {listing.location.coordinates && (
+        <section>
+          <h2 className="font-semibold text-lg mb-4">Localisation</h2>
+          <LocationMap coordinates={listing.location.coordinates} />
+        </section>
+      )}
 
       {/* Amenities */}
       <section>
