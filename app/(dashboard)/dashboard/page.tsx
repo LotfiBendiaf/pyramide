@@ -101,7 +101,8 @@ async function DashboardContent() {
     ? { ...response.data, role: response.role, userName: response.userName }
     : response;
 
-  const isAdmin = role === "ADMIN" || role === "MANAGER";
+  const isAdmin =
+    role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 
   // Show personalized dashboard for agents and assistants
   if (!isAdmin) {

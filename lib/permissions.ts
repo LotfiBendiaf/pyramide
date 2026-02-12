@@ -23,7 +23,7 @@ export const RolePermissions = {
     "manage_followups",
   ],
   ASSISTANT: ["view_dashboard", "manage_clients", "manage_followups"],
-  EMPLOYEE: ["view_dashboard", "manage_clients"],
+  EMPLOYEE: ["manage_clients"],
   DEVELOPER: [
     "view_dashboard",
     "manage_users",
@@ -32,8 +32,7 @@ export const RolePermissions = {
     "manage_followups",
     "view_all_messages",
   ],
-  VIEWER: ["view_dashboard"],
-} as const;
+};
 
 export type Permission =
   (typeof RolePermissions)[keyof typeof RolePermissions][number];

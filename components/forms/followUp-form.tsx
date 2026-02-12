@@ -45,8 +45,14 @@ interface FollowUpFormProps {
   agents?: User[];
 }
 
-export function FollowUpForm({ listings, clients, userRole, agents = [] }: FollowUpFormProps) {
-  const canAssignAgent = userRole === "ADMIN" || userRole === "MANAGER";
+export function FollowUpForm({
+  listings,
+  clients,
+  userRole,
+  agents = [],
+}: FollowUpFormProps) {
+  const canAssignAgent =
+    userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FollowUpFormValues>({

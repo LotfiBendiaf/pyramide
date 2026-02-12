@@ -249,7 +249,9 @@ export async function updateUser(
     }
 
     const isAdmin =
-      currentUser.data.role === "ADMIN" || currentUser.data.role === "MANAGER";
+      currentUser.data.role === "ADMIN" ||
+      currentUser.data.role === "MANAGER" ||
+      currentUser.data.role === "DEVELOPER";
 
     if (!isAdmin) {
       return {

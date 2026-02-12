@@ -84,7 +84,8 @@ export default function UsersTable({
     });
   };
 
-  const canDelete = currentUserRole === "ADMIN";
+  const canDelete =
+    currentUserRole === "ADMIN" || currentUserRole === "DEVELOPER";
 
   return (
     <>

@@ -81,7 +81,9 @@ export default async function FollowUpsPage({
   const params = await searchParams;
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
-    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+    currentUser.data?.role === "ADMIN" ||
+    currentUser.data?.role === "MANAGER" ||
+    currentUser.data?.role === "DEVELOPER";
 
   const agentsResult = isAdmin
     ? await fetchAgents()

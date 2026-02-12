@@ -51,7 +51,8 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
     router.refresh();
   };
 
-  const isAdmin = userRole === "ADMIN" || userRole === "MANAGER";
+  const isAdmin =
+    userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
 
   return (
     <div className="space-y-6">

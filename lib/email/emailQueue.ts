@@ -1,5 +1,3 @@
-"use server";
-
 import { Resend } from "resend";
 import DailyScheduleEmail from "./templates/DailyScheduleEmail";
 import ReminderEmail from "./templates/ReminderEmail";

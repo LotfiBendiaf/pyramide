@@ -60,7 +60,10 @@ export async function createClient(
     )}`;
 
     // 4️⃣ Determine assigned agent
-    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    const isAdmin =
+      user.data.role === "ADMIN" ||
+      user.data.role === "MANAGER" ||
+      user.data.role === "DEVELOPER";
     const assignedAgent =
       isAdmin && providedAgent ? providedAgent : user.data._id;
 
@@ -127,7 +130,10 @@ export async function fetchClients(
     const filter: FilterQuery<Client> = {};
 
     // Role-based filtering: AGENT only sees their own clients
-    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    const isAdmin =
+      user.data.role === "ADMIN" ||
+      user.data.role === "MANAGER" ||
+      user.data.role === "DEVELOPER";
     if (!isAdmin) {
       filter.$or = [
         { assignedAgent: user.data._id },
@@ -249,7 +255,10 @@ export async function updateClientAssignedAgent(
     };
   }
 
-  const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+  const isAdmin =
+    user.data.role === "ADMIN" ||
+    user.data.role === "MANAGER" ||
+    user.data.role === "DEVELOPER";
   if (!isAdmin) {
     return {
       success: false,

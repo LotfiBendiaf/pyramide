@@ -36,7 +36,10 @@ export async function createFollowUp(
   try {
     await dbConnect();
 
-    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    const isAdmin =
+      user.data.role === "ADMIN" ||
+      user.data.role === "MANAGER" ||
+      user.data.role === "DEVELOPER";
     const assignedAgent =
       isAdmin && validationResult.params && validationResult.params.agent
         ? validationResult.params.agent
@@ -154,7 +157,10 @@ export async function fetchAllFollowUps(
 
     await dbConnect();
 
-    const isAdmin = user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    const isAdmin =
+      user.data.role === "ADMIN" ||
+      user.data.role === "MANAGER" ||
+      user.data.role === "DEVELOPER";
 
     const {
       agentId,

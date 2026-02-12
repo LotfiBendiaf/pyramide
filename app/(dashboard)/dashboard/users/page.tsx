@@ -14,7 +14,8 @@ import { UserPlus } from "lucide-react";
 async function getUsersData() {
   const user = await getUserBySessionEmail();
   const role = user.data?.role || "";
-  const isAdmin = role === "ADMIN" || role === "MANAGER";
+  const isAdmin =
+    role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 
   if (!isAdmin) {
     redirect(ROUTES.DASHBOARD);

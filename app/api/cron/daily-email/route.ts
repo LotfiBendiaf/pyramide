@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
           syncStatus: { $ne: "DELETED" },
         })
           .populate("client", "firstName lastName")
-          .populate("listing", "title")
+          .populate("listing", "title codeReference")
           .sort({ startTime: 1 });
 
         // Get follow-ups without calendar events
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
           status: "PENDING",
         })
           .populate("client", "firstName lastName")
-          .populate("listing", "title");
+          .populate("listing", "title codeReference");
 
         // Get tasks without calendar events
         const tasks = await Task.find({
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
           status: { $in: ["PENDING", "IN_PROGRESS"] },
         })
           .populate("client", "firstName lastName")
-          .populate("listing", "title");
+          .populate("listing", "title codeReference");
 
         // Build schedule items
         const items: ScheduleItem[] = [];

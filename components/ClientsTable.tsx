@@ -41,7 +41,8 @@ export default function ClientsTable({
   agents = [],
   userRole,
 }: ClientsTableProps) {
-  const canAssignAgent = userRole === "ADMIN" || userRole === "MANAGER";
+  const canAssignAgent =
+    userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
 
   return (
     <Card>
