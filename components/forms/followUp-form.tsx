@@ -114,7 +114,7 @@ export function FollowUpForm({
                 <SelectContent>
                   {listings.map((l) => (
                     <SelectItem key={l._id} value={l._id}>
-                      {l.title || l.description?.slice(0, 60)}
+                      {l.referenceCode || l.title?.slice(0, 60)}
                     </SelectItem>
                   ))}
                 </SelectContent>

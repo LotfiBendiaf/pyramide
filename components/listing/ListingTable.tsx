@@ -121,8 +121,9 @@ export function ListingTable({ listings }: ListingTableProps) {
                 </TableCell>
 
                 <TableCell>
-                  {" "}
-                  <Badge variant="secondary">{listing.propertyType}</Badge>
+                  <Badge variant="secondary">
+                    {listing.propertyTypeCustom || listing.propertyType}
+                  </Badge>
                 </TableCell>
                 {/* <TableCell>{listing.location.city}</TableCell> */}
 

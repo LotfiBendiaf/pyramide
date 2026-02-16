@@ -239,7 +239,10 @@ export function DocumentGenerationForm({
           } else if (key.includes("city") || key.includes("ville")) {
             form.setValue(variable.key, listingData.location?.city || "");
           } else if (key.includes("type")) {
-            form.setValue(variable.key, listingData.propertyType || "");
+            form.setValue(
+              variable.key,
+              listingData.propertyTypeCustom || listingData.propertyType || ""
+            );
           } else if (key.includes("price") || key.includes("prix")) {
             form.setValue(variable.key, listingData.price || 0);
           } else if (key.includes("description")) {

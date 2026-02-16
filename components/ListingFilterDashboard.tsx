@@ -100,7 +100,8 @@ export default function ListingFilterDashboard() {
             <SelectItem value="Appartement">Appartement</SelectItem>
             <SelectItem value="Maison">Maison</SelectItem>
             <SelectItem value="Villa">Villa</SelectItem>
-            <SelectItem value="Commercial">Local Commercial</SelectItem>
+            <SelectItem value="Local Commercial">Local Commercial</SelectItem>
+            <SelectItem value="Autre">Autre</SelectItem>
           </SelectContent>
         </Select>
         <Input

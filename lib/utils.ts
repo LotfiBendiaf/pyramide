@@ -90,7 +90,8 @@ export type PropertyType =
   | "Duplex"
   | "Hangar"
   | "Penthouse"
-  | "Local Commercial";
+  | "Local Commercial"
+  | "Autre";
 
 export function listingPrefix(
   status: ListingStatus,
@@ -107,6 +108,7 @@ export function listingPrefix(
     Hangar: "H",
     Penthouse: "P",
     "Local Commercial": "L",
+    Autre: "O",
   };
   return `${statusPrefix}${propertyPrefix[propertyType]}`;
 }

@@ -15,7 +15,81 @@ import {
   ListingStatus,
   PropertyType,
   clientPrefix,
+  formatPriceAlgeria,
 } from "../utils";
+
+function buildListingDescription(
+  params: ListingInput,
+  referenceCode: string
+): string {
+  const statusLine =
+    params.status === "En Location"
+      ? "𝗣𝗬𝗥𝗔𝗠𝗜𝗗𝗘 𝗜𝗠𝗠𝗢𝗕𝗜𝗟𝗜𝗘𝗥 met en location"
+      : "𝗣𝗬𝗥𝗔𝗠𝗜𝗗𝗘 𝗜𝗠𝗠𝗢𝗕𝗜𝗟𝗜𝗘𝗥 met en vente";
+
+  const typeLabel = params.propertyTypeCustom?.trim() || params.propertyType;
+  const lowerType = typeLabel.toLowerCase();
+  const article =
+    lowerType.startsWith("maison") || lowerType.startsWith("villa")
+      ? "Une"
+      : "Un";
+  const situe = article === "Une" ? "située" : "situé";
+  const locationLabel =
+    params.location?.district?.trim() ||
+    params.location?.city?.trim() ||
+    params.location?.address?.trim() ||
+    "";
+  const areaLabel = params.features.area ? `${params.features.area} m²` : "";
+  const etage = params.features.etage;
+  const etageSuffix = etage === 1 ? "er" : "e";
+  const elevatorText = params.features.elevator ? " avec ascenseur" : "";
+  const etageLine =
+    etage !== undefined
+      ? `Étage : ${etage}${etageSuffix}${elevatorText}`
+      : undefined;
+
+  const priceLabel = `${formatPriceAlgeria(params.price).replace(".", ",")} DA`;
+
+  const intro =
+    locationLabel && areaLabel
+      ? `${article} ${lowerType} de ${areaLabel}, ${situe}${
+          etage !== undefined ? ` au ${etage}${etageSuffix} étage` : ""
+        } à ${locationLabel}.`
+      : `${article} ${lowerType} spacieux et lumineux.`;
+
+  const details = [
+    `Réf : ${referenceCode}`,
+    `Type : ${typeLabel}`,
+    areaLabel ? `Surface : ${areaLabel}` : undefined,
+    etageLine,
+    locationLabel ? `Emplacement : ${locationLabel}` : undefined,
+    `Prix demandé : ${priceLabel}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const cityLabel = params.location?.city?.trim() || locationLabel;
+  const closing = cityLabel
+    ? `Un bien rare à ${cityLabel}, alliant confort, accessibilité et standing dans l’un des quartiers les plus recherchés.`
+    : "Un bien rare, alliant confort, accessibilité et standing.";
+
+  const contact =
+    "Pour plus d’informations ou pour organiser une visite :\n0779 07 97 06 / 0792 11 65 96 / 0770 82 33 00";
+
+  return [
+    statusLine,
+    "",
+    intro,
+    "",
+    "Ce bien spacieux et lumineux offre de beaux volumes, un cadre agréable et un confort idéal pour une famille recherchant un lieu de vie moderne et bien situé.",
+    "",
+    details,
+    "",
+    closing,
+    "",
+    contact,
+  ].join("\n");
+}
 
 export async function createListing(
   params: ListingInput
@@ -43,25 +117,24 @@ export async function createListing(
   }
 
   try {
-    const evaluation = validationResult.params?.evaluation
+    const parsedParams = listingSchema.parse(validationResult.params);
+
+    const evaluation = parsedParams.evaluation
       ? {
-          ...validationResult.params?.evaluation,
+          ...parsedParams.evaluation,
           positives:
-            validationResult.params.evaluation.positives?.map((p) => p.value) ??
-            [],
+            parsedParams.evaluation.positives?.map((p) => p.value) ?? [],
           negatives:
-            validationResult.params.evaluation.negatives?.map((n) => n.value) ??
-            [],
+            parsedParams.evaluation.negatives?.map((n) => n.value) ?? [],
           evaluatedBy: user.data._id,
-          evaluatedAt:
-            validationResult.params.evaluation.evaluatedAt ?? new Date(),
+          evaluatedAt: parsedParams.evaluation.evaluatedAt ?? new Date(),
         }
       : undefined;
 
     await dbConnect();
 
     // 3. Generate reference code (VA-0001, LV-0001, etc.)
-    const { status, propertyType } = validationResult.params!;
+    const { status, propertyType } = parsedParams;
     const isVente = status === "En Vente";
     // Count listings with same transaction type (Vente or Location)
     const count = await Listing.countDocuments({
@@ -78,7 +151,7 @@ export async function createListing(
     // 4. Create seller client if seller information is provided
     let sellerClientId: Types.ObjectId | undefined = undefined;
     const { sellerFirstName, sellerLastName, sellerPhone, sellerEmail } =
-      validationResult.params!;
+      parsedParams;
 
     if (sellerFirstName && sellerLastName && sellerPhone) {
       // Generate seller client reference code
@@ -95,7 +168,7 @@ export async function createListing(
         lastName: sellerLastName,
         phone: sellerPhone,
         email: sellerEmail || undefined,
-        city: validationResult.params!.location.city,
+        city: parsedParams.location.city,
         qualificationStatus: "NEW",
         archived: false,
         createdBy: user.data._id,
@@ -108,8 +181,19 @@ export async function createListing(
     }
 
     // 5. Create listing with seller client reference
+    const description =
+      parsedParams.description?.trim() ||
+      buildListingDescription(parsedParams, referenceCode);
+
+    const normalizedPropertyTypeCustom =
+      parsedParams.propertyType === "Autre"
+        ? parsedParams.propertyTypeCustom?.trim()
+        : undefined;
+
     const listing = await Listing.create({
-      ...validationResult.params,
+      ...parsedParams,
+      description,
+      propertyTypeCustom: normalizedPropertyTypeCustom,
       referenceCode,
       evaluation,
       agent: user.data._id,

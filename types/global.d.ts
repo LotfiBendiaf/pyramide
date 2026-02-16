@@ -61,7 +61,13 @@ interface Listing {
     | "Villa"
     | "Studio"
     | "Terrain"
-    | "Commercial";
+    | "Commercial"
+    | "Duplex"
+    | "Hangar"
+    | "Penthouse"
+    | "Local Commercial"
+    | "Autre";
+  propertyTypeCustom?: string;
 
   location: {
     city: string;

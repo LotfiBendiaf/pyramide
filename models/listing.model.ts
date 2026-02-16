@@ -21,7 +21,13 @@ export interface IListing {
     | "Villa"
     | "Studio"
     | "Terrain"
-    | "Commercial";
+    | "Commercial"
+    | "Duplex"
+    | "Hangar"
+    | "Penthouse"
+    | "Local Commercial"
+    | "Autre";
+  propertyTypeCustom?: string;
 
   location: {
     city: string;
@@ -111,9 +117,15 @@ const listingSchema = new Schema<IListing>(
         "Studio",
         "Terrain",
         "Commercial",
+        "Duplex",
+        "Hangar",
+        "Penthouse",
+        "Local Commercial",
+        "Autre",
       ],
       required: true,
     },
+    propertyTypeCustom: { type: String, trim: true },
 
     location: {
       city: { type: String, required: true, trim: true },

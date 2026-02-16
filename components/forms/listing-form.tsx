@@ -19,7 +19,6 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -44,6 +43,7 @@ import { createListing } from "@/lib/actions/listings.action";
 import { useRouter } from "next/navigation";
 import { WILAYAS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
+import { Textarea } from "../ui/textarea";
 
 // --- Types ---
 type ListingFormValues = z.infer<typeof listingSchema>;
@@ -58,6 +58,7 @@ const PROPERTY_TYPES = [
   "Hangar",
   "Penthouse",
   "Local Commercial",
+  "Autre",
 ] as const;
 
 const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
@@ -75,11 +76,11 @@ export default function ListingForm() {
     resolver: zodResolver(listingSchema),
     defaultValues: {
       title: "",
-      description: "",
       price: 0,
       offeredPrice: undefined,
       status: "En Vente",
       propertyType: "Appartement",
+      propertyTypeCustom: "",
       location: {
         city: "",
         district: "",
@@ -114,6 +115,8 @@ export default function ListingForm() {
       sellerEmail: "",
     },
   });
+
+  const selectedPropertyType = form.watch("propertyType");
 
   const onSubmit = (data: ListingFormValues) => {
     startTransition(async () => {
@@ -244,24 +247,6 @@ export default function ListingForm() {
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          className="min-h-[120px]"
-                          placeholder="Décrivez le bien..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </CardContent>
             </Card>
 
@@ -334,36 +319,6 @@ export default function ListingForm() {
                     )}
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Images */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Images</CardTitle>
-                <CardDescription>Ajoutez jusqu’à 6 images</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="images"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <ImageUpload
-                          value={field.value}
-                          onChange={field.onChange}
-                          onRemove={(url) =>
-                            field.onChange(
-                              field.value.filter((img) => img.url !== url)
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </CardContent>
             </Card>
 
@@ -517,6 +472,37 @@ export default function ListingForm() {
                 />
               </CardContent>
             </Card>
+
+            {/* Images */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Images</CardTitle>
+                <CardDescription>Ajoutez les images</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          onRemove={(url) =>
+                            field.onChange(
+                              field.value.filter((img) => img.url !== url)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Évaluation</CardTitle>
@@ -683,37 +669,61 @@ export default function ListingForm() {
 
           {/* RIGHT COLUMN */}
           <div className="space-y-8">
-            {/* Status */}
+            {/* Property Type */}
             <Card>
               <CardHeader>
-                <CardTitle>Publication</CardTitle>
+                <CardTitle>Type de bien</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="isPublished"
+                  name="propertyType"
                   render={({ field }) => (
-                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
-                      <div>
-                        <FormLabel>Publié</FormLabel>
-                        <FormDescription className="text-xs">
-                          Visible sur le site
-                        </FormDescription>
-                      </div>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                    <FormItem>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PROPERTY_TYPES.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />
-
+                {selectedPropertyType === "Autre" && (
+                  <FormField
+                    control={form.control}
+                    name="propertyTypeCustom"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type de bien personnalisé</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Ex: Appartement F4 Duplex"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
-                  name="isFeatured"
+                  name="isPremium"
                   render={({ field }) => (
                     <FormItem className="flex justify-between items-center border p-3 rounded-lg">
-                      <FormLabel>À la une</FormLabel>
+                      <FormLabel>Bien Pyramide Premium</FormLabel>
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
@@ -796,43 +806,37 @@ export default function ListingForm() {
               </CardContent>
             </Card>
 
-            {/* Property Type */}
+            {/* Status */}
             <Card>
               <CardHeader>
-                <CardTitle>Type de bien</CardTitle>
+                <CardTitle>Publication</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="propertyType"
+                  name="isPublished"
                   render={({ field }) => (
-                    <FormItem>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {PROPERTY_TYPES.map((t) => (
-                            <SelectItem key={t} value={t}>
-                              {t}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <FormItem className="flex justify-between items-center border p-3 rounded-lg">
+                      <div>
+                        <FormLabel>Publié</FormLabel>
+                        <FormDescription className="text-xs">
+                          Visible sur le site
+                        </FormDescription>
+                      </div>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="isPremium"
+                  name="isFeatured"
                   render={({ field }) => (
                     <FormItem className="flex justify-between items-center border p-3 rounded-lg">
-                      <FormLabel>Bien Pyramide Premium</FormLabel>
+                      <FormLabel>À la une</FormLabel>
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}

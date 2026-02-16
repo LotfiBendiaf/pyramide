@@ -1,7 +1,7 @@
 interface ListingInput {
   title: string;
   slug: string;
-  description: string;
+  description?: string;
 
   price: number;
   priceLabel?: string;
@@ -13,7 +13,13 @@ interface ListingInput {
     | "Villa"
     | "Studio"
     | "Terrain"
-    | "Commercial";
+    | "Commercial"
+    | "Duplex"
+    | "Hangar"
+    | "Penthouse"
+    | "Local Commercial"
+    | "Autre";
+  propertyTypeCustom?: string;
 
   location: {
     city: string;

@@ -180,7 +180,6 @@ export default function ClientCreateForm() {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="BUYER">Acheteur</SelectItem>
-                      <SelectItem value="SELLER">Vendeur</SelectItem>
                       <SelectItem value="RENTER">Loueur</SelectItem>
                       <SelectItem value="INVESTOR">Investisseur</SelectItem>
                     </SelectContent>
