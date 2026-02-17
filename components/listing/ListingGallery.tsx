@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import {
   Carousel,
@@ -9,6 +10,9 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Download, Loader2 } from "lucide-react";
+import { downloadListingImages } from "@/lib/utils/download";
 
 interface ImageData {
   url: string;
@@ -24,8 +28,21 @@ export default function ListingGallery({
   images,
   isStaff = false,
 }: ListingGalleryProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   // Filter images based on user role
   const visibleImages = isStaff ? images : images.filter((img) => img.isPublic);
+
+  const handleDownloadImages = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadListingImages(visibleImages);
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (visibleImages.length === 0) {
     return (
@@ -36,39 +53,63 @@ export default function ListingGallery({
   }
 
   return (
-    <Carousel className="rounded-2xl overflow-hidden relative">
-      <CarouselContent>
-        {visibleImages.map((img, i) => (
-          <CarouselItem key={i}>
-            <div className="relative h-[420px] w-full">
-              <Image
-                src={img.url}
-                alt="Listing image"
-                fill
-                className="object-cover"
-                priority={i === 0}
-              />
-              {isStaff && !img.isPublic && (
+    <div className="space-y-4">
+      <Carousel className="rounded-2xl overflow-hidden relative">
+        <CarouselContent>
+          {visibleImages.map((img, i) => (
+            <CarouselItem key={i}>
+              <div className="relative h-[420px] w-full">
+                <Image
+                  src={img.url}
+                  alt="Listing image"
+                  fill
+                  className="object-cover"
+                  priority={i === 0}
+                />
+                {isStaff && !img.isPublic && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute top-4 left-4 z-10"
+                  >
+                    Interne uniquement
+                  </Badge>
+                )}
+                {/* Image counter */}
                 <Badge
                   variant="secondary"
-                  className="absolute top-4 left-4 z-10"
+                  className="absolute bottom-4 right-4 z-10 bg-black/50 text-white"
                 >
-                  Interne uniquement
+                  {i + 1} / {visibleImages.length}
                 </Badge>
-              )}
-              {/* Image counter */}
-              <Badge
-                variant="secondary"
-                className="absolute bottom-4 right-4 z-10 bg-black/50 text-white"
-              >
-                {i + 1} / {visibleImages.length}
-              </Badge>
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious className="left-4" />
-      <CarouselNext className="right-4" />
-    </Carousel>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="left-4" />
+        <CarouselNext className="right-4" />
+      </Carousel>
+      {isStaff && visibleImages.length > 0 && (
+        <div className="flex justify-end">
+          <Button
+            onClick={handleDownloadImages}
+            disabled={isDownloading}
+            variant="outline"
+            className="gap-2"
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Téléchargement...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Télécharger les images
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
