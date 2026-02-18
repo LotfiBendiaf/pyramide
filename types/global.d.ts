@@ -110,8 +110,15 @@ interface Listing {
   }>;
   coverImage?: string;
 
-  owner: string; // admin or agent
-  agent: Schema.Types.ObjectId; // admin or agent
+  sellerClient: string;
+  agent?: {
+    _id: string;
+    firstname: string;
+    lastname: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
   isPublished: boolean;
   publishedAt?: Date;
 

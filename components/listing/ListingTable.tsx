@@ -155,7 +155,11 @@ export function ListingTable({ listings }: ListingTableProps) {
                 </TableCell>
 
                 <TableCell>
-                  <Badge variant="outline">{listing.agent?.name}</Badge>
+                  <Badge variant="outline">
+                    {listing.agent
+                      ? `${listing.agent.firstname ?? ""} ${listing.agent.lastname ?? ""}`.trim()
+                      : "-"}
+                  </Badge>
                 </TableCell>
 
                 <TableCell>

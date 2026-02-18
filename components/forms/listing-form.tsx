@@ -51,6 +51,7 @@ type ListingFormValues = z.infer<typeof listingSchema>;
 interface ListingFormProps {
   initialData?: Listing;
   listingId?: string;
+  client?: Client;
 }
 
 const PROPERTY_TYPES = [
@@ -72,7 +73,11 @@ const LocationPicker = dynamic(() => import("../listing/LocationPicker"), {
   ssr: false,
 });
 
-export default function ListingForm({ initialData, listingId }: ListingFormProps) {
+export default function ListingForm({
+  initialData,
+  listingId,
+  client,
+}: ListingFormProps) {
   const [isPending, startTransition] = useTransition();
   const isEditMode = !!listingId;
 
@@ -88,7 +93,8 @@ export default function ListingForm({ initialData, listingId }: ListingFormProps
           offeredPrice: initialData.offeredPrice,
           priceLabel: initialData.priceLabel ?? "",
           status: initialData.status,
-          propertyType: initialData.propertyType as ListingFormValues["propertyType"],
+          propertyType:
+            initialData.propertyType as ListingFormValues["propertyType"],
           propertyTypeCustom: initialData.propertyTypeCustom ?? "",
           location: {
             city: initialData.location.city,
@@ -111,10 +117,15 @@ export default function ListingForm({ initialData, listingId }: ListingFormProps
           },
           evaluation: {
             finalScore: initialData.evaluation?.finalScore ?? 0,
-            positives: (initialData.evaluation?.positives ?? []).map((v) => ({ value: v })),
-            negatives: (initialData.evaluation?.negatives ?? []).map((v) => ({ value: v })),
+            positives: (initialData.evaluation?.positives ?? []).map((v) => ({
+              value: v,
+            })),
+            negatives: (initialData.evaluation?.negatives ?? []).map((v) => ({
+              value: v,
+            })),
             idealBuyerType: initialData.evaluation?.idealBuyerType ?? "",
-            priceQualityOpinion: initialData.evaluation?.priceQualityOpinion ?? "",
+            priceQualityOpinion:
+              initialData.evaluation?.priceQualityOpinion ?? "",
             evaluatedBy: "",
             evaluatedAt: new Date(),
           },
@@ -123,10 +134,10 @@ export default function ListingForm({ initialData, listingId }: ListingFormProps
           isFeatured: initialData.isFeatured,
           isPremium: initialData.isPremium,
           isPublished: initialData.isPublished,
-          sellerFirstName: "",
-          sellerLastName: "",
-          sellerPhone: "",
-          sellerEmail: "",
+          sellerFirstName: client?.firstName ?? "",
+          sellerLastName: client?.lastName ?? "",
+          sellerPhone: client?.phone ?? "",
+          sellerEmail: client?.email ?? "",
         }
       : {
           title: "",
@@ -186,7 +197,11 @@ export default function ListingForm({ initialData, listingId }: ListingFormProps
           return;
         }
 
-        toast.success(isEditMode ? "Annonce mise à jour avec succès" : "Annonce publiée avec succès");
+        toast.success(
+          isEditMode
+            ? "Annonce mise à jour avec succès"
+            : "Annonce publiée avec succès"
+        );
         router.push(ROUTES.LISTINGS_DASHBOARD);
       } catch (error) {
         form.setError("root", {

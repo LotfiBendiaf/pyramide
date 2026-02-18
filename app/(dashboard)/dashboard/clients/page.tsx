@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { SectionHeader } from "@/components/SectionHeader";
 import { fetchClients } from "@/lib/actions/client.action";
-import { fetchAgents } from "@/lib/actions/users.action";
+import { fetchTeamMembers } from "@/lib/actions/users.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import ClientsTable from "@/components/ClientsTable";
@@ -43,7 +43,7 @@ async function ClientsContent({
 
   const [result, agentsResult] = await Promise.all([
     fetchClients(filterParams),
-    isAdmin ? fetchAgents() : Promise.resolve({ success: true, data: [] }),
+    isAdmin ? fetchTeamMembers() : Promise.resolve({ success: true, data: [] }),
   ]);
 
   if (!result.success) {
@@ -84,7 +84,7 @@ export default async function ClientPage({
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
 
   const agentsResult = isAdmin
-    ? await fetchAgents()
+    ? await fetchTeamMembers()
     : { success: true, data: [] };
 
   return (

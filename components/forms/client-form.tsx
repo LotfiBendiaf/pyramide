@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -77,6 +77,11 @@ export default function ClientCreateForm() {
       qualificationNotes: "",
     },
   });
+
+  const preferredLocation = useWatch({ control: form.control, name: "preferredLocation" });
+  const isCustomLocation =
+    preferredLocation === "__other__" ||
+    (!!preferredLocation && !PREFERRED_LOCATIONS.includes(preferredLocation as (typeof PREFERRED_LOCATIONS)[number]));
 
   const router = useRouter();
   const onSubmit = async (values: ClientFormValues) => {
@@ -324,18 +329,43 @@ export default function ClientCreateForm() {
                 <FormItem>
                   <FormLabel>Zone préférée</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une zone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PREFERRED_LOCATIONS.map((location) => (
-                          <SelectItem key={location} value={location}>
-                            {location}
+                    {isCustomLocation ? (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Préciser la zone..."
+                          value={field.value === "__other__" ? "" : field.value}
+                          onChange={(e) =>
+                            field.onChange(e.target.value || "__other__")
+                          }
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => field.onChange("")}
+                        >
+                          ←
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => field.onChange(v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une zone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PREFERRED_LOCATIONS.map((location) => (
+                            <SelectItem key={location} value={location}>
+                              {location}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="__other__">
+                            Autre (préciser)
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </FormControl>
                   <FormMessage />
                 </FormItem>

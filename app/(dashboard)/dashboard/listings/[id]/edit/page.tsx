@@ -1,5 +1,6 @@
 import ListingForm from "@/components/forms/listing-form";
 import { SectionHeader } from "@/components/SectionHeader";
+import { fetchClientById } from "@/lib/actions/client.action";
 import { fetchListingById } from "@/lib/actions/listings.action";
 import { notFound } from "next/navigation";
 
@@ -16,6 +17,9 @@ export default async function EditListingPage({
   }
 
   const listing = result.data;
+  const clientId = listing.sellerClient;
+
+  const clientResult = await fetchClientById(clientId);
 
   return (
     <div>
@@ -23,7 +27,7 @@ export default async function EditListingPage({
         title="Modifier le bien"
         subtitle={`Référence : ${listing.referenceCode}`}
       />
-      <ListingForm initialData={listing} listingId={id} />
+      <ListingForm initialData={listing} listingId={id} client={clientResult.data} />
     </div>
   );
 }
