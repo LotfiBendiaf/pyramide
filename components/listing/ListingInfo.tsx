@@ -82,10 +82,37 @@ export default function ListingInfo({
 
       {/* Description */}
       <section>
-        <h2 className="font-semibold text-lg mb-2">Description</h2>
-        <p className="text-muted-foreground leading-relaxed">
-          {listing.description}
-        </p>
+        <h2 className="font-semibold text-lg mb-3">Description</h2>
+        <div className="text-sm text-muted-foreground space-y-1 leading-relaxed">
+          {listing.description.split("\n").map((line, i) => {
+            if (!line.trim()) return <div key={i} className="h-2" />;
+
+            // Key : Value lines — bold the key
+            const colonIdx = line.indexOf(" : ");
+            if (colonIdx !== -1) {
+              const key = line.slice(0, colonIdx);
+              const value = line.slice(colonIdx + 3);
+              return (
+                <p key={i}>
+                  <span className="font-medium text-foreground">{key}</span>
+                  {" : "}
+                  {value}
+                </p>
+              );
+            }
+
+            // First line (bold header)
+            if (i === 0) {
+              return (
+                <p key={i} className="font-semibold text-foreground text-base">
+                  {line}
+                </p>
+              );
+            }
+
+            return <p key={i}>{line}</p>;
+          })}
+        </div>
       </section>
 
       {listing.location.coordinates && (
