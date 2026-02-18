@@ -402,6 +402,98 @@ export async function updateListingStatus(
   }
 }
 
+export async function updateListing(
+  listingId: string,
+  params: ListingInput
+): Promise<ActionResponse<Listing>> {
+  // 1. Validation + Authorization
+  const validationResult = await action({
+    params,
+    schema: listingSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  // 2. Validate ObjectId
+  if (!Types.ObjectId.isValid(listingId)) {
+    return {
+      success: false,
+      error: { message: "ID d'annonce invalide" },
+      status: 400,
+    };
+  }
+
+  // 3. Get current user
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorisé" },
+      status: 401,
+    };
+  }
+
+  try {
+    const parsedParams = listingSchema.parse(validationResult.params);
+
+    const evaluation = parsedParams.evaluation
+      ? {
+          ...parsedParams.evaluation,
+          positives:
+            parsedParams.evaluation.positives?.map((p) => p.value) ?? [],
+          negatives:
+            parsedParams.evaluation.negatives?.map((n) => n.value) ?? [],
+          evaluatedBy: user.data._id,
+          evaluatedAt: parsedParams.evaluation.evaluatedAt ?? new Date(),
+        }
+      : undefined;
+
+    await dbConnect();
+
+    const normalizedPropertyTypeCustom =
+      parsedParams.propertyType === "Autre"
+        ? parsedParams.propertyTypeCustom?.trim()
+        : undefined;
+
+    const updated = await Listing.findByIdAndUpdate(
+      listingId,
+      {
+        ...parsedParams,
+        propertyTypeCustom: normalizedPropertyTypeCustom,
+        evaluation,
+        // Do not overwrite agent or referenceCode
+        sellerFirstName: undefined,
+        sellerLastName: undefined,
+        sellerPhone: undefined,
+        sellerEmail: undefined,
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(updated)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function toggleListingPublished(
   listingId: string,
   currentStatus: boolean

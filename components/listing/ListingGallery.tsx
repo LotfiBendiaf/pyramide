@@ -20,7 +20,7 @@ interface ImageData {
 }
 
 interface ListingGalleryProps {
-  images: ImageData[];
+  images?: ImageData[];
   isStaff?: boolean;
 }
 
@@ -31,7 +31,9 @@ export default function ListingGallery({
   const [isDownloading, setIsDownloading] = useState(false);
 
   // Filter images based on user role
-  const visibleImages = isStaff ? images : images.filter((img) => img.isPublic);
+  const visibleImages = isStaff
+    ? images || []
+    : (images || []).filter((img) => img.isPublic);
 
   const handleDownloadImages = async () => {
     setIsDownloading(true);

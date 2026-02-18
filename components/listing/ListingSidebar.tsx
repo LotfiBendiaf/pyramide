@@ -3,33 +3,41 @@ import { Phone, Mail, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
 
-export default function ListingSidebar({ listing }: { listing: Listing }) {
+export default function ListingSidebar({
+  listing,
+  isStaff,
+}: {
+  listing: Listing;
+  isStaff?: boolean;
+}) {
   const agentName = listing.agent
     ? `${listing.agent.firstname} ${listing.agent.lastname}`
     : "Non spécifié";
   /* Price and Actions */
   return (
     <aside className="sticky top-24 space-y-6">
-      <div className="rounded-2xl border p-6 space-y-4">
-        <h3 className="text-xl font-semibold">
-          {formatPriceAlgeria(listing.price)}
-        </h3>
-        <p className="text-muted-foreground text-sm">
-          {formatPrice(listing.price)}
-        </p>
+      {!isStaff && (
+        <div className="rounded-2xl border p-6 space-y-4">
+          <h3 className="text-xl font-semibold">
+            {formatPriceAlgeria(listing.price)}
+          </h3>
+          <p className="text-muted-foreground text-sm">
+            {formatPrice(listing.price)}
+          </p>
 
-        <Button className="w-full">Demander une visite</Button>
+          <Button className="w-full">Demander une visite</Button>
 
-        <Button variant="outline" className="w-full">
-          <Phone className="w-4 h-4 mr-2" />
-          Appeler l’agence
-        </Button>
+          <Button variant="outline" className="w-full">
+            <Phone className="w-4 h-4 mr-2" />
+            Appeler l’agence
+          </Button>
 
-        <Button variant="outline" className="w-full">
-          <Mail className="w-4 h-4 mr-2" />
-          Envoyer un message
-        </Button>
-      </div>
+          <Button variant="outline" className="w-full">
+            <Mail className="w-4 h-4 mr-2" />
+            Envoyer un message
+          </Button>
+        </div>
+      )}
       <div className="rounded-2xl border p-6 space-y-4">
         <h4 className="font-semibold mb-4">Agent</h4>
         <div className="space-y-3">

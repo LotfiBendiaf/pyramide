@@ -53,7 +53,7 @@ export default function AddToWishlistButton({
             title: product.title || "",
             description: product.description,
             price: product.price,
-            image: product.images[0]?.url ?? "/placeholder.png",
+            image: product.images?.[0]?.url ?? "/placeholder.png",
           });
 
           const res = await incrementListingLikes(product._id);
@@ -75,7 +75,7 @@ export default function AddToWishlistButton({
             title: product.title || "",
             description: product.description,
             price: product.price,
-            image: product.images[0]?.url ?? "/placeholder.png",
+            image: product.images?.[0]?.url ?? "/placeholder.png",
           });
         } else {
           toast.error(error as string);

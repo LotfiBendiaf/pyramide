@@ -53,6 +53,7 @@ interface Listing {
 
   price: number;
   priceLabel?: string; // ex: "80 000 DA / mois"
+  offeredPrice?: number;
 
   status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
   propertyType:
@@ -103,7 +104,7 @@ interface Listing {
     evaluatedAt?: Date;
   };
 
-  images: Array<{
+  images?: Array<{
     url: string;
     isPublic: boolean;
   }>;

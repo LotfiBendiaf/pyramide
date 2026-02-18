@@ -39,7 +39,7 @@ import {
 // Schema
 import { listingSchema } from "@/lib/validators/listing";
 import ImageUpload from "../listing/ImageUpload";
-import { createListing } from "@/lib/actions/listings.action";
+import { createListing, updateListing } from "@/lib/actions/listings.action";
 import { useRouter } from "next/navigation";
 import { WILAYAS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -47,6 +47,11 @@ import { Textarea } from "../ui/textarea";
 
 // --- Types ---
 type ListingFormValues = z.infer<typeof listingSchema>;
+
+interface ListingFormProps {
+  initialData?: Listing;
+  listingId?: string;
+}
 
 const PROPERTY_TYPES = [
   "Appartement",
@@ -67,53 +72,101 @@ const LocationPicker = dynamic(() => import("../listing/LocationPicker"), {
   ssr: false,
 });
 
-export default function ListingForm() {
+export default function ListingForm({ initialData, listingId }: ListingFormProps) {
   const [isPending, startTransition] = useTransition();
+  const isEditMode = !!listingId;
 
   const router = useRouter();
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingSchema),
-    defaultValues: {
-      title: "",
-      price: 0,
-      offeredPrice: undefined,
-      status: "En Vente",
-      propertyType: "Appartement",
-      propertyTypeCustom: "",
-      location: {
-        city: "",
-        district: "",
-        address: "",
-        coordinates: undefined,
-      },
-      features: {
-        bedrooms: 0,
-        bathrooms: 0,
-        area: 0,
-        etage: undefined,
-        furnished: false,
-        parking: false,
-        facade: 1,
-      },
-      evaluation: {
-        finalScore: 0,
-        positives: [],
-        negatives: [],
-        idealBuyerType: "",
-        priceQualityOpinion: "",
-        evaluatedBy: "",
-        evaluatedAt: new Date(),
-      },
-      images: [],
-      isFeatured: false,
-      isPublished: false,
-      // Seller information
-      sellerFirstName: "",
-      sellerLastName: "",
-      sellerPhone: "",
-      sellerEmail: "",
-    },
+    defaultValues: initialData
+      ? {
+          title: initialData.title ?? "",
+          description: initialData.description,
+          price: initialData.price,
+          offeredPrice: initialData.offeredPrice,
+          priceLabel: initialData.priceLabel ?? "",
+          status: initialData.status,
+          propertyType: initialData.propertyType as ListingFormValues["propertyType"],
+          propertyTypeCustom: initialData.propertyTypeCustom ?? "",
+          location: {
+            city: initialData.location.city,
+            district: initialData.location.district ?? "",
+            address: initialData.location.address ?? "",
+            coordinates: initialData.location.coordinates,
+          },
+          features: {
+            bedrooms: initialData.features.bedrooms,
+            bathrooms: initialData.features.bathrooms,
+            area: initialData.features.area,
+            facade: initialData.features.facade,
+            etage: initialData.features.etage,
+            furnished: initialData.features.furnished ?? false,
+            parking: initialData.features.parking ?? false,
+            balcony: initialData.features.balcony ?? false,
+            garden: initialData.features.garden ?? false,
+            pool: initialData.features.pool ?? false,
+            elevator: initialData.features.elevator ?? false,
+          },
+          evaluation: {
+            finalScore: initialData.evaluation?.finalScore ?? 0,
+            positives: (initialData.evaluation?.positives ?? []).map((v) => ({ value: v })),
+            negatives: (initialData.evaluation?.negatives ?? []).map((v) => ({ value: v })),
+            idealBuyerType: initialData.evaluation?.idealBuyerType ?? "",
+            priceQualityOpinion: initialData.evaluation?.priceQualityOpinion ?? "",
+            evaluatedBy: "",
+            evaluatedAt: new Date(),
+          },
+          images: initialData.images ?? [],
+          coverImage: initialData.coverImage,
+          isFeatured: initialData.isFeatured,
+          isPremium: initialData.isPremium,
+          isPublished: initialData.isPublished,
+          sellerFirstName: "",
+          sellerLastName: "",
+          sellerPhone: "",
+          sellerEmail: "",
+        }
+      : {
+          title: "",
+          price: 0,
+          offeredPrice: undefined,
+          status: "En Vente",
+          propertyType: "Appartement",
+          propertyTypeCustom: "",
+          location: {
+            city: "",
+            district: "",
+            address: "",
+            coordinates: undefined,
+          },
+          features: {
+            bedrooms: 0,
+            bathrooms: 0,
+            area: 0,
+            etage: undefined,
+            furnished: false,
+            parking: false,
+            facade: 1,
+          },
+          evaluation: {
+            finalScore: 0,
+            positives: [],
+            negatives: [],
+            idealBuyerType: "",
+            priceQualityOpinion: "",
+            evaluatedBy: "",
+            evaluatedAt: new Date(),
+          },
+          images: [],
+          isFeatured: false,
+          isPublished: false,
+          sellerFirstName: "",
+          sellerLastName: "",
+          sellerPhone: "",
+          sellerEmail: "",
+        },
   });
 
   const selectedPropertyType = form.watch("propertyType");
@@ -121,21 +174,21 @@ export default function ListingForm() {
   const onSubmit = (data: ListingFormValues) => {
     startTransition(async () => {
       try {
-        const result = await createListing(data);
+        const result = isEditMode
+          ? await updateListing(listingId!, data)
+          : await createListing(data);
 
         if (!result.success) {
-          // Attach error to a specific field
           form.setError("title", {
             type: "server",
-            message: "Erreur inconnue",
+            message: result.error?.message ?? "Erreur inconnue",
           });
           return;
         }
 
-        toast.success("Annonce publiée avec succès");
+        toast.success(isEditMode ? "Annonce mise à jour avec succès" : "Annonce publiée avec succès");
         router.push(ROUTES.LISTINGS_DASHBOARD);
       } catch (error) {
-        // Global form error
         form.setError("root", {
           type: "server",
           message: (error as string) || "Erreur serveur, veuillez réessayer",
@@ -491,7 +544,9 @@ export default function ListingForm() {
                           onChange={field.onChange}
                           onRemove={(url) =>
                             field.onChange(
-                              field.value.filter((img) => img.url !== url)
+                              (field.value ?? []).filter(
+                                (img) => img.url !== url
+                              )
                             )
                           }
                         />
@@ -859,11 +914,11 @@ export default function ListingForm() {
           <Button type="submit" disabled={isPending}>
             {isPending ? (
               <div className="flex items-center gap-2">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                <span>Publication</span>{" "}
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span>{isEditMode ? "Mise à jour..." : "Publication..."}</span>
               </div>
             ) : (
-              <span>Publier l’annonce</span>
+              <span>{isEditMode ? "Mettre à jour" : "Publier l'annonce"}</span>
             )}
           </Button>
         </div>

@@ -97,7 +97,7 @@ export const listingSchema = z
           isPublic: z.boolean().default(true),
         })
       )
-      .min(1, "Au moins une image requise"),
+      .optional(),
 
     coverImage: z.string().url().optional(),
 
@@ -106,8 +106,8 @@ export const listingSchema = z
     isPremium: z.boolean().optional(),
 
     // Seller information
-    sellerFirstName: z.string().min(2, "Prénom requis").optional(),
-    sellerLastName: z.string().min(2, "Nom requis").optional(),
+    sellerFirstName: z.string().optional(),
+    sellerLastName: z.string().optional(),
     sellerPhone: z.string().min(8, "Téléphone requis").optional(),
     sellerEmail: z
       .string()

@@ -20,6 +20,7 @@ const ROUTES = {
   FOLLOWUPS_LISTING: (listingId: string) =>
     `/dashboard/follow-ups/${listingId}`,
   LISTING_DETAIL_DASHBOARD: (id: string) => `/dashboard/listings/${id}`,
+  LISTING_EDIT: (id: string) => `/dashboard/listings/${id}/edit`,
   DAILY_REPORT: "/dashboard/daily-report",
   TEAM_REPORT: "/dashboard/team-report",
   // User management

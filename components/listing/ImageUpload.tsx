@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone"; // npm install react-dropzone
 import { ImagePlus, Trash2, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
@@ -16,7 +16,7 @@ interface ImageData {
 }
 
 interface ImageUploadProps {
-  value: ImageData[]; // Current image objects
+  value?: ImageData[]; // Current image objects
   onChange: (value: ImageData[]) => void; // Function to update form
   onRemove: (url: string) => void; // Function to remove image
 }
@@ -28,6 +28,7 @@ export default function ImageUpload({
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const images = useMemo(() => value ?? [], [value]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -67,18 +68,18 @@ export default function ImageUpload({
         });
 
         const newImages = await Promise.all(uploadPromises);
-        onChange([...value, ...newImages]);
+        onChange([...images, ...newImages]);
       } catch (error) {
         console.error("Upload failed", error);
       } finally {
         setUploading(false);
       }
     },
-    [value, onChange]
+    [images, onChange]
   );
 
   const toggleVisibility = (url: string) => {
-    const updated = value.map((img) =>
+    const updated = images.map((img) =>
       img.url === url ? { ...img, isPublic: !img.isPublic } : img
     );
     onChange(updated);
@@ -92,7 +93,7 @@ export default function ImageUpload({
   });
 
   const downloadAllImages = useCallback(async () => {
-    if (!value.length || downloading) {
+    if (!images.length || downloading) {
       return;
     }
 
@@ -100,7 +101,7 @@ export default function ImageUpload({
 
     try {
       const zip = new JSZip();
-      const fileAdds = value.map(async (image, index) => {
+      const fileAdds = images.map(async (image, index) => {
         const response = await fetch(image.url);
         if (!response.ok) {
           throw new Error("Failed to download image");
@@ -134,19 +135,19 @@ export default function ImageUpload({
     } finally {
       setDownloading(false);
     }
-  }, [downloading, value]);
+  }, [downloading, images]);
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {value.length ? `${value.length} image(s)` : "Aucune image"}
+          {images.length ? `${images.length} image(s)` : "Aucune image"}
         </p>
         <Button
           type="button"
           variant="outline"
           onClick={downloadAllImages}
-          disabled={!value.length || downloading}
+          disabled={!images.length || downloading}
         >
           {downloading
             ? "Preparation du ZIP..."
@@ -155,7 +156,7 @@ export default function ImageUpload({
       </div>
       {/* 1. Image Previews */}
       <div className="mb-4 flex flex-wrap gap-4">
-        {value.map((image) => (
+        {images.map((image) => (
           <div
             key={image.url}
             className="relative w-[200px] h-[200px] rounded-md overflow-hidden border"

@@ -35,9 +35,11 @@ export default function ListingInfo({
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <span className="inline-block mb-2 px-3 py-1 rounded-full text-xs bg-primary text-white">
-          {listing.status}
-        </span>
+        <div className="flex items-center justify-between gap-4 mb-2">
+          <Badge>{listing.status}</Badge>
+          {/* Wishlist */}
+          <AddToWishlistButton product={listing} light />
+        </div>
         <p className="text-muted-foreground mb-1">Code reference</p>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Hash className="w-4 h-4 inline-block mr-2 text-primary" />
@@ -211,9 +213,6 @@ export default function ListingInfo({
           </div>
         </section>
       )}
-
-      {/* Wishlist */}
-      <AddToWishlistButton product={listing} />
     </div>
   );
 }
