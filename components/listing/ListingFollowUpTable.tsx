@@ -54,7 +54,7 @@ export function ListingFollowUpTable({ listings }: ListingTableProps) {
 
                   <TableCell>
                     <Image
-                      src={listing.images[0]?.url || "/placeholder.png"}
+                      src={listing.images?.[0]?.url || "/placeholder.png"}
                       alt={listing.title || "Image de l'annonce"}
                       width={64}
                       height={48}
