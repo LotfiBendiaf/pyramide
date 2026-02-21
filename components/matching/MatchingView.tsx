@@ -79,8 +79,8 @@ export default function MatchingView({ clients, listings }: Props) {
     if (!q) return clients;
     return clients.filter(
       (c) =>
-        c.firstName.toLowerCase().includes(q) ||
-        c.lastName.toLowerCase().includes(q) ||
+        c.firstName?.toLowerCase().includes(q) ||
+        c.lastName?.toLowerCase().includes(q) ||
         c.referenceCode.toLowerCase().includes(q) ||
         c.city?.toLowerCase().includes(q)
     );
@@ -155,7 +155,9 @@ export default function MatchingView({ clients, listings }: Props) {
           {/* Left: client list */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Clients acheteurs / loueurs</CardTitle>
+              <CardTitle className="text-base">
+                Clients acheteurs / loueurs
+              </CardTitle>
               <div className="relative mt-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
