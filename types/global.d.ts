@@ -136,14 +136,17 @@ interface Client {
   referenceCode: string; // BUY-032
   type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
 
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   phone: string;
   email?: string;
 
   budgetMin?: number;
   budgetMax?: number;
   city?: string;
+  wantedPropertyType?: string;
+  rooms?: number;
+  preferredLocation?: string;
 
   qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
   qualificationNotes?: string;

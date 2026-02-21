@@ -45,6 +45,7 @@ import {
   CalendarDays,
   Loader2,
   Mail,
+  Shuffle,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -113,6 +114,11 @@ const sidebarConfig: SidebarGroup[] = [
         url: ROUTES.CLIENT_ADD,
         icon: UserPlus,
         roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
+      {
+        title: "Matching",
+        url: ROUTES.MATCHING,
+        icon: Shuffle,
       },
     ],
   },

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/lotfibendiaf/Work/pyramide-V2 log --oneline)"
+    ]
+  }
+}

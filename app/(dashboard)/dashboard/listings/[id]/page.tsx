@@ -1,6 +1,7 @@
 import ListingGallery from "@/components/listing/ListingGallery";
 import ListingInfo from "@/components/listing/ListingInfo";
 import ListingSidebar from "@/components/listing/ListingSidebar";
+import ListingMatchingPanel from "@/components/listing/ListingMatchingPanel";
 import { fetchListingById } from "@/lib/actions/listings.action";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -42,6 +43,11 @@ export default async function ListingDetailsPage({
 
         {/* Sidebar */}
         <ListingSidebar listing={listing} isStaff={true} />
+      </div>
+
+      {/* Matching clients */}
+      <div className="mt-10">
+        <ListingMatchingPanel listing={listing} />
       </div>
     </section>
   );

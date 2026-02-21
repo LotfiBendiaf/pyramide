@@ -15,6 +15,7 @@ const ROUTES = {
   CLIENT_DETAIL: (id: string) => `/dashboard/clients/${id}`,
   LISTINGS_DASHBOARD: "/dashboard/listings",
   LISTING_ADD: "/dashboard/listings/add",
+  MATCHING: "/dashboard/matching",
   FOLLOWUPS: "/dashboard/follow-ups",
   NEW_FOLLOWUP: "/dashboard/follow-ups/new",
   FOLLOWUPS_LISTING: (listingId: string) =>

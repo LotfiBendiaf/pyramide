@@ -1,8 +1,8 @@
 export type ClientInput = {
   type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
 
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   phone: string;
   email?: string;
   city?: string;

@@ -78,10 +78,16 @@ export default function ClientCreateForm() {
     },
   });
 
-  const preferredLocation = useWatch({ control: form.control, name: "preferredLocation" });
+  const preferredLocation = useWatch({
+    control: form.control,
+    name: "preferredLocation",
+  });
   const isCustomLocation =
     preferredLocation === "__other__" ||
-    (!!preferredLocation && !PREFERRED_LOCATIONS.includes(preferredLocation as (typeof PREFERRED_LOCATIONS)[number]));
+    (!!preferredLocation &&
+      !PREFERRED_LOCATIONS.includes(
+        preferredLocation as (typeof PREFERRED_LOCATIONS)[number]
+      ));
 
   const router = useRouter();
   const onSubmit = async (values: ClientFormValues) => {
