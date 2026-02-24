@@ -11,8 +11,8 @@ export interface IClient {
   referenceCode: string; // BUY-032
   type: ClientType;
 
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   phone: string;
   email?: string;
 
@@ -45,8 +45,8 @@ const clientSchema = new Schema<IClient>(
       required: true,
     },
 
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    firstName: { type: String },
+    lastName: { type: String },
     phone: { type: String, required: true },
     email: String,
 
