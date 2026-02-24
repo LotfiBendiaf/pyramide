@@ -66,17 +66,19 @@ export default function ClientsTable({
               <TableRow key={client._id}>
                 {/* Reference code */}
                 <TableCell>
-                  <Badge variant="outline">{client.referenceCode}</Badge>
+                  <Link href={ROUTES.CLIENT_DETAIL(client._id)}>
+                    <Badge
+                      variant="outline"
+                      className="hover:bg-accent cursor-pointer transition-colors"
+                    >
+                      {client.referenceCode}
+                    </Badge>
+                  </Link>
                 </TableCell>
 
                 {/* Client name */}
                 <TableCell className="font-medium">
-                  <Link
-                    href={ROUTES.CLIENT_DETAIL(client._id)}
-                    className="hover:underline"
-                  >
-                    {client.firstName} {client.lastName}
-                  </Link>
+                  {client.firstName} {client.lastName}
                 </TableCell>
 
                 {/* Type */}

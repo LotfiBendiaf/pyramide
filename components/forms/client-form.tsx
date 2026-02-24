@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
+import { Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -413,8 +414,19 @@ export default function ClientCreateForm() {
               )}
             />
 
-            <Button type="submit" className="w-full">
-              Ajouter le client
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Ajout en cours...
+                </>
+              ) : (
+                "Ajouter le client"
+              )}
             </Button>
           </form>
         </Form>
