@@ -110,7 +110,13 @@ interface Listing {
   }>;
   coverImage?: string;
 
-  sellerClient: string;
+  sellerClient: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
+  };
   agent?: {
     _id: string;
     firstname: string;
@@ -151,6 +157,8 @@ interface Client {
   wantedPropertyType?: string;
   rooms?: number;
   preferredLocation?: string;
+
+  extraNotes?: string;
 
   qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
   qualificationNotes?: string;

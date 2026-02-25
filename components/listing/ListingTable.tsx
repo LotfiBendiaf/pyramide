@@ -128,6 +128,7 @@ export function ListingTable({ listings }: ListingTableProps) {
                 onClick={() =>
                   router.push(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id))
                 }
+                className="cursor-pointer hover:bg-muted"
               >
                 <TableCell
                   className="font-medium"

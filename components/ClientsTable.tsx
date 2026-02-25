@@ -9,12 +9,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import { Card, CardContent } from "./ui/card";
 import ClientQualificationSelect from "./ClientQualificationButton";
 import ClientAgentSelect from "./ClientAgentSelect";
+import ClientNotesDialog from "./clients/ClientNotesDialog";
 import ROUTES from "@/constants/routes";
 import { formatDate } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 type ClientsTableProps = {
   clients: Client[];
@@ -41,6 +42,7 @@ export default function ClientsTable({
   agents = [],
   userRole,
 }: ClientsTableProps) {
+  const router = useRouter();
   const canAssignAgent =
     userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
 
@@ -58,22 +60,24 @@ export default function ClientsTable({
               <TableHead>Créé le</TableHead>
               {canAssignAgent && <TableHead>Agent</TableHead>}
               <TableHead>Qualification</TableHead>
+              <TableHead>C.R.</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {clients.map((client) => (
-              <TableRow key={client._id}>
+              <TableRow
+                key={client._id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() =>
+                  router.push(ROUTES.CLIENT_DETAIL(client._id))
+                }
+              >
                 {/* Reference code */}
                 <TableCell>
-                  <Link href={ROUTES.CLIENT_DETAIL(client._id)}>
-                    <Badge
-                      variant="outline"
-                      className="hover:bg-accent cursor-pointer transition-colors"
-                    >
-                      {client.referenceCode}
-                    </Badge>
-                  </Link>
+                  <Badge variant="outline">
+                    {client.referenceCode}
+                  </Badge>
                 </TableCell>
 
                 {/* Client name */}
@@ -105,9 +109,10 @@ export default function ClientsTable({
                 <TableCell className="text-muted-foreground text-sm">
                   {formatDate(client.createdAt)}
                 </TableCell>
+
                 {/* Agent */}
                 {canAssignAgent && (
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <ClientAgentSelect
                       clientId={client._id}
                       agents={agents}
@@ -115,10 +120,25 @@ export default function ClientsTable({
                     />
                   </TableCell>
                 )}
-                <TableCell>
+
+                {/* Qualification */}
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <ClientQualificationSelect
                     clientId={client._id}
                     value={client.qualificationStatus}
+                  />
+                </TableCell>
+
+                {/* Compte rendu */}
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <ClientNotesDialog
+                    clientId={client._id}
+                    clientName={
+                      [client.firstName, client.lastName]
+                        .filter(Boolean)
+                        .join(" ") || client.referenceCode
+                    }
+                    initialNotes={client.extraNotes}
                   />
                 </TableCell>
               </TableRow>

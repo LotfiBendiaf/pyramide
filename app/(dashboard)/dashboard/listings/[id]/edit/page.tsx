@@ -17,7 +17,7 @@ export default async function EditListingPage({
   }
 
   const listing = result.data;
-  const clientId = listing.sellerClient;
+  const clientId = listing.sellerClient._id;
 
   const clientResult = await fetchClientById(clientId);
 
@@ -27,7 +27,11 @@ export default async function EditListingPage({
         title="Modifier le bien"
         subtitle={`Référence : ${listing.referenceCode}`}
       />
-      <ListingForm initialData={listing} listingId={id} client={clientResult.data} />
+      <ListingForm
+        initialData={listing}
+        listingId={id}
+        client={clientResult.data}
+      />
     </div>
   );
 }

@@ -33,8 +33,8 @@ export const fetchClientsSchema = z.object({
 
 export const updateClientSchema = z.object({
   type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]),
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   phone: z.string().min(8),
   email: z.union([z.string().email(), z.literal("")]).optional(),
   city: z.string().optional(),

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Phone, Mail, MapPin, CalendarDays } from "lucide-react";
+import { Mail, MapPin, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
+import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
 
 const WHATSAPP_NUMBER = "213770823300";
 
@@ -98,10 +98,12 @@ export default function ListingSidebar({
             <div>
               <p className="text-xs text-muted-foreground mb-1">Téléphone</p>
               <a
-                href={`tel:${listing.agent.phone}`}
+                href={`https://wa.me/${listing.agent.phone.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-primary hover:underline flex items-center gap-2"
               >
-                <Phone className="w-3 h-3" />
+                <WhatsAppIcon className="w-3 h-3" />
                 {listing.agent.phone}
               </a>
             </div>
@@ -144,12 +146,13 @@ export default function ListingSidebar({
             <p className="text-xs text-muted-foreground mb-2">Statut</p>
             <Badge>{listing.status}</Badge>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-2">Contact client</p>
-            <p className="font-medium">
-              {listing.sellerClient || "Non spécifié"}
-            </p>
-          </div>
+          {isStaff && listing.createdAt && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Ajouté le :</p>
+              <p className="font-medium">{formatDate(listing.createdAt)}</p>
+            </div>
+          )}
+          <div></div>
         </div>
       </div>
     </aside>

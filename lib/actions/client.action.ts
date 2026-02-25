@@ -416,6 +416,52 @@ export async function updateClient(
   }
 }
 
+/* -------------------------------- Update Notes -------------------------------- */
+
+export async function updateClientNotes(
+  clientId: string,
+  extraNotes: string
+): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorisé" },
+      status: 401,
+    };
+  }
+
+  try {
+    if (!Types.ObjectId.isValid(clientId)) {
+      return {
+        success: false,
+        error: { message: "ID client invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+
+    const client = await Client.findByIdAndUpdate(clientId, { extraNotes });
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 /* -------------------------------- Archive / Restore -------------------------------- */
 
 export async function archiveClient(clientId: string): Promise<ActionResponse> {
