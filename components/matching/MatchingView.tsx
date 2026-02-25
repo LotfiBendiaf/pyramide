@@ -91,7 +91,7 @@ export default function MatchingView({ clients, listings }: Props) {
     if (!q) return listings;
     return listings.filter(
       (l) =>
-        l.referenceCode.toLowerCase().includes(q) ||
+        l.referenceCode?.toLowerCase().includes(q) ||
         l.location.city.toLowerCase().includes(q) ||
         l.propertyType.toLowerCase().includes(q) ||
         l.title?.toLowerCase().includes(q)
