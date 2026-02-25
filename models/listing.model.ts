@@ -4,7 +4,7 @@ import { Schema, model, models } from "mongoose";
    TypeScript Interface
 ----------------------------------*/
 export interface IListing {
-  referenceCode: string; // VA-0001 (Vente Appartement), LV-0001 (Location Villa)
+  referenceCode?: string; // VA-0001 (Vente Appartement), LV-0001 (Location Villa) — assigned on validation
   title?: string;
   slug?: string;
 
@@ -75,6 +75,10 @@ export interface IListing {
   sellerClient?: Schema.Types.ObjectId; // Reference to the seller client created for this listing
   isPublished: boolean;
   publishedAt?: Date;
+
+  isValidated: boolean;
+  validatedAt?: Date;
+  validatedBy?: Schema.Types.ObjectId;
 
   views: number;
   likes: number;
@@ -197,6 +201,9 @@ const listingSchema = new Schema<IListing>(
     },
     isPublished: { type: Boolean, default: false },
     publishedAt: { type: Date, default: new Date() },
+    isValidated: { type: Boolean, default: false },
+    validatedAt: { type: Date },
+    validatedBy: { type: Schema.Types.ObjectId, ref: "User" },
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },
@@ -214,6 +221,7 @@ listingSchema.index({ price: 1 });
 listingSchema.index({ status: 1 });
 listingSchema.index({ propertyType: 1 });
 listingSchema.index({ isFeatured: 1 });
+listingSchema.index({ isValidated: 1 });
 listingSchema.index({ "evaluation.finalScore": -1 });
 
 /* ---------------------------------

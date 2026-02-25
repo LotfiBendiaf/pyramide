@@ -44,6 +44,10 @@ export default function ListingFilterDashboard() {
     searchParams.get("isPremium") === "true"
   );
 
+  const [validatedOnly, setValidatedOnly] = useState(
+    searchParams.get("validated") === "true"
+  );
+
   /* ---------------- Submit ---------------- */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +66,7 @@ export default function ListingFilterDashboard() {
     if (idealBuyer) params.set("idealBuyer", idealBuyer);
     if (evaluatedOnly) params.set("evaluated", "true");
     if (isPremium) params.set("isPremium", "true");
+    if (validatedOnly) params.set("validated", "true");
 
     router.push(`?${params.toString()}`, { scroll: false });
   };
@@ -76,6 +81,7 @@ export default function ListingFilterDashboard() {
     setIdealBuyer("");
     setEvaluatedOnly(false);
     setIsPremium(false);
+    setValidatedOnly(false);
     setPriceRange([30000, 200000000]);
 
     router.push(window.location.pathname, { scroll: false });
@@ -141,12 +147,19 @@ export default function ListingFilterDashboard() {
             <SelectItem value="Commercial">Usage commercial</SelectItem>
           </SelectContent>
         </Select> */}
-        <Button
+        {/* <Button
           type="button"
           variant={evaluatedOnly ? "default" : "outline"}
           onClick={() => setEvaluatedOnly(!evaluatedOnly)}
         >
           Biens évalués
+        </Button> */}
+        <Button
+          type="button"
+          variant={validatedOnly ? "default" : "outline"}
+          onClick={() => setValidatedOnly(!validatedOnly)}
+        >
+          Validés
         </Button>
         {/* Price */}
         <div className="w-[240px] space-y-1">

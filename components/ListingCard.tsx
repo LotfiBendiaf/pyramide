@@ -24,7 +24,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         {/* Image */}
         <div className=" w-full aspect-6/9">
           <Image
-            src={displayImage?.url || "/placeholder.jpg"}
+            src={displayImage?.url || "/placeholder.png"}
             alt={title || "Property image"}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

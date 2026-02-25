@@ -20,7 +20,7 @@ import {
 
 function buildListingDescription(
   params: ListingInput,
-  referenceCode: string
+  referenceCode?: string
 ): string {
   const statusLine =
     params.status === "En Location"
@@ -58,7 +58,7 @@ function buildListingDescription(
       : `${article} ${lowerType} spacieux et lumineux.`;
 
   const details = [
-    `Réf : ${referenceCode}`,
+    referenceCode ? `Réf : ${referenceCode}` : undefined,
     `Type : ${typeLabel}`,
     areaLabel ? `Surface : ${areaLabel}` : undefined,
     etageLine,
@@ -133,27 +133,12 @@ export async function createListing(
 
     await dbConnect();
 
-    // 3. Generate reference code (VA-0001, LV-0001, etc.)
-    const { status, propertyType } = parsedParams;
-    const isVente = status === "En Vente";
-    // Count listings with same transaction type (Vente or Location)
-    const count = await Listing.countDocuments({
-      status: {
-        $in: isVente ? ["En Vente", "Vendu"] : ["En Location", "Loué"],
-      },
-    });
-    const prefix = listingPrefix(
-      status as ListingStatus,
-      propertyType as PropertyType
-    );
-    const referenceCode = `${prefix}-${String(count + 1).padStart(4, "0")}`;
-
-    // 4. Create seller client if seller information is provided
+    // 3. Create seller client if seller information is provided
     let sellerClientId: Types.ObjectId | undefined = undefined;
     const { sellerFirstName, sellerLastName, sellerPhone, sellerEmail } =
       parsedParams;
 
-    if (sellerFirstName && sellerLastName && sellerPhone) {
+    if (sellerPhone) {
       // Generate seller client reference code
       const sellerCount = await Client.countDocuments({ type: "SELLER" });
       const sellerReferenceCode = `${clientPrefix("SELLER")}-${String(
@@ -180,10 +165,9 @@ export async function createListing(
       }
     }
 
-    // 5. Create listing with seller client reference
+    // 4. Create listing (no reference code yet — assigned on validation)
     const description =
-      parsedParams.description?.trim() ||
-      buildListingDescription(parsedParams, referenceCode);
+      parsedParams.description?.trim() || buildListingDescription(parsedParams);
 
     const normalizedPropertyTypeCustom =
       parsedParams.propertyType === "Autre"
@@ -194,10 +178,10 @@ export async function createListing(
       ...parsedParams,
       description,
       propertyTypeCustom: normalizedPropertyTypeCustom,
-      referenceCode,
       evaluation,
       agent: user.data._id,
       sellerClient: sellerClientId,
+      isValidated: false,
     });
 
     if (!listing) {
@@ -216,6 +200,7 @@ export async function createListing(
 
 interface FetchListingsParams {
   isPublished?: boolean;
+  isValidated?: boolean;
   status?: "En Vente" | "En Location";
   city?: string;
   propertyType?: string;
@@ -234,6 +219,7 @@ export async function fetchListings(
   try {
     const {
       isPublished,
+      isValidated,
       status,
       city,
       propertyType,
@@ -252,6 +238,10 @@ export async function fetchListings(
 
     if (isPublished !== undefined) {
       query.isPublished = isPublished;
+    }
+
+    if (isValidated !== undefined) {
+      query.isValidated = isValidated;
     }
 
     if (status) query.status = status;
@@ -312,6 +302,7 @@ export async function fetchListingById(
     // 3️⃣ Fetch listing
     const listing = await Listing.findById(listingId)
       .populate("agent", "firstname lastname email phone")
+      .populate("sellerClient", "firstName lastName phone email")
       .lean();
 
     if (!listing) {
@@ -489,6 +480,146 @@ export async function updateListing(
       data: JSON.parse(JSON.stringify(updated)),
       status: 200,
     };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function toggleListingValidation(
+  listingId: string,
+  currentValidated: boolean
+): Promise<ActionResponse<{ isValidated: boolean; referenceCode?: string }>> {
+  try {
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d'annonce invalide" },
+        status: 400,
+      };
+    }
+
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    if (!currentValidated) {
+      // — Validate: assign reference code if not already set —
+      let referenceCode = listing.referenceCode as string | undefined;
+      let updatedDescription = listing.description;
+
+      if (!referenceCode) {
+        const { status, propertyType } = listing;
+        const isVente = status === "En Vente";
+        // Count listings that already have a code (validated or previously validated)
+        const count = await Listing.countDocuments({
+          referenceCode: { $exists: true, $ne: null },
+          status: {
+            $in: isVente ? ["En Vente", "Vendu"] : ["En Location", "Loué"],
+          },
+        });
+        const prefix = listingPrefix(
+          status as ListingStatus,
+          propertyType as PropertyType
+        );
+        referenceCode = `${prefix}-${String(count + 1).padStart(4, "0")}`;
+
+        const descriptionHasRef = listing.description?.includes("Réf :");
+        if (!descriptionHasRef) {
+          updatedDescription = listing.description?.replace(
+            /^([\s\S]*?)(Type :)/m,
+            `$1Réf : ${referenceCode}\n$2`
+          );
+        }
+      }
+
+      await Listing.findByIdAndUpdate(listingId, {
+        referenceCode,
+        isValidated: true,
+        validatedAt: new Date(),
+        validatedBy: user.data._id,
+        description: updatedDescription || listing.description,
+      });
+
+      revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+      revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+      return {
+        success: true,
+        data: { isValidated: true, referenceCode },
+        status: 200,
+      };
+    } else {
+      // — Unvalidate: keep reference code, just flip the flag —
+      await Listing.findByIdAndUpdate(listingId, {
+        isValidated: false,
+        $unset: { validatedAt: 1, validatedBy: 1 },
+      });
+
+      revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+      revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+      return {
+        success: true,
+        data: { isValidated: false },
+        status: 200,
+      };
+    }
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function deleteListing(
+  listingId: string
+): Promise<ActionResponse<null>> {
+  try {
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d'annonce invalide" },
+        status: 400,
+      };
+    }
+
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const deleted = await Listing.findByIdAndDelete(listingId);
+    if (!deleted) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+
+    return { success: true, data: null, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

@@ -28,6 +28,7 @@ import { StatusAction } from "./StatusButton";
 import {
   updateListingStatus,
   toggleListingPublished,
+  toggleListingValidation,
 } from "@/lib/actions/listings.action";
 import { STATUS_COLORS } from "@/constants/values";
 import { useState } from "react";
@@ -42,6 +43,9 @@ interface ListingTableProps {
 export function ListingTable({ listings }: ListingTableProps) {
   const router = useRouter();
   const [publishingStates, setPublishingStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [validatingStates, setValidatingStates] = useState<
     Record<string, boolean>
   >({});
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -76,6 +80,24 @@ export function ListingTable({ listings }: ListingTableProps) {
     setConfirmDialog({ open: true, listingId, currentStatus });
   };
 
+  const handleToggleValidation = async (
+    listingId: string,
+    currentValidated: boolean
+  ) => {
+    setValidatingStates((prev) => ({ ...prev, [listingId]: true }));
+    const result = await toggleListingValidation(listingId, currentValidated);
+    if (result.success) {
+      if (result.data?.isValidated) {
+        toast.success(`Annonce validée — Réf : ${result.data.referenceCode}`);
+      } else {
+        toast.success("Validation retirée");
+      }
+    } else {
+      toast.error(result.error?.message || "Erreur lors de la validation");
+    }
+    setValidatingStates((prev) => ({ ...prev, [listingId]: false }));
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -86,7 +108,7 @@ export function ListingTable({ listings }: ListingTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Reference</TableHead>
+              <TableHead>Référence</TableHead>
               <TableHead>Image</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Prix</TableHead>
@@ -107,8 +129,32 @@ export function ListingTable({ listings }: ListingTableProps) {
                   router.push(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id))
                 }
               >
-                <TableCell className="font-medium">
-                  {listing.referenceCode}
+                <TableCell
+                  className="font-medium"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex flex-col gap-1">
+                    {listing.referenceCode && (
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {listing.referenceCode}
+                      </span>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={listing.isValidated}
+                        onCheckedChange={() =>
+                          handleToggleValidation(
+                            listing._id,
+                            listing.isValidated
+                          )
+                        }
+                        disabled={validatingStates[listing._id]}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {listing.isValidated ? "Validé" : "Non validé"}
+                      </span>
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Image

@@ -108,7 +108,7 @@ export const listingSchema = z
     // Seller information
     sellerFirstName: z.string().optional(),
     sellerLastName: z.string().optional(),
-    sellerPhone: z.string().min(8, "Téléphone requis").optional(),
+    sellerPhone: z.string().min(8, "Téléphone requis").or(z.literal("")).optional(),
     sellerEmail: z
       .string()
       .email("Email invalide")

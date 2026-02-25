@@ -4,6 +4,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { ListingTable } from "@/components/listing/ListingTable";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import ListingFilterDashboard from "@/components/ListingFilterDashboard";
+import ROUTES from "@/constants/routes";
 
 type ListingsSectionProps = {
   searchParams?: {
@@ -15,6 +16,7 @@ type ListingsSectionProps = {
     minScore?: number;
     propertyType?: string;
     isPremium?: boolean;
+    validated?: string;
   };
 };
 
@@ -30,6 +32,7 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
+    isValidated: params?.validated === "true" ? true : undefined,
   });
 
   if (!result.success) {
@@ -56,7 +59,11 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
 export default function ListingsPage({ searchParams }: ListingsSectionProps) {
   return (
     <section className="space-y-10">
-      <SectionHeader title="Biens à vendre à Oran" />
+      <SectionHeader
+        title="Biens à vendre à Oran"
+        buttonLabel="Ajouter un bien"
+        buttonHref={ROUTES.LISTING_ADD}
+      />
 
       <Suspense fallback={<TableSkeleton />}>
         <ListingFilterDashboard />

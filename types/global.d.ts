@@ -46,7 +46,7 @@ interface PaginatedSearchParams {
 interface Listing {
   _id: string;
   title?: string;
-  referenceCode: string; // REF-032
+  referenceCode?: string; // VA-0001 — assigned on validation
   slug?: string;
 
   description: string;
@@ -121,6 +121,10 @@ interface Listing {
   };
   isPublished: boolean;
   publishedAt?: Date;
+
+  isValidated: boolean;
+  validatedAt?: Date;
+  validatedBy?: string;
 
   views: number;
   likes: number;

@@ -139,7 +139,7 @@ export default function LocationPicker({
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-lg border z-0">
         <MapContainer
           center={center}
           zoom={zoom}

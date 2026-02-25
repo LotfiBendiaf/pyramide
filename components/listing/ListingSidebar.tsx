@@ -50,21 +50,36 @@ export default function ListingSidebar({
             {formatPrice(listing.price)}
           </p>
 
-          <a href={waVisit} target="_blank" rel="noopener noreferrer" className="block">
+          <a
+            href={waVisit}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
             <Button className="w-full">
               <CalendarDays className="w-4 h-4 mr-2" />
               Demander une visite
             </Button>
           </a>
 
-          <a href={waCall} target="_blank" rel="noopener noreferrer" className="block">
+          <a
+            href={waCall}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
             <Button variant="outline" className="w-full">
               <WhatsAppIcon className="w-4 h-4 mr-2" />
               Appeler l&apos;agence
             </Button>
           </a>
 
-          <a href={waMessage} target="_blank" rel="noopener noreferrer" className="block">
+          <a
+            href={waMessage}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
             <Button variant="outline" className="w-full">
               <Mail className="w-4 h-4 mr-2" />
               Envoyer un message
@@ -128,6 +143,12 @@ export default function ListingSidebar({
           <div className="pt-2 border-t">
             <p className="text-xs text-muted-foreground mb-2">Statut</p>
             <Badge>{listing.status}</Badge>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Contact client</p>
+            <p className="font-medium">
+              {listing.sellerClient || "Non spécifié"}
+            </p>
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       {/* Image */}
       <div className="relative h-56 w-full overflow-hidden">
         <Image
-          src={images?.[0].url || "/immo-placeholder.jpg"}
+          src={images?.[0].url || "/placeholder.png"}
           alt={title || "Image du bien"}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

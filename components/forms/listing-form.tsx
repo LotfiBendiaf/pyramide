@@ -267,7 +267,7 @@ export default function ListingForm({
                               <SelectValue placeholder="Choisir une ville" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="relative z-50">
                             {WILAYAS.map((wilaya) => (
                               <SelectItem key={wilaya} value={wilaya}>
                                 {wilaya}
