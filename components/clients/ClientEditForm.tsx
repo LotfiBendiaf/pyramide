@@ -52,6 +52,7 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
       budgetMax: client.budgetMax,
       qualificationStatus: client.qualificationStatus,
       qualificationNotes: client.qualificationNotes || "",
+      extraNotes: client.extraNotes || "",
       assignedAgent: client.assignedAgent?._id || "",
     },
   });
@@ -268,10 +269,10 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
 
         <FormField
           control={form.control}
-          name="qualificationNotes"
+          name="extraNotes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes</FormLabel>
+              <FormLabel>Compte Rendu</FormLabel>
               <FormControl>
                 <Textarea placeholder="Notes sur le client…" {...field} />
               </FormControl>
