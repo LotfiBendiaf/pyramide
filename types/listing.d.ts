@@ -3,7 +3,8 @@ interface ListingInput {
   slug: string;
   description?: string;
 
-  price: number;
+  price?: number;
+  offeredPrice?: number;
   priceLabel?: string;
 
   status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
@@ -35,7 +36,7 @@ interface ListingInput {
     bedrooms?: number;
     bathrooms?: number;
     area?: number; // m²
-    facade: number;
+    facade?: number;
     etage?: number;
 
     furnished?: boolean;

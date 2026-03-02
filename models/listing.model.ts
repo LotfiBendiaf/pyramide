@@ -10,7 +10,7 @@ export interface IListing {
 
   description: string;
 
-  price: number;
+  price?: number;
   priceLabel?: string; // ex: "80 000 DA / mois"
   offeredPrice?: number; // Final agreed price
 
@@ -43,7 +43,7 @@ export interface IListing {
     bedrooms: number;
     bathrooms: number;
     area: number; // m²
-    facade: number;
+    facade?: number;
     etage?: number;
     furnished?: boolean;
     parking?: boolean;
@@ -102,7 +102,7 @@ const listingSchema = new Schema<IListing>(
 
     description: { type: String, required: true },
 
-    price: { type: Number, required: true },
+    price: { type: Number },
     priceLabel: { type: String, trim: true },
     offeredPrice: { type: Number },
 

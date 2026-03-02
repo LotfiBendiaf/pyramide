@@ -33,7 +33,7 @@ export const listingSchema = z
 
     description: z.string().min(10, "Description trop courte").optional(),
 
-    price: z.number().positive("Le prix doit être positif"),
+    price: z.number().optional(),
 
     priceLabel: z.string().optional(),
     offeredPrice: z
@@ -108,7 +108,11 @@ export const listingSchema = z
     // Seller information
     sellerFirstName: z.string().optional(),
     sellerLastName: z.string().optional(),
-    sellerPhone: z.string().min(8, "Téléphone requis").or(z.literal("")).optional(),
+    sellerPhone: z
+      .string()
+      .min(8, "Téléphone requis")
+      .or(z.literal(""))
+      .optional(),
     sellerEmail: z
       .string()
       .email("Email invalide")

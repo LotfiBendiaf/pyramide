@@ -845,6 +845,7 @@ export default function ListingForm({
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
