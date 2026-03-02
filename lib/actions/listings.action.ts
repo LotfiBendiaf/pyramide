@@ -48,7 +48,7 @@ function buildListingDescription(
       ? `Étage : ${etage}${etageSuffix}${elevatorText}`
       : undefined;
 
-  const priceLabel = `${formatPriceAlgeria(params.price).replace(".", ",")} DA`;
+  const priceLabel = `${formatPriceAlgeria(params.price ?? 0).replace(".", ",")} DA`;
 
   const intro =
     locationLabel && areaLabel
