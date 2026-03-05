@@ -11,9 +11,6 @@ import { revalidatePath } from "next/cache";
 import { PropertyStatus } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import {
-  listingPrefix,
-  ListingStatus,
-  PropertyType,
   clientPrefix,
   formatPriceAlgeria,
 } from "../utils";
@@ -524,8 +521,9 @@ export async function toggleListingValidation(
       let updatedDescription = listing.description;
 
       if (!referenceCode) {
-        const { status, propertyType } = listing;
+        const { status } = listing;
         const isVente = status === "En Vente";
+        const prefix = isVente ? "V" : "L";
         // Count listings that already have a code (validated or previously validated)
         const count = await Listing.countDocuments({
           referenceCode: { $exists: true, $ne: null },
@@ -533,11 +531,7 @@ export async function toggleListingValidation(
             $in: isVente ? ["En Vente", "Vendu"] : ["En Location", "Loué"],
           },
         });
-        const prefix = listingPrefix(
-          status as ListingStatus,
-          propertyType as PropertyType
-        );
-        referenceCode = `${prefix}-${String(count + 1).padStart(4, "0")}`;
+        referenceCode = `${prefix}-${String(count + 1).padStart(6, "0")}`;
 
         const descriptionHasRef = listing.description?.includes("Réf :");
         if (!descriptionHasRef) {
