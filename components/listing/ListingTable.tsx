@@ -168,18 +168,38 @@ export function ListingTable({ listings }: ListingTableProps) {
                 </TableCell>
 
                 <TableCell>
-                  <Badge variant="secondary">
-                    {listing.propertyTypeCustom || listing.propertyType}
-                  </Badge>
+                  <div className="space-y-1">
+                    <Badge variant="default">
+                      {listing.propertyTypeCustom || listing.propertyType}
+                    </Badge>
+
+                    {listing.propertyType === "Appartement" &&
+                      listing.features.etage && (
+                        <div className="flex gap-1 items-center">
+                          <Badge variant="success">
+                            F{listing.features.bedrooms}
+                          </Badge>
+                          <p className="text-muted-foreground text-xs">
+                            {listing.features.etage}ème étage
+                          </p>
+                        </div>
+                      )}
+                  </div>
                 </TableCell>
                 {/* <TableCell>{listing.location.city}</TableCell> */}
 
                 <TableCell>
                   <div>
-                    {formatPriceAlgeria(listing.price)}
-                    <p className="text-muted-foreground text-xs">
-                      {formatPrice(listing.price)}
-                    </p>
+                    {listing.price ? (
+                      <>
+                        {formatPriceAlgeria(listing.price)}
+                        <p className="text-muted-foreground text-xs">
+                          {formatPrice(listing.price)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-yellow-600">À estimer</p>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>

@@ -152,8 +152,11 @@ function parsePrice(priceStr) {
   const num = parseFloat(match[1].replace(/,/g, '.'));
   const unit = (match[2] || '').toLowerCase();
 
-  if (unit.startsWith('milliard')) return Math.round(num * 1_000_000_000);
-  if (unit.startsWith('million'))  return Math.round(num * 1_000_000);
+  // Algerian real estate prices are quoted in centimes (100 centimes = 1 DA):
+  //   1 milliard = 10^9 centimes = 10,000,000 DA
+  //   1 million  = 10^6 centimes =     10,000 DA
+  if (unit.startsWith('milliard')) return Math.round(num * 10_000_000);
+  if (unit.startsWith('million'))  return Math.round(num * 10_000);
   return Math.round(num);
 }
 
