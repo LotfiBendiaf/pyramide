@@ -24,7 +24,6 @@ const propertyTypes = [
 ];
 
 const contactInfo = [
-  { icon: Phone, text: "0770 82 33 00", href: "tel:+213770823300" },
   { icon: Phone, text: "0779 07 97 06", href: "tel:+213779079706" },
   { icon: Phone, text: "0792 11 65 96", href: "tel:+213792116596" },
   {
