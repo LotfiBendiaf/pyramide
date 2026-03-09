@@ -29,7 +29,12 @@ import { readFileSync } from 'fs';
 const SHEET_ID  = '1OPfz-bV9GI8BU7u0jwMZ3ycRNH4y2vSiir11yDOhNhU';
 const SHEET_GID = '0';
 const AGENT_ID  = '69256e87a84b812ee80c50bc';
-const DRY_RUN   = !process.argv.includes('--import');
+
+// Only import rows whose reference number falls within this range (inclusive).
+const REF_RANGE = { min: 201, max: 418 };
+const ROW_LIMIT = null;
+const DRY_RUN        = !process.argv.includes('--import') && !process.argv.includes('--fix-validation');
+const FIX_VALIDATION = process.argv.includes('--fix-validation');
 
 // ─── Load .env.local ──────────────────────────────────────────────────────────
 
@@ -92,12 +97,19 @@ function parseCSVRow(line) {
 }
 
 function parseCSV(text) {
-  const lines = text.split('\n').filter(l => l.trim());
-  const headers = parseCSVRow(lines[0]);
+  // Strip BOM if present
+  const clean = text.replace(/^\uFEFF/, '');
+  const lines = clean.split('\n').filter(l => l.trim());
+  // Trim each header to remove invisible chars, extra spaces, and \r
+  const headers = parseCSVRow(lines[0]).map(h => h.trim().replace(/\r/g, ''));
   const rows = lines.slice(1).map(line => {
     const vals = parseCSVRow(line);
     const obj = {};
-    headers.forEach((h, i) => (obj[h] = (vals[i] ?? '').trim()));
+    // Use column index as key for empty/duplicate headers to avoid overwriting
+    headers.forEach((h, i) => {
+      const key = h || `_col${i}`;
+      obj[key] = (vals[i] ?? '').trim();
+    });
     return obj;
   });
   return { headers, rows };
@@ -259,6 +271,52 @@ function parseInformation(info) {
   return result;
 }
 
+// ─── Reference code detector ─────────────────────────────────────────────────
+//
+// The sheet has an (often unlabeled) first column with old reference codes
+// like V0000001, V0000201, L0000042 …
+// We scan all column values of the row to find it rather than relying on a
+// specific header name.
+
+const REF_PATTERN = /^[VLvl]\d{4,}$/;
+
+/** Converts V0000201 → V-0000201. Returns null for placeholder values like "V0000". */
+function normalizeRefCode(raw) {
+  const v = raw.trim().toUpperCase();
+
+  // "V0000" with no meaningful digits after it is a placeholder — skip
+  if (/^[VL]-?0+$/i.test(v)) return null;
+
+  // Already has dash (e.g. V-0000201) — return as-is
+  if (v[1] === '-') return v;
+  // Insert dash after first letter: V0000201 → V-0000201
+  return `${v[0]}-${v.slice(1)}`;
+}
+
+// Column names that are known to hold the reference code (case-insensitive)
+const REF_COLUMN_NAMES = new Set(['ref', 'réf', 'référence', 'reference', 'n°']);
+
+function findReferenceCode(row) {
+  // 1. Look for a column whose header matches a known ref column name
+  for (const [key, val] of Object.entries(row)) {
+    const k = key.trim().replace(/\r/g, '').toLowerCase();
+    if (!k) continue; // skip empty-header columns
+    if (REF_COLUMN_NAMES.has(k)) {
+      const v = (val || '').trim();
+      // Ref column found but empty → skip this row entirely
+      if (!v) return null;
+      return normalizeRefCode(v);
+    }
+  }
+
+  // 2. Fallback: scan all values for the old-style pattern
+  for (const val of Object.values(row)) {
+    const v = (val || '').trim();
+    if (REF_PATTERN.test(v)) return normalizeRefCode(v);
+  }
+  return null;
+}
+
 // ─── Name splitter ────────────────────────────────────────────────────────────
 
 function parseName(nom) {
@@ -293,7 +351,19 @@ function mapRow(row) {
 
   const description = information || `${propertyType} à ${address || city}`;
 
+  // Skip rows that have no reference code — only validated listings are imported
+  const referenceCode = findReferenceCode(row);
+  if (!referenceCode) return null;
+
+  // Apply numeric range filter
+  if (REF_RANGE) {
+    const numPart = parseInt(referenceCode.replace(/^[VL]-?/i, ''), 10);
+    if (numPart < REF_RANGE.min || numPart > REF_RANGE.max) return null;
+  }
+
   const { firstName, lastName } = parseName(nom);
+  const isValidated = true;
+  const now           = new Date();
 
   const listing = {
     description,
@@ -319,10 +389,15 @@ function mapRow(row) {
     ...(price !== undefined  && { price }),
     ...(prixStr              && { priceLabel: prixStr }),
     ...(nom                  && { owner: nom }),
+    ...(referenceCode        && { referenceCode }),
     agent:       new mongoose.Types.ObjectId(AGENT_ID),
     images:      [],
     isPublished: false,
-    isValidated: false,
+    isValidated,
+    ...(isValidated && {
+      validatedAt: now,
+      validatedBy: new mongoose.Types.ObjectId(AGENT_ID),
+    }),
     views:       0,
     likes:       0,
     isFeatured:  false,
@@ -431,6 +506,90 @@ async function main() {
     process.exit(1);
   }
 
+  // ── Fix-validation mode ──────────────────────────────────────────────────────
+  // Patches already-imported listings that have an old-style referenceCode
+  // (V0000001 …) but are still marked isValidated: false.
+  if (FIX_VALIDATION) {
+    console.log('\n🔌 Connecting to MongoDB…');
+    await mongoose.connect(MONGODB_URI, { dbName: 'Pyramide-Immobilier' });
+    console.log('✅ Connected\n');
+
+    const Listing = mongoose.models.Listing || mongoose.model('Listing', listingSchema);
+
+    // Case 1: referenceCode is already stored — just flip the flag
+    const withCode = await Listing.updateMany(
+      { referenceCode: { $regex: /^[VL]\d{4,}$/i }, isValidated: false },
+      {
+        $set: {
+          isValidated: true,
+          validatedAt:  new Date(),
+          validatedBy:  new mongoose.Types.ObjectId(AGENT_ID),
+        },
+      }
+    );
+
+    console.log(`✅ Updated (had referenceCode, was not validated): ${withCode.modifiedCount}`);
+
+    // Case 2: no referenceCode stored at all — re-read sheet and match by description
+    if (withCode.modifiedCount === 0) {
+      console.log('\n⚠️  No listings with old-style referenceCode found.');
+      console.log('   This means the import ran before reference detection was added.');
+      console.log('   Re-fetching sheet to match and patch listings…\n');
+
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+      const csvText = await fetchText(csvUrl);
+      const { rows } = parseCSV(csvText);
+
+      let patched = 0;
+      let missed  = 0;
+
+      for (const row of rows) {
+        const refCode = findReferenceCode(row);
+        if (!refCode) continue;
+
+        const { propertyType } = parsePropertyType((row['Type de bien'] || '').trim());
+        const information = (row['Information'] || '').trim();
+        const telephone   = (row['Téléphone']   || '').trim();
+
+        // Match by description text + propertyType (most reliable combo without a PK)
+        const filter = {
+          isValidated: false,
+          propertyType,
+          ...(information && { description: information }),
+          ...(telephone   && { owner: { $regex: telephone } }),
+        };
+
+        const result = await Listing.findOneAndUpdate(
+          filter,
+          {
+            $set: {
+              referenceCode: refCode,
+              isValidated:   true,
+              validatedAt:   new Date(),
+              validatedBy:   new mongoose.Types.ObjectId(AGENT_ID),
+            },
+          }
+        );
+
+        if (result) {
+          console.log(`✅ Patched: ${refCode}  ${propertyType}`);
+          patched++;
+        } else {
+          console.log(`⚠️  No match for: ${refCode}  ${propertyType}`);
+          missed++;
+        }
+      }
+
+      console.log(`\n── Result ───────────────────────────────────────────────`);
+      console.log(`  ✅ Patched : ${patched}`);
+      console.log(`  ⚠️  Missed  : ${missed}  (already validated or no matching listing found)`);
+    }
+
+    await mongoose.disconnect();
+    console.log('\nDone.\n');
+    return;
+  }
+
   // 1. Fetch CSV
   console.log('\n📋 Fetching Google Sheet…');
   const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
@@ -440,16 +599,35 @@ async function main() {
 
   console.log(`✅ ${rows.length} rows fetched`);
   console.log(`\n── Detected columns ────────────────────────────────────────`);
-  headers.forEach((h, i) => console.log(`   [${i}] "${h}"`));
+  headers.forEach((h, i) => {
+    const charCodes = [...h].map(c => c.charCodeAt(0)).join(',');
+    console.log(`   [${i}] "${h}"  (chars: ${charCodes})`);
+  });
+  // Find first 10 rows where _col0 (the ref column) is non-empty
+  console.log('\n── First 10 rows with non-empty _col0 ─────────────────────');
+  let found = 0;
+  for (let i = 0; i < rows.length && found < 10; i++) {
+    const firstVal = (rows[i]['_col0'] || '').trim();
+    if (firstVal) {
+      const charCodes = [...firstVal].map(c => c.charCodeAt(0)).join(',');
+      console.log(`  Row ${i + 1}: _col0="${firstVal}"  chars:[${charCodes}]`);
+      found++;
+    }
+  }
+  if (found === 0) console.log('  (no rows with non-empty _col0 found)');
   console.log();
 
   // 2. Map rows
   const mapped   = [];
   const mapErrors = [];
 
-  for (let i = 0; i < rows.length; i++) {
+  const rowsToProcess = ROW_LIMIT ? rows.slice(0, ROW_LIMIT) : rows;
+  let skippedNoRef = 0;
+  for (let i = 0; i < rowsToProcess.length; i++) {
     try {
-      mapped.push(mapRow(rows[i]));
+      const result = mapRow(rowsToProcess[i]);
+      if (result === null) { skippedNoRef++; continue; }
+      mapped.push(result);
     } catch (err) {
       mapErrors.push({ rowNum: i + 2, error: err.message });
     }
@@ -466,6 +644,8 @@ async function main() {
   mapped.slice(0, 5).forEach(({ listing, client }, i) => {
     console.log(`\n[${i + 1}]`);
     const f = listing.features;
+    const validated = listing.isValidated ? `✅ validated  ref=${listing.referenceCode}` : '⏳ not validated';
+    console.log(`   ${validated}`);
     console.log(`   type    : ${listing.propertyType}  bedrooms=${f.bedrooms}  bathrooms=${f.bathrooms}  area=${f.area}m²`);
     console.log(`   status  : ${listing.status}`);
     console.log(`   city    : ${listing.location.city}  address="${listing.location.address || '—'}"`);
@@ -482,8 +662,9 @@ async function main() {
 
   const withPhone = mapped.filter(m => m.client).length;
   console.log(`\n────────────────────────────────────────────────────────────`);
-  console.log(`📦 Listings ready : ${mapped.length}`);
-  console.log(`👤 Clients ready  : ${withPhone}  (rows with a phone number)`);
+  console.log(`📦 Listings ready (with ref) : ${mapped.length}`);
+  console.log(`⏭  Skipped (no ref code)     : ${skippedNoRef}`);
+  console.log(`👤 Clients ready             : ${withPhone}  (rows with a phone number)`);
 
   if (DRY_RUN) {
     console.log(`\n⚡ DRY RUN — database was NOT modified.`);

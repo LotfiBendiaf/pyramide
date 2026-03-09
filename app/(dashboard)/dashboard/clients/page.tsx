@@ -6,13 +6,17 @@ import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import ClientsTable from "@/components/ClientsTable";
 import ClientsFilter from "@/components/ClientsFilter";
+import { PaginationControls } from "@/components/PaginationControls";
 import { ClientFilters } from "@/types/client";
+
+const CLIENTS_PER_PAGE = 20;
 
 type SearchParams = {
   agentId?: string;
   qualification?: string;
   type?: string;
   search?: string;
+  page?: string;
 };
 
 async function ClientsContent({
@@ -24,8 +28,10 @@ async function ClientsContent({
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
 
+  const page = searchParams.page ? Math.max(1, Number(searchParams.page)) : 1;
+
   // Build filter params, excluding "__all__" values
-  const filterParams: ClientFilters = {};
+  const filterParams: ClientFilters = { page, limit: CLIENTS_PER_PAGE };
 
   if (searchParams.agentId && searchParams.agentId !== "__all__") {
     filterParams.agentId = searchParams.agentId;
@@ -64,12 +70,17 @@ async function ClientsContent({
     );
   }
 
+  const totalPages = Math.ceil((result.data?.total ?? 0) / CLIENTS_PER_PAGE);
+
   return (
-    <ClientsTable
-      clients={clients}
-      agents={isAdmin ? agentsResult.data || [] : []}
-      userRole={currentUser.data?.role}
-    />
+    <>
+      <ClientsTable
+        clients={clients}
+        agents={isAdmin ? agentsResult.data || [] : []}
+        userRole={currentUser.data?.role}
+      />
+      <PaginationControls currentPage={page} totalPages={totalPages} />
+    </>
   );
 }
 

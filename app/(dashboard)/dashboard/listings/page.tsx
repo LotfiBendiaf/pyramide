@@ -4,7 +4,10 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { ListingTable } from "@/components/listing/ListingTable";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import ListingFilterDashboard from "@/components/ListingFilterDashboard";
+import { PaginationControls } from "@/components/PaginationControls";
 import ROUTES from "@/constants/routes";
+
+const LISTINGS_PER_PAGE = 15;
 
 type ListingsSectionProps = {
   searchParams?: {
@@ -17,11 +20,13 @@ type ListingsSectionProps = {
     propertyType?: string;
     isPremium?: boolean;
     validated?: string;
+    page?: string;
   };
 };
 
 async function ListingsContent({ searchParams }: ListingsSectionProps) {
   const params = await searchParams;
+  const page = params?.page ? Math.max(1, Number(params.page)) : 1;
 
   const result = await fetchListings({
     city: params?.city,
@@ -33,6 +38,8 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
     isValidated: params?.validated === "true" ? true : undefined,
+    page,
+    limit: LISTINGS_PER_PAGE,
   });
 
   if (!result.success) {
@@ -53,7 +60,14 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     );
   }
 
-  return <ListingTable listings={listings} />;
+  const totalPages = Math.ceil((result.total ?? 0) / LISTINGS_PER_PAGE);
+
+  return (
+    <>
+      <ListingTable listings={listings} />
+      <PaginationControls currentPage={page} totalPages={totalPages} />
+    </>
+  );
 }
 
 export default function ListingsPage({ searchParams }: ListingsSectionProps) {

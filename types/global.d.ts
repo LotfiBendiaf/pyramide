@@ -6,6 +6,7 @@ type ActionResponse<T = null> = {
     details?: Record<string, string[]>;
   };
   status?: number;
+  total?: number;
 };
 
 type SuccessResponse<T = null> = ActionResponse<T> & { success: true };

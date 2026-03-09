@@ -261,18 +261,21 @@ export async function fetchListings(
 
     await dbConnect();
 
-    // 2. Fetch listings
-    const listings = await Listing.find(query)
-      .sort({ createdAt: -1 })
-      .populate("agent", "name firstname lastname email phone")
-      .skip(skip)
-      .limit(limit)
-      .lean();
-    // .populate("agent", "name email");
+    // 2. Fetch listings and total count in parallel
+    const [listings, total] = await Promise.all([
+      Listing.find(query)
+        .sort({ createdAt: -1 })
+        .populate("agent", "name firstname lastname email phone")
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Listing.countDocuments(query),
+    ]);
 
     return {
       success: true,
       data: JSON.parse(JSON.stringify(listings)),
+      total,
       status: 200,
     };
   } catch (error) {
