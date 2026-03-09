@@ -159,7 +159,7 @@ export default function ListingForm({
             etage: undefined,
             furnished: false,
             parking: false,
-            facade: 1,
+            facade: undefined,
           },
           evaluation: {
             finalScore: 0,
