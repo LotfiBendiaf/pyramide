@@ -127,7 +127,7 @@ export async function fetchClients(
     } = validationResult.params;
 
     // 3. Build MongoDB filter
-    const filter: FilterQuery<Client> = {};
+    const filter: FilterQuery<Client> = { type: { $ne: "SELLER" } };
 
     // Role-based filtering: AGENT only sees their own clients
     const isAdmin =
