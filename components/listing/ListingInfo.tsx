@@ -16,10 +16,13 @@ import {
   Hash,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import AddToWishlistButton from "@/components/AddToWishlistButton";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "../ui/card";
+import { Mail, User, ExternalLink } from "lucide-react";
 
 const LocationMap = dynamic(() => import("./LocationMap"), { ssr: false });
 
@@ -64,20 +67,55 @@ export default function ListingInfo({
       </div>
       {isStaff && (
         <Card>
-          <CardHeader className="font-bold">Contact client</CardHeader>
-          <CardContent>
+          <CardHeader className="font-bold flex flex-row items-center justify-between">
+            <span>Contact client</span>
+            {listing.sellerClient?._id && (
+              <Button asChild variant="outline">
+                <Link href={`/dashboard/clients/${listing.sellerClient._id}`}>
+                  <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                  Voir fiche
+                </Link>
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(listing.sellerClient?.firstName ||
+              listing.sellerClient?.lastName) && (
+              <div className="flex items-center gap-2 text-sm">
+                <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="font-medium">
+                  {[
+                    listing.sellerClient.firstName,
+                    listing.sellerClient.lastName,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                </span>
+              </div>
+            )}
             {listing.sellerClient?.phone ? (
               <a
                 href={`https://wa.me/${listing.sellerClient.phone.replace(/\D/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline flex items-center gap-2"
+                className="text-primary hover:underline flex items-center gap-2 text-sm"
               >
-                <WhatsAppIcon className="w-3 h-3" />
+                <WhatsAppIcon className="w-4 h-4 shrink-0" />
                 {listing.sellerClient.phone}
               </a>
             ) : (
-              <p className="font-medium">Non spécifié</p>
+              <p className="text-sm text-muted-foreground">
+                Téléphone non spécifié
+              </p>
+            )}
+            {listing.sellerClient?.email && (
+              <a
+                href={`mailto:${listing.sellerClient.email}`}
+                className="text-primary hover:underline flex items-center gap-2 text-sm"
+              >
+                <Mail className="w-4 h-4 shrink-0" />
+                {listing.sellerClient.email}
+              </a>
             )}
           </CardContent>
         </Card>
