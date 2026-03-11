@@ -208,6 +208,7 @@ interface FetchListingsParams {
   page?: number;
   isPremium?: boolean;
   minScore?: number;
+  search?: string;
 }
 
 export async function fetchListings(
@@ -227,6 +228,7 @@ export async function fetchListings(
       page = 1,
       isPremium,
       minScore,
+      search,
     } = params;
 
     const skip = (page - 1) * limit;
@@ -257,6 +259,17 @@ export async function fetchListings(
       query.price = {};
       if (minPrice !== undefined) query.price.$gte = minPrice;
       if (maxPrice !== undefined) query.price.$lte = maxPrice;
+    }
+
+    if (search) {
+      const regex = new RegExp(search, "i");
+      query.$or = [
+        { referenceCode: regex },
+        { title: regex },
+        { "location.city": regex },
+        { "location.district": regex },
+        { "location.address": regex },
+      ];
     }
 
     await dbConnect();

@@ -12,12 +12,14 @@ import {
   SelectContent,
   SelectItem,
 } from "./ui/select";
+import { Search } from "lucide-react";
 
 export default function ListingFilterDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   /* ---------------- State hydrated from URL ---------------- */
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [city, setCity] = useState(searchParams.get("city") ?? "");
   const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") ?? "");
   const [status, setStatus] = useState(searchParams.get("status") ?? "");
@@ -54,6 +56,7 @@ export default function ListingFilterDashboard() {
 
     const params = new URLSearchParams();
 
+    if (search) params.set("search", search);
     if (city) params.set("city", city);
     if (bedrooms) params.set("bedrooms", bedrooms);
     if (status) params.set("status", status);
@@ -73,6 +76,7 @@ export default function ListingFilterDashboard() {
 
   /* ---------------- Clear ---------------- */
   const handleClearFilters = () => {
+    setSearch("");
     setCity("");
     setBedrooms("");
     setStatus("");
@@ -93,6 +97,15 @@ export default function ListingFilterDashboard() {
         onSubmit={handleSubmit}
         className=" bg-background rounded-2xl border shadow-md px-8 py-5 flex flex-wrap justify-between gap-3 items-center w-full z-40"
       >
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par référence, ville..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         {/* <Input
         placeholder="Ville"
         value={city}

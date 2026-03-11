@@ -21,6 +21,7 @@ type ListingsSectionProps = {
     isPremium?: boolean;
     validated?: string;
     page?: string;
+    search?: string;
   };
 };
 
@@ -38,6 +39,7 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
     isValidated: params?.validated === "true" ? true : undefined,
+    search: params?.search,
     page,
     limit: LISTINGS_PER_PAGE,
   });
