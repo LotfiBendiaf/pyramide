@@ -65,7 +65,7 @@ export async function createClient(
       user.data.role === "MANAGER" ||
       user.data.role === "DEVELOPER";
     const assignedAgent =
-      isAdmin && providedAgent ? providedAgent : user.data._id;
+      isAdmin && providedAgent ? providedAgent : undefined;
 
     // 5️⃣ Create client
     const client = await Client.create({
@@ -74,7 +74,7 @@ export async function createClient(
       qualificationStatus: "NEW",
       archived: false,
       createdBy: user.data._id,
-      assignedAgent,
+      ...(assignedAgent ? { assignedAgent } : { assignedAgent: null }),
     });
 
     if (!client) {
