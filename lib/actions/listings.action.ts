@@ -622,6 +622,35 @@ export async function deleteListing(
   }
 }
 
+export async function fetchListingsBySellerClient(
+  sellerClientId: string
+): Promise<ActionResponse<Listing[]>> {
+  try {
+    if (!Types.ObjectId.isValid(sellerClientId)) {
+      return {
+        success: false,
+        error: { message: "ID client invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+
+    const listings = await Listing.find({ sellerClient: sellerClientId })
+      .sort({ createdAt: -1 })
+      .populate("agent", "name firstname lastname email phone")
+      .lean();
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(listings)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function toggleListingPublished(
   listingId: string,
   currentStatus: boolean
