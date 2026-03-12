@@ -5,6 +5,9 @@ import ListingCard from "../ListingCard";
 import { ListingsSkeleton } from "../skeletons/ListingsSkeleton";
 import ROUTES from "@/constants/routes";
 import SearchFilter from "../SearchFilter";
+import Link from "next/link";
+import { Button } from "../ui/button";
+import { ArrowUpRight } from "lucide-react";
 
 type ListingsSectionProps = {
   searchParams?: {
@@ -14,6 +17,7 @@ type ListingsSectionProps = {
     maxPrice?: string;
     bedrooms?: string;
     propertyType?: string;
+    limit?: string;
   };
 };
 
@@ -31,6 +35,7 @@ const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
     propertyType: params?.propertyType,
     isPremium: false,
     isPublished: true,
+    limit: params?.limit ? Number(params.limit) : 4,
   });
 
   if (!result.success) {
@@ -77,6 +82,15 @@ export default function ListingsSection({
         <SearchFilter />
         <ListingsContent searchParams={searchParams} />
       </Suspense>
+
+      <div className="flex justify-center mt-10">
+        <Link href={ROUTES.LISTINGS}>
+          <Button variant="outline">
+            Voir tous les biens
+            <ArrowUpRight className="ml-2" size={18} />
+          </Button>
+        </Link>
+      </div>
     </section>
   );
 }

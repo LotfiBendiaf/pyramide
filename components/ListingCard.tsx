@@ -20,7 +20,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         <AddToWishlistButton product={listing} />
       </div>
       <Link href={ROUTES.LISTING_DETAIL(listing._id)}>
-        <div className="inset-0 absolute z-10 bg-gradient-to-b from-transparent to-black"></div>
+        <div className="inset-0 absolute z-10 bg-gradient-to-b from-transparent via-transparent to-black"></div>
         {/* Image */}
         <div className=" w-full aspect-6/9">
           <Image

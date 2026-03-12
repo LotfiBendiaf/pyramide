@@ -10,10 +10,7 @@ import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
 import { PropertyStatus } from "@/constants/values";
 import ROUTES from "@/constants/routes";
-import {
-  clientPrefix,
-  formatPriceAlgeria,
-} from "../utils";
+import { clientPrefix, formatPriceAlgeria } from "../utils";
 
 function buildListingDescription(
   params: ListingInput,
@@ -224,7 +221,7 @@ export async function fetchListings(
       minPrice,
       maxPrice,
       bedrooms,
-      limit = 12,
+      limit = 8,
       page = 1,
       isPremium,
       minScore,
@@ -541,12 +538,12 @@ export async function toggleListingValidation(
         const isVente = status === "En Vente";
         const prefix = isVente ? "V" : "L";
         // Find the highest existing reference number for this prefix
-        const lastListing = await Listing.findOne({
+        const lastListing = (await Listing.findOne({
           referenceCode: { $regex: `^${prefix}-` },
         })
           .sort({ referenceCode: -1 })
           .select("referenceCode")
-          .lean() as { referenceCode?: string } | null;
+          .lean()) as { referenceCode?: string } | null;
         const lastNumber = lastListing?.referenceCode
           ? parseInt(lastListing.referenceCode.split("-")[1], 10)
           : 0;

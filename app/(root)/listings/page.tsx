@@ -5,6 +5,9 @@ import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import SearchFilter from "@/components/SearchFilter";
 import Navbar from "@/components/navigation/Navbar";
 import { SectionHeader } from "@/components/SectionHeader";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const LIMIT = 8;
 
 type SearchParams = {
   city?: string;
@@ -13,6 +16,7 @@ type SearchParams = {
   maxPrice?: string;
   bedrooms?: string;
   propertyType?: string;
+  page?: string;
 };
 
 type ListingsPageProps = {
@@ -24,6 +28,8 @@ async function ListingsContent({
 }: {
   searchParams: SearchParams;
 }) {
+  const page = Math.max(1, Number(searchParams?.page) || 1);
+
   const result = await fetchListings({
     city: searchParams?.city,
     status: searchParams?.status as "En Vente" | "En Location",
@@ -39,6 +45,8 @@ async function ListingsContent({
     propertyType: searchParams?.propertyType,
     isPremium: false,
     isPublished: true,
+    page,
+    limit: LIMIT,
   });
 
   if (!result.success) {
@@ -59,12 +67,17 @@ async function ListingsContent({
     );
   }
 
+  const totalPages = Math.ceil((result.total ?? 0) / LIMIT);
+
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {listings.map((listing) => (
-        <ListingCard key={listing._id} listing={listing} />
-      ))}
-    </div>
+    <>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {listings.map((listing) => (
+          <ListingCard key={listing._id} listing={listing} />
+        ))}
+      </div>
+      <PaginationControls currentPage={page} totalPages={totalPages} />
+    </>
   );
 }
 
