@@ -183,7 +183,6 @@ export default function ListingForm({
   const selectedPropertyType = form.watch("propertyType");
 
   const onSubmit = (data: ListingFormValues) => {
-    console.log("[ListingForm] onSubmit called", data);
     startTransition(async () => {
       try {
         const result = isEditMode
@@ -225,9 +224,7 @@ export default function ListingForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
-          console.error("[ListingForm] Validation errors:", errors);
-        })}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="grid gap-8 lg:grid-cols-3">
           {/* LEFT COLUMN */}
           <div className="lg:col-span-2 space-y-8">
