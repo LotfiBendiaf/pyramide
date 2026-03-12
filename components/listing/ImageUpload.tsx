@@ -2,13 +2,27 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone"; // npm install react-dropzone
-import { ImagePlus, Trash2, Eye, EyeOff } from "lucide-react";
+import { ImagePlus, Trash2, Eye, EyeOff, GripVertical } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import JSZip from "jszip";
-
 import imageCompression from "browser-image-compression";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface ImageData {
   url: string;
@@ -21,6 +35,100 @@ interface ImageUploadProps {
   onRemove: (url: string) => void; // Function to remove image
 }
 
+interface SortableImageProps {
+  image: ImageData;
+  index: number;
+  onRemove: (url: string) => void;
+  onToggleVisibility: (url: string) => void;
+}
+
+function SortableImage({
+  image,
+  index,
+  onRemove,
+  onToggleVisibility,
+}: SortableImageProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: image.url });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative w-[200px] h-[200px] rounded-md overflow-hidden border"
+    >
+      {index === 0 && (
+        <Badge
+          variant="default"
+          className="absolute z-10 bottom-2 left-2 bg-amber-500 text-white border-0 text-xs"
+        >
+          Principale
+        </Badge>
+      )}
+      <Badge
+        variant={image.isPublic ? "default" : "secondary"}
+        className="absolute z-10 top-2 left-2"
+      >
+        {image.isPublic ? "Public" : "Interne"}
+      </Badge>
+      {/* Drag handle */}
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="absolute z-10 top-2 left-[72px] size-8 flex items-center justify-center rounded bg-white/90 hover:bg-white cursor-grab active:cursor-grabbing"
+        aria-label="Réordonner l'image"
+        title="Glisser pour réordonner"
+      >
+        <GripVertical className="h-4 w-4 text-gray-600" />
+      </button>
+      <Button
+        type="button"
+        onClick={() => onToggleVisibility(image.url)}
+        variant="outline"
+        size="icon"
+        className="absolute size-8 z-10 top-2 right-12 rounded bg-white/90 hover:bg-white"
+        aria-label="Basculer la visibilité"
+        title={
+          image.isPublic
+            ? "Cliquez pour rendre cette image interne uniquement"
+            : "Cliquez pour rendre cette image publique"
+        }
+      >
+        {image.isPublic ? (
+          <Eye className="h-4 w-4" />
+        ) : (
+          <EyeOff className="h-4 w-4" />
+        )}
+      </Button>
+      <Button
+        type="button"
+        onClick={() => onRemove(image.url)}
+        variant="destructive"
+        size="icon"
+        className="absolute size-8 z-10 top-2 right-2 rounded"
+        aria-label="Supprimer l'image"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+      <Image fill className="object-cover" alt="Image" src={image.url} />
+    </div>
+  );
+}
+
 export default function ImageUpload({
   value,
   onChange,
@@ -29,6 +137,8 @@ export default function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const images = useMemo(() => value ?? [], [value]);
+
+  const sensors = useSensors(useSensor(PointerSensor));
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -83,6 +193,15 @@ export default function ImageUpload({
       img.url === url ? { ...img, isPublic: !img.isPublic } : img
     );
     onChange(updated);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = images.findIndex((img) => img.url === active.id);
+      const newIndex = images.findIndex((img) => img.url === over.id);
+      onChange(arrayMove(images, oldIndex, newIndex));
+    }
   };
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -154,59 +273,36 @@ export default function ImageUpload({
             : "Telecharger toutes les images"}
         </Button>
       </div>
-      {/* 1. Image Previews */}
-      <div className="mb-4 flex flex-wrap gap-4">
-        {images.map((image) => (
-          <div
-            key={image.url}
-            className="relative w-[200px] h-[200px] rounded-md overflow-hidden border"
-          >
-            <Badge
-              variant={image.isPublic ? "default" : "secondary"}
-              className="absolute z-10 top-2 left-2"
-            >
-              {image.isPublic ? "Public" : "Interne"}
-            </Badge>
-            <Button
-              type="button"
-              onClick={() => toggleVisibility(image.url)}
-              variant="outline"
-              size="icon"
-              className="absolute size-8 z-10 top-2 right-12 rounded bg-white/90 hover:bg-white"
-              aria-label="Basculer la visibilité"
-              title={
-                image.isPublic
-                  ? "Cliquez pour rendre cette image interne uniquement"
-                  : "Cliquez pour rendre cette image publique"
-              }
-            >
-              {image.isPublic ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              type="button"
-              onClick={() => onRemove(image.url)}
-              variant="destructive"
-              size="icon"
-              className="absolute size-8 z-10 top-2 right-2 rounded"
-              aria-label="Supprimer l'image"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Image fill className="object-cover" alt="Image" src={image.url} />
+      {/* 1. Image Previews with drag-to-reorder */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={images.map((img) => img.url)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="mb-4 flex flex-wrap gap-4">
+            {images.map((image, index) => (
+              <SortableImage
+                key={image.url}
+                image={image}
+                index={index}
+                onRemove={onRemove}
+                onToggleVisibility={toggleVisibility}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {/* 2. Dropzone Area */}
       <div
         {...getRootProps()}
         className="
-          border-dashed border-2 border-gray-300 rounded-lg 
-          p-10 hover:bg-gray-100 transition cursor-pointer 
+          border-dashed border-2 border-gray-300 rounded-lg
+          p-10 hover:bg-gray-100 transition cursor-pointer
           flex flex-col justify-center items-center gap-4
         "
       >
@@ -224,9 +320,10 @@ export default function ImageUpload({
         </div>
       </div>
       <p className="text-sm text-muted-foreground mt-2">
-        Veuillez introduire des photos de qualité. Cliquez sur l&apos;icône{" "}
-        <Eye className="inline h-4 w-4" /> pour contrôler la visibilité de
-        chaque image.
+        Veuillez introduire des photos de qualité. Glissez les images pour les
+        réordonner. La première image sera utilisée comme image principale.
+        Cliquez sur l&apos;icône <Eye className="inline h-4 w-4" /> pour
+        contrôler la visibilité de chaque image.
       </p>
     </div>
   );
