@@ -159,7 +159,7 @@ export default function ListingForm({
             etage: undefined,
             furnished: false,
             parking: false,
-            facade: undefined,
+            facade: "",
           },
           evaluation: {
             finalScore: 0,
@@ -534,7 +534,7 @@ export default function ListingForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Façades</FormLabel>
-                      <Input type="number" {...field} />
+                      <Input type="number" {...field} value={field.value ?? ""} />
                     </FormItem>
                   )}
                 />

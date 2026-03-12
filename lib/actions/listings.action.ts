@@ -540,14 +540,17 @@ export async function toggleListingValidation(
         const { status } = listing;
         const isVente = status === "En Vente";
         const prefix = isVente ? "V" : "L";
-        // Count listings that already have a code (validated or previously validated)
-        const count = await Listing.countDocuments({
-          referenceCode: { $exists: true, $ne: null },
-          status: {
-            $in: isVente ? ["En Vente", "Vendu"] : ["En Location", "Loué"],
-          },
-        });
-        referenceCode = `${prefix}-${String(count + 1).padStart(6, "0")}`;
+        // Find the highest existing reference number for this prefix
+        const lastListing = await Listing.findOne({
+          referenceCode: { $regex: `^${prefix}-` },
+        })
+          .sort({ referenceCode: -1 })
+          .select("referenceCode")
+          .lean() as { referenceCode?: string } | null;
+        const lastNumber = lastListing?.referenceCode
+          ? parseInt(lastListing.referenceCode.split("-")[1], 10)
+          : 0;
+        referenceCode = `${prefix}-${String(lastNumber + 1).padStart(7, "0")}`;
 
         const descriptionHasRef = listing.description?.includes("Réf :");
         if (!descriptionHasRef) {
