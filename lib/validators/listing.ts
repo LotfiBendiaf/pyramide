@@ -31,7 +31,7 @@ export const listingSchema = z
   .object({
     title: z.string().min(5, "Titre trop court").max(120),
 
-    description: z.string().min(10, "Description trop courte").optional(),
+    description: z.string().optional(),
 
     price: z.number().optional(),
 

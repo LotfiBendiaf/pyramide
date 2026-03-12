@@ -88,7 +88,7 @@ export default function ListingForm({
     defaultValues: initialData
       ? {
           title: initialData.title ?? "",
-          description: initialData.description,
+          description: initialData.description || undefined,
           price: initialData.price,
           offeredPrice: initialData.offeredPrice,
           priceLabel: initialData.priceLabel ?? "",
@@ -130,7 +130,7 @@ export default function ListingForm({
             evaluatedAt: new Date(),
           },
           images: initialData.images ?? [],
-          coverImage: initialData.coverImage,
+          coverImage: initialData.coverImage || undefined,
           isFeatured: initialData.isFeatured,
           isPremium: initialData.isPremium,
           isPublished: initialData.isPublished,
@@ -183,6 +183,7 @@ export default function ListingForm({
   const selectedPropertyType = form.watch("propertyType");
 
   const onSubmit = (data: ListingFormValues) => {
+    console.log("[ListingForm] onSubmit called", data);
     startTransition(async () => {
       try {
         const result = isEditMode
@@ -224,7 +225,9 @@ export default function ListingForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          console.error("[ListingForm] Validation errors:", errors);
+        })}>
         <div className="grid gap-8 lg:grid-cols-3">
           {/* LEFT COLUMN */}
           <div className="lg:col-span-2 space-y-8">
