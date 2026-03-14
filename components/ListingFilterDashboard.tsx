@@ -29,7 +29,7 @@ export default function ListingFilterDashboard() {
 
   const [priceRange, setPriceRange] = useState<[number, number]>([
     Number(searchParams.get("minPrice")) || 30000,
-    Number(searchParams.get("maxPrice")) || 20000000,
+    Number(searchParams.get("maxPrice")) || 500000000,
   ]);
 
   const [minScore, setMinScore] = useState(searchParams.get("minScore") ?? "");
@@ -86,7 +86,7 @@ export default function ListingFilterDashboard() {
     setEvaluatedOnly(false);
     setIsPremium(false);
     setValidatedOnly(false);
-    setPriceRange([30000, 200000000]);
+    setPriceRange([30000, 500000000]);
 
     router.push(window.location.pathname, { scroll: false });
   };

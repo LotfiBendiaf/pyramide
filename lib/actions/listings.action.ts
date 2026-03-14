@@ -221,14 +221,14 @@ export async function fetchListings(
       minPrice,
       maxPrice,
       bedrooms,
-      limit = 8,
+      limit,
       page = 1,
       isPremium,
       minScore,
       search,
     } = params;
 
-    const skip = (page - 1) * limit;
+    const skip = limit ? (page - 1) * limit : 0;
 
     const query: FilterQuery<Listing> = {};
 
@@ -266,6 +266,10 @@ export async function fetchListings(
         { "location.city": regex },
         { "location.district": regex },
         { "location.address": regex },
+        { "sellerClient.firstName": regex },
+        { "sellerClient.lastName": regex },
+        { "sellerClient.email": regex },
+        { "sellerClient.phone": regex },
       ];
     }
 
@@ -277,7 +281,7 @@ export async function fetchListings(
         .sort({ createdAt: -1 })
         .populate("agent", "name firstname lastname email phone")
         .skip(skip)
-        .limit(limit)
+        .limit(limit ?? 0)
         .lean(),
       Listing.countDocuments(query),
     ]);

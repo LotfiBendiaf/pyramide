@@ -13,6 +13,8 @@ export const clientSchema = z.object({
   budgetMax: z.number().optional(),
   wantedPropertyType: z.string().optional(),
   rooms: z.number().min(0).optional(),
+  floorMin: z.number().min(0).optional(),
+  floorMax: z.number().min(0).optional(),
   preferredLocation: z.string().optional(),
   extraNotes: z.string().optional(),
 
@@ -42,6 +44,8 @@ export const updateClientSchema = z.object({
   budgetMax: z.number().optional(),
   wantedPropertyType: z.string().optional(),
   rooms: z.number().min(0).optional(),
+  floorMin: z.number().min(0).optional(),
+  floorMax: z.number().min(0).optional(),
   preferredLocation: z.string().optional(),
   extraNotes: z.string().optional(),
   qualificationStatus: z.enum(["NEW", "QUALIFIED", "NOT_RELEVANT", "ARCHIVED"]),

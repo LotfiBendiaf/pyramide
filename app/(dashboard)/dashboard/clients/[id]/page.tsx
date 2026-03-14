@@ -11,7 +11,7 @@ export default async function ClientDetailRoute({
 }: {
   params: { id: string };
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   const [clientResult, followUpsResult] = await Promise.all([
     fetchClientById(id),
@@ -25,9 +25,7 @@ export default async function ClientDetailRoute({
   const client = clientResult.data;
 
   const sellerListingsResult =
-    client.type === "SELLER"
-      ? await fetchListingsBySellerClient(id)
-      : null;
+    client.type === "SELLER" ? await fetchListingsBySellerClient(id) : null;
 
   return (
     <>

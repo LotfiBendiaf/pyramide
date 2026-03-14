@@ -21,6 +21,8 @@ export interface IClient {
   city?: string;
   wantedPropertyType?: string;
   rooms?: number;
+  floorMin?: number;
+  floorMax?: number;
   preferredLocation?: string;
   extraNotes?: string;
 
@@ -55,6 +57,8 @@ const clientSchema = new Schema<IClient>(
     city: String,
     wantedPropertyType: String,
     rooms: Number,
+    floorMin: Number,
+    floorMax: Number,
     preferredLocation: String,
     extraNotes: String,
 

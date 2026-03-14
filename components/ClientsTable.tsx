@@ -69,15 +69,11 @@ export default function ClientsTable({
               <TableRow
                 key={client._id}
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() =>
-                  router.push(ROUTES.CLIENT_DETAIL(client._id))
-                }
+                onClick={() => router.push(ROUTES.CLIENT_DETAIL(client._id))}
               >
                 {/* Reference code */}
                 <TableCell>
-                  <Badge variant="outline">
-                    {client.referenceCode}
-                  </Badge>
+                  <Badge variant="outline">{client.referenceCode}</Badge>
                 </TableCell>
 
                 {/* Client name */}

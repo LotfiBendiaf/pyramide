@@ -30,6 +30,7 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
 
   const result = await fetchListings({
+    search: params?.search,
     city: params?.city,
     status: params?.status as "En Vente" | "En Location" | undefined,
     minPrice: params?.minPrice ? Number(params.minPrice) : undefined,
@@ -39,7 +40,6 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
     isValidated: params?.validated === "true" ? true : undefined,
-    search: params?.search,
     page,
     limit: LISTINGS_PER_PAGE,
   });

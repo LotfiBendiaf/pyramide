@@ -1,9 +1,10 @@
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 import { createClient } from "@/lib/actions/client.action";
 import { clientSchema } from "@/lib/validators/client";
@@ -50,15 +51,6 @@ const WANTED_PROPERTY_TYPES = [
   "Local Commercial",
 ] as const;
 
-const PREFERRED_LOCATIONS = [
-  "Oran Est",
-  "Maraval",
-  "Belgaid",
-  "Senia",
-  "Canastel",
-  "Millenium",
-] as const;
-
 export default function ClientCreateForm() {
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -73,22 +65,13 @@ export default function ClientCreateForm() {
       budgetMax: undefined,
       wantedPropertyType: "",
       rooms: undefined,
+      floorMin: undefined,
+      floorMax: undefined,
       preferredLocation: "",
       extraNotes: "",
       qualificationNotes: "",
     },
   });
-
-  const preferredLocation = useWatch({
-    control: form.control,
-    name: "preferredLocation",
-  });
-  const isCustomLocation =
-    preferredLocation === "__other__" ||
-    (!!preferredLocation &&
-      !PREFERRED_LOCATIONS.includes(
-        preferredLocation as (typeof PREFERRED_LOCATIONS)[number]
-      ));
 
   const router = useRouter();
   const onSubmit = async (values: ClientFormValues) => {
@@ -280,29 +263,48 @@ export default function ClientCreateForm() {
               <FormField
                 control={form.control}
                 name="wantedPropertyType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type de bien souhaité</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un type" />
-                        </SelectTrigger>
-                        <SelectContent>
+                render={({ field }) => {
+                  const selected = field.value
+                    ? field.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                    : [];
+                  const toggle = (type: string) => {
+                    if (selected.includes(type)) {
+                      field.onChange(
+                        selected.filter((s) => s !== type).join(", ")
+                      );
+                    } else {
+                      field.onChange([...selected, type].join(", "));
+                    }
+                  };
+                  return (
+                    <FormItem>
+                      <FormLabel>Type de bien souhaité</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-wrap gap-2">
                           {WANTED_PROPERTY_TYPES.map((type) => (
-                            <SelectItem key={type} value={type}>
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => toggle(type)}
+                              className={cn(
+                                "px-3 py-1 rounded-full border text-sm transition-colors",
+                                selected.includes(type)
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background text-foreground border-input hover:bg-accent"
+                              )}
+                            >
                               {type}
-                            </SelectItem>
+                            </button>
                           ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
@@ -329,6 +331,55 @@ export default function ClientCreateForm() {
               />
             </div>
 
+            {/* Floor range */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="floorMin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Étage minimum</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 3"
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? Number(e.target.value) : undefined
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="floorMax"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Étage maximum</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 6"
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? Number(e.target.value) : undefined
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="preferredLocation"
@@ -336,43 +387,7 @@ export default function ClientCreateForm() {
                 <FormItem>
                   <FormLabel>Zone préférée</FormLabel>
                   <FormControl>
-                    {isCustomLocation ? (
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Préciser la zone..."
-                          value={field.value === "__other__" ? "" : field.value}
-                          onChange={(e) =>
-                            field.onChange(e.target.value || "__other__")
-                          }
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => field.onChange("")}
-                        >
-                          ←
-                        </Button>
-                      </div>
-                    ) : (
-                      <Select
-                        value={field.value}
-                        onValueChange={(v) => field.onChange(v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une zone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PREFERRED_LOCATIONS.map((location) => (
-                            <SelectItem key={location} value={location}>
-                              {location}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="__other__">
-                            Autre (préciser)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                    <Input placeholder="Ex: Oran Est, Maraval..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

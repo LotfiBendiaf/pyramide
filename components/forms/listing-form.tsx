@@ -267,7 +267,7 @@ export default function ListingForm({
                               <SelectValue placeholder="Choisir une ville" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent className="relative z-50">
+                          <SelectContent>
                             {WILAYAS.map((wilaya) => (
                               <SelectItem key={wilaya} value={wilaya}>
                                 {wilaya}
@@ -363,7 +363,7 @@ export default function ListingForm({
                       <FormItem>
                         <FormLabel>Téléphone du vendeur</FormLabel>
                         <FormControl>
-                          <Input placeholder="Téléphone" {...field} />
+                          <Input required placeholder="Téléphone" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -534,7 +534,11 @@ export default function ListingForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Façades</FormLabel>
-                      <Input type="number" {...field} value={field.value ?? ""} />
+                      <Input
+                        type="number"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
                     </FormItem>
                   )}
                 />
