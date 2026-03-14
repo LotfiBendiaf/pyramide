@@ -24,14 +24,26 @@ function scoreListing(listing: Listing, client: Client): number {
     score += 3;
   }
 
-  const price = listing.price;
-  if (client.budgetMin !== undefined || client.budgetMax !== undefined) {
-    const aboveMin = client.budgetMin === undefined || price >= client.budgetMin;
-    const belowMax = client.budgetMax === undefined || price <= client.budgetMax;
-    if (aboveMin && belowMax) score += 3;
+  const price = Number(listing.price);
+  if (
+    !isNaN(price) &&
+    (client.budgetMin !== undefined || client.budgetMax !== undefined)
+  ) {
+    const budgetMin =
+      client.budgetMin !== undefined ? Number(client.budgetMin) : undefined;
+    const budgetMax =
+      client.budgetMax !== undefined ? Number(client.budgetMax) : undefined;
+    const aboveMin = budgetMin === undefined || price >= budgetMin;
+    const withinMax = budgetMax === undefined || price <= budgetMax;
+    const withinTolerance = budgetMax !== undefined && price <= budgetMax * 1.1;
+    if (aboveMin && withinMax) score += 3;
+    else if (aboveMin && withinTolerance) score += 1;
   }
 
-  if (client.rooms !== undefined && listing.features.bedrooms === client.rooms) {
+  if (
+    client.rooms !== undefined &&
+    listing.features.bedrooms === client.rooms
+  ) {
     score += 2;
   }
 
@@ -67,12 +79,17 @@ function scoreClient(
 
   const price = listing.price;
   if (client.budgetMin !== undefined || client.budgetMax !== undefined) {
-    const aboveMin = client.budgetMin === undefined || price >= client.budgetMin;
-    const belowMax = client.budgetMax === undefined || price <= client.budgetMax;
+    const aboveMin =
+      client.budgetMin === undefined || price >= client.budgetMin;
+    const belowMax =
+      client.budgetMax === undefined || price <= client.budgetMax;
     if (aboveMin && belowMax) score += 3;
   }
 
-  if (client.rooms !== undefined && listing.features.bedrooms === client.rooms) {
+  if (
+    client.rooms !== undefined &&
+    listing.features.bedrooms === client.rooms
+  ) {
     score += 2;
   }
 
@@ -81,7 +98,10 @@ function scoreClient(
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
-export type MatchedListing = Listing & { matchScore: number };
+export type MatchedListing = Listing & {
+  matchScore: number;
+  overBudget?: boolean;
+};
 export type MatchedClient = Client & { matchScore: number };
 
 /**
@@ -102,8 +122,7 @@ export async function matchClientToListings(
       return { success: true, data: [] };
     }
 
-    const statusFilter =
-      client.type === "BUYER" ? "En Vente" : "En Location";
+    const statusFilter = client.type === "BUYER" ? "En Vente" : "En Location";
 
     const listings = await Listing.find({ status: statusFilter })
       .select(
@@ -112,10 +131,20 @@ export async function matchClientToListings(
       .lean<Listing[]>();
 
     const scored: MatchedListing[] = listings
-      .map((l) => ({ ...l, matchScore: scoreListing(l, client) }))
+      .map((l) => {
+        const price = Number(l.price);
+        const budgetMax =
+          client.budgetMax !== undefined ? Number(client.budgetMax) : undefined;
+        const overBudget =
+          budgetMax !== undefined &&
+          !isNaN(price) &&
+          price > budgetMax &&
+          price <= budgetMax * 1.1;
+        return { ...l, matchScore: scoreListing(l, client), overBudget };
+      })
       .filter((l) => l.matchScore >= 1)
       .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 8);
+      .slice(0, 20);
 
     return { success: true, data: JSON.parse(JSON.stringify(scored)) };
   } catch (error) {

@@ -64,9 +64,16 @@ export default async function ClientMatchingPanel({ client }: Props) {
                     </div>
                   </div>
                 </div>
-                <span className="text-sm font-medium shrink-0 ml-4">
-                  {formatPriceAlgeria(listing.price)} DA
-                </span>
+                <div className="flex flex-col items-end shrink-0 ml-4 gap-0.5">
+                  <span className="text-sm font-medium">
+                    {formatPriceAlgeria(listing.price)} DA
+                  </span>
+                  {listing.overBudget && (
+                    <span className="text-xs text-amber-600 font-medium">
+                      +10% budget
+                    </span>
+                  )}
+                </div>
               </Link>
             ))}
           </div>

@@ -9,7 +9,7 @@ import ClientsFilter from "@/components/ClientsFilter";
 import { PaginationControls } from "@/components/PaginationControls";
 import { ClientFilters } from "@/types/client";
 
-const CLIENTS_PER_PAGE = 20;
+const CLIENTS_PER_PAGE = 10;
 
 type SearchParams = {
   agentId?: string;

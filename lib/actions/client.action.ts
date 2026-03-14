@@ -64,8 +64,7 @@ export async function createClient(
       user.data.role === "ADMIN" ||
       user.data.role === "MANAGER" ||
       user.data.role === "DEVELOPER";
-    const assignedAgent =
-      isAdmin && providedAgent ? providedAgent : undefined;
+    const assignedAgent = isAdmin && providedAgent ? providedAgent : undefined;
 
     // 5️⃣ Create client
     const client = await Client.create({
@@ -123,7 +122,7 @@ export async function fetchClients(
       agentId,
       search,
       page = 1,
-      limit = 20,
+      limit = 10,
     } = validationResult.params;
 
     // 3. Build MongoDB filter
