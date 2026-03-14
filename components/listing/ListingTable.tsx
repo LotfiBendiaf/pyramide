@@ -33,7 +33,6 @@ import {
 import { STATUS_COLORS } from "@/constants/values";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import ROUTES from "@/constants/routes";
 
 interface ListingTableProps {
@@ -41,7 +40,6 @@ interface ListingTableProps {
 }
 
 export function ListingTable({ listings }: ListingTableProps) {
-  const router = useRouter();
   const [publishingStates, setPublishingStates] = useState<
     Record<string, boolean>
   >({});
@@ -126,7 +124,11 @@ export function ListingTable({ listings }: ListingTableProps) {
               <TableRow
                 key={listing._id}
                 onClick={() =>
-                  router.push(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id))
+                  window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")
+                }
+                onAuxClick={(e) =>
+                  e.button === 1 &&
+                  window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")
                 }
                 className="cursor-pointer hover:bg-muted"
               >

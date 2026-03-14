@@ -15,7 +15,6 @@ import ClientAgentSelect from "./ClientAgentSelect";
 import ClientNotesDialog from "./clients/ClientNotesDialog";
 import ROUTES from "@/constants/routes";
 import { formatDate } from "@/lib/utils";
-import { useRouter } from "next/navigation";
 
 type ClientsTableProps = {
   clients: Client[];
@@ -42,7 +41,6 @@ export default function ClientsTable({
   agents = [],
   userRole,
 }: ClientsTableProps) {
-  const router = useRouter();
   const canAssignAgent =
     userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
 
@@ -69,7 +67,8 @@ export default function ClientsTable({
               <TableRow
                 key={client._id}
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => router.push(ROUTES.CLIENT_DETAIL(client._id))}
+                onClick={() => window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")}
+                onAuxClick={(e) => e.button === 1 && window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")}
               >
                 {/* Reference code */}
                 <TableCell>
