@@ -18,6 +18,8 @@ export interface IClient {
 
   budgetMin?: number;
   budgetMax?: number;
+  priceCurrency?: "DZD" | "EUR" | "USD";
+  wantedArea?: number;
   city?: string;
   wantedPropertyType?: string;
   rooms?: number;
@@ -54,6 +56,8 @@ const clientSchema = new Schema<IClient>(
 
     budgetMin: Number,
     budgetMax: Number,
+    priceCurrency: { type: String, enum: ["DZD", "EUR", "USD"], default: "DZD" },
+    wantedArea: Number,
     city: String,
     wantedPropertyType: String,
     rooms: Number,

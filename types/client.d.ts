@@ -8,6 +8,8 @@ export type ClientInput = {
   city?: string;
   budgetMin?: number;
   budgetMax?: number;
+  priceCurrency?: "DZD" | "EUR" | "USD";
+  wantedArea?: number;
   wantedPropertyType?: string;
   rooms?: number;
   preferredLocation?: string;
@@ -26,6 +28,8 @@ export type ClientUpdateInput = {
   city?: string;
   budgetMin?: number;
   budgetMax?: number;
+  priceCurrency?: "DZD" | "EUR" | "USD";
+  wantedArea?: number;
   wantedPropertyType?: string;
   rooms?: number;
   preferredLocation?: string;

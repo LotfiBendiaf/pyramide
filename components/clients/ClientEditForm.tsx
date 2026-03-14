@@ -50,6 +50,9 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
       city: client.city || "",
       budgetMin: client.budgetMin,
       budgetMax: client.budgetMax,
+      priceCurrency: client.priceCurrency || "DZD",
+      preferredLocation: client.preferredLocation || "",
+      wantedArea: client.wantedArea,
       qualificationStatus: client.qualificationStatus,
       qualificationNotes: client.qualificationNotes || "",
       extraNotes: client.extraNotes || "",
@@ -219,7 +222,7 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="budgetMin"
@@ -253,6 +256,67 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                   <Input
                     type="number"
                     placeholder="Max"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value ? Number(e.target.value) : undefined
+                      )
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="priceCurrency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Devise</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Devise" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="DZD">DZD</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="preferredLocation"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Zone préférée</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Senia, Canastel..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="wantedArea"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Surface souhaitée (m²)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 90"
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(

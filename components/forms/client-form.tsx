@@ -63,6 +63,8 @@ export default function ClientCreateForm() {
       city: "",
       budgetMin: undefined,
       budgetMax: undefined,
+      priceCurrency: "DZD",
+      wantedArea: undefined,
       wantedPropertyType: "",
       rooms: undefined,
       floorMin: undefined,
@@ -211,7 +213,7 @@ export default function ClientCreateForm() {
             />
 
             {/* Budget */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="budgetMin"
@@ -257,56 +259,79 @@ export default function ClientCreateForm() {
                   </FormItem>
                 )}
               />
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="wantedPropertyType"
-                render={({ field }) => {
-                  const selected = field.value
-                    ? field.value
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean)
-                    : [];
-                  const toggle = (type: string) => {
-                    if (selected.includes(type)) {
-                      field.onChange(
-                        selected.filter((s) => s !== type).join(", ")
-                      );
-                    } else {
-                      field.onChange([...selected, type].join(", "));
-                    }
-                  };
-                  return (
-                    <FormItem>
-                      <FormLabel>Type de bien souhaité</FormLabel>
+                name="priceCurrency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Devise</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
-                        <div className="flex flex-wrap gap-2">
-                          {WANTED_PROPERTY_TYPES.map((type) => (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => toggle(type)}
-                              className={cn(
-                                "px-3 py-1 rounded-full border text-sm transition-colors",
-                                selected.includes(type)
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-background text-foreground border-input hover:bg-accent"
-                              )}
-                            >
-                              {type}
-                            </button>
-                          ))}
-                        </div>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Devise" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
+                      <SelectContent>
+                        <SelectItem value="DZD">DZD</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
+            </div>
 
+            <FormField
+              control={form.control}
+              name="wantedPropertyType"
+              render={({ field }) => {
+                const selected = field.value
+                  ? field.value
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                  : [];
+                const toggle = (type: string) => {
+                  if (selected.includes(type)) {
+                    field.onChange(
+                      selected.filter((s) => s !== type).join(", ")
+                    );
+                  } else {
+                    field.onChange([...selected, type].join(", "));
+                  }
+                };
+                return (
+                  <FormItem>
+                    <FormLabel>Type de bien souhaité</FormLabel>
+                    <FormControl>
+                      <div className="flex flex-wrap gap-2">
+                        {WANTED_PROPERTY_TYPES.map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => toggle(type)}
+                            className={cn(
+                              "px-3 py-1 rounded-full border text-sm transition-colors",
+                              selected.includes(type)
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-foreground border-input hover:bg-accent"
+                            )}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="rooms"
@@ -317,6 +342,29 @@ export default function ClientCreateForm() {
                       <Input
                         type="number"
                         placeholder="Ex: 3"
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? Number(e.target.value) : undefined
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="wantedArea"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Surface souhaitée (m²)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 90"
                         value={field.value ?? ""}
                         onChange={(e) =>
                           field.onChange(

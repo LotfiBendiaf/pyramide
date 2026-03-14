@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -156,7 +156,7 @@ export default function ClientDetailPage({
       {/* Edit Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Informations</CardTitle>
+          <CardTitle>Fiche client</CardTitle>
         </CardHeader>
         <CardContent>
           <ClientEditForm client={client} />
@@ -169,6 +169,11 @@ export default function ClientDetailPage({
           <CardTitle>Suivis associés</CardTitle>
         </CardHeader>
         <CardContent>
+          <Link href={ROUTES.NEW_FOLLOWUP}>
+            <Button className="mb-4 flex items-center gap-2">
+              Ajouter un suivi <Plus className="w-4 h-4" />
+            </Button>
+          </Link>
           {followUps.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               Aucun suivi associé à ce client.

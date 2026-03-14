@@ -154,6 +154,8 @@ interface Client {
 
   budgetMin?: number;
   budgetMax?: number;
+  priceCurrency?: "DZD" | "EUR" | "USD";
+  wantedArea?: number;
   city?: string;
   wantedPropertyType?: string;
   rooms?: number;
