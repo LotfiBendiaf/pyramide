@@ -134,6 +134,10 @@ export default function ClientsTable({
                         .join(" ") || client.referenceCode
                     }
                     initialNotes={client.extraNotes}
+                    preferredLocation={client.preferredLocation}
+                    budgetMax={client.budgetMax}
+                    priceCurrency={client.priceCurrency}
+                    wantedPropertyType={client.wantedPropertyType}
                   />
                 </TableCell>
               </TableRow>

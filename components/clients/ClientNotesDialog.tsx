@@ -19,12 +19,20 @@ interface ClientNotesDialogProps {
   clientId: string;
   clientName: string;
   initialNotes?: string;
+  preferredLocation?: string;
+  budgetMax?: number;
+  priceCurrency?: string;
+  wantedPropertyType?: string;
 }
 
 export default function ClientNotesDialog({
   clientId,
   clientName,
   initialNotes = "",
+  preferredLocation,
+  budgetMax,
+  priceCurrency,
+  wantedPropertyType,
 }: ClientNotesDialogProps) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
@@ -60,6 +68,30 @@ export default function ClientNotesDialog({
         <DialogHeader>
           <DialogTitle>Compte rendu — {clientName}</DialogTitle>
         </DialogHeader>
+        {(preferredLocation || budgetMax || wantedPropertyType) && (
+          <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm space-y-1">
+            {preferredLocation && (
+              <div className="flex gap-2">
+                <span className="text-muted-foreground w-32 shrink-0">Zone souhaitée</span>
+                <span className="font-medium">{preferredLocation}</span>
+              </div>
+            )}
+            {budgetMax !== undefined && (
+              <div className="flex gap-2">
+                <span className="text-muted-foreground w-32 shrink-0">Budget max</span>
+                <span className="font-medium">
+                  {budgetMax.toLocaleString()} {priceCurrency ?? "DZD"}
+                </span>
+              </div>
+            )}
+            {wantedPropertyType && (
+              <div className="flex gap-2">
+                <span className="text-muted-foreground w-32 shrink-0">Type de bien</span>
+                <span className="font-medium">{wantedPropertyType}</span>
+              </div>
+            )}
+          </div>
+        )}
         <Textarea
           placeholder="Saisir le compte rendu..."
           className="min-h-[160px] resize-none"
