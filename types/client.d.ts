@@ -12,6 +12,8 @@ export type ClientInput = {
   wantedArea?: number;
   wantedPropertyType?: string;
   rooms?: number;
+  floorMin?: number;
+  floorMax?: number;
   preferredLocation?: string;
   extraNotes?: string;
 
@@ -32,6 +34,8 @@ export type ClientUpdateInput = {
   wantedArea?: number;
   wantedPropertyType?: string;
   rooms?: number;
+  floorMin?: number;
+  floorMax?: number;
   preferredLocation?: string;
   extraNotes?: string;
   qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";

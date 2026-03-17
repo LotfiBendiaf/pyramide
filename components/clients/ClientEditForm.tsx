@@ -10,6 +10,7 @@ import { updateClient } from "@/lib/actions/client.action";
 import { updateClientSchema } from "@/lib/validators/client";
 import { ClientType } from "@/models/client.model";
 import { CLIENT_QUALIFICATIONS, WILAYAS } from "@/constants/values";
+import { cn } from "@/lib/utils";
 
 import {
   Form,
@@ -51,6 +52,10 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
       budgetMin: client.budgetMin,
       budgetMax: client.budgetMax,
       priceCurrency: client.priceCurrency || "DZD",
+      wantedPropertyType: client.wantedPropertyType || "",
+      rooms: client.rooms,
+      floorMin: client.floorMin,
+      floorMax: client.floorMax,
       preferredLocation: client.preferredLocation || "",
       wantedArea: client.wantedArea,
       qualificationStatus: client.qualificationStatus,
@@ -293,15 +298,68 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
           />
         </div>
 
+        <FormField
+          control={form.control}
+          name="wantedPropertyType"
+          render={({ field }) => {
+            const WANTED_PROPERTY_TYPES = [
+              "Appartement", "Maison", "Villa", "Studio", "Terrain",
+              "Duplex", "Hangar", "Penthouse", "Local Commercial",
+            ];
+            const selected = field.value
+              ? field.value.split(",").map((s) => s.trim()).filter(Boolean)
+              : [];
+            const toggle = (type: string) => {
+              if (selected.includes(type)) {
+                field.onChange(selected.filter((s) => s !== type).join(", "));
+              } else {
+                field.onChange([...selected, type].join(", "));
+              }
+            };
+            return (
+              <FormItem>
+                <FormLabel>Type de bien souhaité</FormLabel>
+                <FormControl>
+                  <div className="flex flex-wrap gap-2">
+                    {WANTED_PROPERTY_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggle(type)}
+                        className={cn(
+                          "px-3 py-1 rounded-full border text-sm transition-colors",
+                          selected.includes(type)
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-foreground border-input hover:bg-accent"
+                        )}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="preferredLocation"
+            name="rooms"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Zone préférée</FormLabel>
+                <FormLabel>Nombre de pièces</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Senia, Canastel..." {...field} />
+                  <Input
+                    type="number"
+                    placeholder="Ex: 3"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                    }
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -319,9 +377,7 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                     placeholder="Ex: 90"
                     value={field.value ?? ""}
                     onChange={(e) =>
-                      field.onChange(
-                        e.target.value ? Number(e.target.value) : undefined
-                      )
+                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
                     }
                   />
                 </FormControl>
@@ -330,6 +386,63 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
             )}
           />
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="floorMin"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Étage minimum</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 1"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="floorMax"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Étage maximum</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 6"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="preferredLocation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Zone préférée</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: Senia, Canastel..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

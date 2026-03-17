@@ -159,6 +159,8 @@ interface Client {
   city?: string;
   wantedPropertyType?: string;
   rooms?: number;
+  floorMin?: number;
+  floorMax?: number;
   preferredLocation?: string;
 
   extraNotes?: string;

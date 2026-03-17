@@ -52,13 +52,6 @@ export async function createClient(
   try {
     const { type, assignedAgent: providedAgent } = validationResult.params;
 
-    // 3️⃣ Generate reference code (BUY-032…)
-    const count = await Client.countDocuments({ type });
-    const referenceCode = `${clientPrefix(type)}-${String(count + 1).padStart(
-      3,
-      "0"
-    )}`;
-
     // 4️⃣ Determine assigned agent
     const isAdmin =
       user.data.role === "ADMIN" ||
@@ -66,15 +59,47 @@ export async function createClient(
       user.data.role === "DEVELOPER";
     const assignedAgent = isAdmin && providedAgent ? providedAgent : undefined;
 
-    // 5️⃣ Create client
-    const client = await Client.create({
-      ...validationResult.params,
-      referenceCode,
-      qualificationStatus: "NEW",
-      archived: false,
-      createdBy: user.data._id,
-      ...(assignedAgent ? { assignedAgent } : { assignedAgent: null }),
-    });
+    // 3️⃣ Generate reference code with retry on duplicate key (race condition)
+    const prefix = clientPrefix(type);
+    const MAX_RETRIES = 5;
+    let client = null;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const [agg] = await Client.aggregate([
+        { $match: { type } },
+        {
+          $addFields: {
+            codeNum: {
+              $toInt: { $arrayElemAt: [{ $split: ["$referenceCode", "-"] }, 1] },
+            },
+          },
+        },
+        { $sort: { codeNum: -1 } },
+        { $limit: 1 },
+        { $project: { codeNum: 1 } },
+      ]);
+      const lastNum = agg?.codeNum ?? 0;
+      const referenceCode = `${prefix}-${String(lastNum + 1).padStart(3, "0")}`;
+
+      try {
+        client = await Client.create({
+          ...validationResult.params,
+          referenceCode,
+          qualificationStatus: "NEW",
+          archived: false,
+          createdBy: user.data._id,
+          ...(assignedAgent ? { assignedAgent } : { assignedAgent: null }),
+        });
+        break; // success — exit retry loop
+      } catch (err: unknown) {
+        // E11000: duplicate referenceCode — retry with fresh aggregate
+        const mongoErr = err as { code?: number; keyPattern?: Record<string, unknown> };
+        if (mongoErr?.code === 11000 && mongoErr?.keyPattern?.referenceCode && attempt < MAX_RETRIES - 1) {
+          continue;
+        }
+        throw err;
+      }
+    }
 
     if (!client) {
       throw new Error("Échec de la création du client");

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Locate } from "lucide-react";
 import {
   MapContainer,
   TileLayer,
@@ -86,6 +87,30 @@ export default function LocationPicker({
 }: LocationPickerProps) {
   const center = useMemo(() => value ?? defaultCenter, [value, defaultCenter]);
   const zoom = value ? SELECTED_ZOOM : DEFAULT_ZOOM;
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const handleCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("La géolocalisation n'est pas supportée par ce navigateur.");
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        onChange({
+          lat: Number(position.coords.latitude.toFixed(6)),
+          lng: Number(position.coords.longitude.toFixed(6)),
+        });
+        setLocating(false);
+      },
+      () => {
+        setLocationError("Impossible d'obtenir votre position.");
+        setLocating(false);
+      }
+    );
+  };
 
   const updateCoordinate = (next: Partial<ListingCoordinates> | null) => {
     if (!next) {
@@ -133,11 +158,23 @@ export default function LocationPicker({
         <Button
           type="button"
           variant="outline"
+          onClick={handleCurrentLocation}
+          disabled={locating}
+        >
+          <Locate className="mr-2 h-4 w-4" />
+          {locating ? "Localisation..." : "Ma position"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
           onClick={() => onChange(undefined)}
         >
           Effacer
         </Button>
       </div>
+      {locationError && (
+        <p className="text-xs text-destructive">{locationError}</p>
+      )}
 
       <div className="relative z-0 overflow-hidden rounded-lg border">
         <MapContainer
