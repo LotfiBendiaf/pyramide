@@ -1,5 +1,5 @@
 interface FollowUpInput {
-  listing: string;
+  listing?: string;
   client: string;
   agent?: string;
   type: "COLD" | "WARM" | "HOT" | "CUSTOM";

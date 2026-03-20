@@ -14,6 +14,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -205,6 +206,7 @@ export function AppSidebar() {
   const userRole = user?.role as Role | undefined;
   const pathname = usePathname();
   const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
+  const { isMobile, setOpenMobile } = useSidebar();
 
   // Reset loading state when pathname changes (navigation complete)
   useEffect(() => {
@@ -212,9 +214,11 @@ export function AppSidebar() {
   }, [pathname]);
 
   const handleNavClick = (url: string) => {
-    // Only show loading if navigating to a different page
     if (url !== pathname) {
       setLoadingUrl(url);
+    }
+    if (isMobile) {
+      setOpenMobile(false);
     }
   };
 

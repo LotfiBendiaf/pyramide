@@ -463,10 +463,20 @@ export async function updateListing(
         ? parsedParams.propertyTypeCustom?.trim()
         : undefined;
 
+    const existingListing = await Listing.findById(listingId)
+      .select("referenceCode")
+      .lean() as { referenceCode?: string } | null;
+
+    const description = buildListingDescription(
+      parsedParams,
+      existingListing?.referenceCode
+    );
+
     const updated = await Listing.findByIdAndUpdate(
       listingId,
       {
         ...parsedParams,
+        description,
         propertyTypeCustom: normalizedPropertyTypeCustom,
         evaluation,
         // Do not overwrite agent or referenceCode

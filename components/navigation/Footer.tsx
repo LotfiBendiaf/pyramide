@@ -25,7 +25,7 @@ const propertyTypes = [
 
 const contactInfo = [
   { icon: Phone, text: "0779 07 97 06", href: "tel:+213779079706" },
-  { icon: Phone, text: "0792 11 65 96", href: "tel:+213792116596" },
+  { icon: Phone, text: "0556 51 00 00", href: "tel:+213556510000" },
   {
     icon: Mail,
     text: "contact@pyramideimmobilier.com",

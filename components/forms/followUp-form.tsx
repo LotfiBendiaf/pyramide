@@ -74,6 +74,7 @@ export function FollowUpForm({
       try {
         const result = await createFollowUp({
           ...data,
+          listing: data.listing === "AUTRE" ? undefined : data.listing,
           title: data.title || undefined,
         });
 
@@ -112,6 +113,7 @@ export function FollowUpForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="AUTRE">Autre</SelectItem>
                   {listings.map((l) => (
                     <SelectItem key={l._id} value={l._id}>
                       {l.referenceCode || l.title?.slice(0, 60)}
@@ -283,8 +285,8 @@ export function FollowUpForm({
                       >
                         <CalendarSyncIcon className="h-4 w-4 text-muted-foreground" />
                         {field.value
-                          ? format(new Date(field.value), "dd/MM/yyyy")
-                          : "Sélectionner une date"}
+                          ? format(new Date(field.value), "dd/MM/yyyy HH:mm")
+                          : "Sélectionner une date et heure"}
                       </Button>
                     </div>
                   </FormControl>
@@ -293,9 +295,27 @@ export function FollowUpForm({
                   <Calendar
                     mode="single"
                     selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date)}
-                    initialFocus
+                    onSelect={(date) => {
+                      if (!date) return field.onChange(undefined);
+                      const prev = field.value ? new Date(field.value) : null;
+                      date.setHours(prev?.getHours() ?? 9, prev?.getMinutes() ?? 0, 0, 0);
+                      field.onChange(date);
+                    }}
                   />
+                  <div className="border-t p-3">
+                    <label className="text-sm text-muted-foreground mb-1 block">Heure</label>
+                    <Input
+                      type="time"
+                      className="w-full"
+                      value={field.value ? format(new Date(field.value), "HH:mm") : "09:00"}
+                      onChange={(e) => {
+                        const [hours, minutes] = e.target.value.split(":").map(Number);
+                        const date = field.value ? new Date(field.value) : new Date();
+                        date.setHours(hours, minutes, 0, 0);
+                        field.onChange(new Date(date));
+                      }}
+                    />
+                  </div>
                 </PopoverContent>
               </Popover>
               <FormMessage />
