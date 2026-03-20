@@ -46,6 +46,7 @@ export type ClientUpdateInput = {
 export type ClientFilters = {
   type?: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
   qualificationStatus?: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
+  wantedPropertyType?: string;
   agentId?: string;
   search?: string;
   fromDate?: Date;

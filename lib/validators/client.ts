@@ -29,6 +29,7 @@ export const fetchClientsSchema = z.object({
   qualificationStatus: z
     .enum(["NEW", "QUALIFIED", "NOT_RELEVANT", "ARCHIVED"])
     .optional(),
+  wantedPropertyType: z.string().optional(),
   agentId: z.string().optional(),
   search: z.string().min(1).optional(),
   page: z.number().min(1).optional(),

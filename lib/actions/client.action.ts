@@ -144,6 +144,7 @@ export async function fetchClients(
     const {
       type,
       qualificationStatus,
+      wantedPropertyType,
       agentId,
       search,
       page = 1,
@@ -167,21 +168,25 @@ export async function fetchClients(
 
     if (type) filter.type = type;
     if (qualificationStatus) filter.qualificationStatus = qualificationStatus;
+    if (wantedPropertyType) filter.wantedPropertyType = wantedPropertyType;
 
     // Agent filter (admin/manager only)
     if (isAdmin && agentId) {
       filter.assignedAgent = agentId;
     }
 
-    // Search (name, phone, email, reference)
+    // Search (name, phone, email, reference, rooms via "f3" pattern)
     if (search) {
-      const searchConditions = [
-        { firstName: { $regex: search, $options: "i" } },
-        { lastName: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { referenceCode: { $regex: search, $options: "i" } },
-      ];
+      const roomMatch = search.match(/^f(\d+)$/i);
+      const searchConditions = roomMatch
+        ? [{ rooms: parseInt(roomMatch[1], 10) }]
+        : [
+            { firstName: { $regex: search, $options: "i" } },
+            { lastName: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { referenceCode: { $regex: search, $options: "i" } },
+          ];
       // Combine role filter with search filter
       if (filter.$or) {
         filter.$and = [{ $or: filter.$or }, { $or: searchConditions }];

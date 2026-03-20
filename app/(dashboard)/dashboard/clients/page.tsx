@@ -15,6 +15,7 @@ type SearchParams = {
   agentId?: string;
   qualification?: string;
   type?: string;
+  propertyType?: string;
   search?: string;
   page?: string;
 };
@@ -42,6 +43,9 @@ async function ClientsContent({
   }
   if (searchParams.type && searchParams.type !== "__all__") {
     filterParams.type = searchParams.type as ClientFilters["type"];
+  }
+  if (searchParams.propertyType && searchParams.propertyType !== "__all__") {
+    filterParams.wantedPropertyType = searchParams.propertyType;
   }
   if (searchParams.search) {
     filterParams.search = searchParams.search;

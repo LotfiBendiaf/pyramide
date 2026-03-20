@@ -32,9 +32,13 @@ export default function ClientsFilter({
     searchParams.get("qualification") ?? ""
   );
   const [type, setType] = useState(searchParams.get("type") ?? "");
+  const [propertyType, setPropertyType] = useState(
+    searchParams.get("propertyType") ?? ""
+  );
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
 
-  const hasActiveFilters = !!agentId || !!qualification || !!type || !!search;
+  const hasActiveFilters =
+    !!agentId || !!qualification || !!type || !!propertyType || !!search;
 
   const handleApplyFilters = () => {
     const params = new URLSearchParams();
@@ -42,6 +46,7 @@ export default function ClientsFilter({
     if (agentId) params.set("agentId", agentId);
     if (qualification) params.set("qualification", qualification);
     if (type) params.set("type", type);
+    if (propertyType) params.set("propertyType", propertyType);
     if (search) params.set("search", search);
 
     startTransition(() => {
@@ -53,6 +58,7 @@ export default function ClientsFilter({
     setAgentId("");
     setQualification("");
     setType("");
+    setPropertyType("");
     setSearch("");
 
     startTransition(() => {
@@ -105,6 +111,24 @@ export default function ClientsFilter({
             <SelectItem value="SELLER">Vendeur</SelectItem>
             <SelectItem value="RENTER">Loueur</SelectItem>
             <SelectItem value="INVESTOR">Investisseur</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Property type filter */}
+        <Select value={propertyType} onValueChange={setPropertyType}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Type de bien" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous les biens</SelectItem>
+            <SelectItem value="Appartement">Appartement</SelectItem>
+            <SelectItem value="Maison">Maison</SelectItem>
+            <SelectItem value="Villa">Villa</SelectItem>
+            <SelectItem value="Studio">Studio</SelectItem>
+            <SelectItem value="Terrain">Terrain</SelectItem>
+            <SelectItem value="Commercial">Commercial</SelectItem>
+            <SelectItem value="Penthouse">Penthouse</SelectItem>
+            <SelectItem value="Local Commercial">Local Commercial</SelectItem>
           </SelectContent>
         </Select>
 
