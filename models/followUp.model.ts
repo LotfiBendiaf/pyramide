@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 
 export interface IFollowUp {
   _id?: string;
-  listing: Schema.Types.ObjectId;
+  listing?: Schema.Types.ObjectId;
   client: Schema.Types.ObjectId;
   agent: Schema.Types.ObjectId;
   type: "COLD" | "WARM" | "HOT" | "CUSTOM";
@@ -23,7 +23,6 @@ const FollowUpSchema = new Schema<IFollowUp>(
     listing: {
       type: Schema.Types.ObjectId,
       ref: "Listing",
-      required: true,
     },
 
     client: {
