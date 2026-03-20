@@ -108,6 +108,7 @@ export default function ListingForm({
             area: initialData.features.area,
             facade: initialData.features.facade,
             etage: initialData.features.etage,
+            nombreEtages: initialData.features.nombreEtages,
             furnished: initialData.features.furnished ?? false,
             parking: initialData.features.parking ?? false,
             balcony: initialData.features.balcony ?? false,
@@ -157,6 +158,7 @@ export default function ListingForm({
             bathrooms: 0,
             area: 0,
             etage: undefined,
+            nombreEtages: undefined,
             furnished: false,
             parking: false,
             facade: undefined,
@@ -463,6 +465,38 @@ export default function ListingForm({
                     </FormItem>
                   )}
                 />
+                {(selectedPropertyType === "Villa" ||
+                  selectedPropertyType === "Terrain") && (
+                  <FormField
+                    control={form.control}
+                    name="features.nombreEtages"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          R+{" "}
+                          <span className="text-muted-foreground text-xs font-normal">
+                            (Nombre d&apos;étages)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Ex: 2 → R+2"
+                            value={field.value ?? ""}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === ""
+                                  ? undefined
+                                  : Number(e.target.value)
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="features.furnished"

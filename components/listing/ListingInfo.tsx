@@ -145,6 +145,13 @@ export default function ListingInfo({
         {listing.features.etage !== undefined && (
           <Stat icon={Building2} label="Étage" value={listing.features.etage} />
         )}
+        {listing.features.nombreEtages !== undefined && (
+          <Stat
+            icon={Building2}
+            label="Hauteur"
+            value={`R+${listing.features.nombreEtages}`}
+          />
+        )}
       </div>
 
       {/* Description */}

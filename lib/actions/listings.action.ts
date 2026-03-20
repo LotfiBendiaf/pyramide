@@ -34,6 +34,9 @@ function buildListingDescription(
     params.location?.address?.trim() ||
     "";
   const areaLabel = params.features.area ? `${params.features.area} m²` : "";
+  const nombreEtages = params.features.nombreEtages;
+  const nombreEtagesLine =
+    nombreEtages !== undefined ? `Hauteur : R+${nombreEtages}` : undefined;
   const etage = params.features.etage;
   const etageSuffix = etage === 1 ? "er" : "e";
   const elevatorText = params.features.elevator ? " avec ascenseur" : "";
@@ -56,6 +59,7 @@ function buildListingDescription(
     `Type : ${typeLabel}`,
     areaLabel ? `Surface : ${areaLabel}` : undefined,
     etageLine,
+    nombreEtagesLine,
     locationLabel ? `Emplacement : ${locationLabel}` : undefined,
     `Prix demandé : ${priceLabel}`,
   ]

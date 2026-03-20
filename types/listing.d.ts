@@ -38,6 +38,7 @@ interface ListingInput {
     area?: number; // m²
     facade?: number;
     etage?: number;
+    nombreEtages?: number;
 
     furnished?: boolean;
     parking?: boolean;

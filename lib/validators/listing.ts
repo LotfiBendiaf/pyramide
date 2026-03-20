@@ -71,6 +71,7 @@ export const listingSchema = z
       facade: z.coerce.number().min(1).max(4).optional(),
       area: z.coerce.number().positive("Surface invalide"),
       etage: z.coerce.number().optional(),
+      nombreEtages: z.coerce.number().min(1).optional(),
 
       furnished: z.boolean().optional(),
       parking: z.boolean().optional(),
