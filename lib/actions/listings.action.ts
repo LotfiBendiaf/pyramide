@@ -72,7 +72,7 @@ function buildListingDescription(
     : "Un bien rare, alliant confort, accessibilité et standing.";
 
   const contact =
-    "Pour plus d’informations ou pour organiser une visite :\n0779 07 97 06 / 0792 11 65 96 / 0770 82 33 00";
+    "Pour plus d’informations ou pour organiser une visite :\n0779 07 97 06 / 0792 11 65 96";
 
   return [
     statusLine,
@@ -467,9 +467,9 @@ export async function updateListing(
         ? parsedParams.propertyTypeCustom?.trim()
         : undefined;
 
-    const existingListing = await Listing.findById(listingId)
+    const existingListing = (await Listing.findById(listingId)
       .select("referenceCode")
-      .lean() as { referenceCode?: string } | null;
+      .lean()) as { referenceCode?: string } | null;
 
     const description = buildListingDescription(
       parsedParams,

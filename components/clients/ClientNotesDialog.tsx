@@ -23,6 +23,7 @@ interface ClientNotesDialogProps {
   budgetMax?: number;
   priceCurrency?: string;
   wantedPropertyType?: string;
+  rooms?: number;
 }
 
 export default function ClientNotesDialog({
@@ -33,6 +34,7 @@ export default function ClientNotesDialog({
   budgetMax,
   priceCurrency,
   wantedPropertyType,
+  rooms,
 }: ClientNotesDialogProps) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
@@ -68,17 +70,24 @@ export default function ClientNotesDialog({
         <DialogHeader>
           <DialogTitle>Compte rendu — {clientName}</DialogTitle>
         </DialogHeader>
-        {(preferredLocation || budgetMax || wantedPropertyType) && (
+        {(preferredLocation ||
+          budgetMax ||
+          wantedPropertyType ||
+          rooms !== undefined) && (
           <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm space-y-1">
             {preferredLocation && (
               <div className="flex gap-2">
-                <span className="text-muted-foreground w-32 shrink-0">Zone souhaitée</span>
+                <span className="text-muted-foreground w-32 shrink-0">
+                  Zone souhaitée
+                </span>
                 <span className="font-medium">{preferredLocation}</span>
               </div>
             )}
             {budgetMax !== undefined && (
               <div className="flex gap-2">
-                <span className="text-muted-foreground w-32 shrink-0">Budget max</span>
+                <span className="text-muted-foreground w-32 shrink-0">
+                  Budget max
+                </span>
                 <span className="font-medium">
                   {budgetMax.toLocaleString()} {priceCurrency ?? "DZD"}
                 </span>
@@ -86,8 +95,18 @@ export default function ClientNotesDialog({
             )}
             {wantedPropertyType && (
               <div className="flex gap-2">
-                <span className="text-muted-foreground w-32 shrink-0">Type de bien</span>
+                <span className="text-muted-foreground w-32 shrink-0">
+                  Type de bien
+                </span>
                 <span className="font-medium">{wantedPropertyType}</span>
+              </div>
+            )}
+            {rooms !== undefined && (
+              <div className="flex gap-2">
+                <span className="text-muted-foreground w-32 shrink-0">
+                  Pièces
+                </span>
+                <span className="font-medium">{rooms}</span>
               </div>
             )}
           </div>

@@ -138,6 +138,7 @@ export default function ClientsTable({
                     budgetMax={client.budgetMax}
                     priceCurrency={client.priceCurrency}
                     wantedPropertyType={client.wantedPropertyType}
+                    rooms={client.rooms}
                   />
                 </TableCell>
               </TableRow>
