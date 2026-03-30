@@ -159,7 +159,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-none text-gray-600 space-y-2 ml-4">
               <li>Email : contact@pyramideimmobilier.com</li>
-              <li>Téléphone : +213 00 00 00 00</li>
+              <li>Téléphone : 0779 07 97 06 / 0792 11 65 96</li>
               <li>Adresse : Oran, Algérie</li>
             </ul>
           </section>
