@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { NotebookPen } from "lucide-react";
+import {
+  NotebookPen,
+  MapPin,
+  Wallet,
+  Building2,
+  LayoutGrid,
+  ArrowRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +27,7 @@ interface ClientNotesDialogProps {
   clientName: string;
   initialNotes?: string;
   preferredLocation?: string;
+  budgetMin?: number;
   budgetMax?: number;
   priceCurrency?: string;
   wantedPropertyType?: string;
@@ -31,6 +39,7 @@ export default function ClientNotesDialog({
   clientName,
   initialNotes = "",
   preferredLocation,
+  budgetMin,
   budgetMax,
   priceCurrency,
   wantedPropertyType,
@@ -71,42 +80,62 @@ export default function ClientNotesDialog({
           <DialogTitle>Compte rendu — {clientName}</DialogTitle>
         </DialogHeader>
         {(preferredLocation ||
+          budgetMin ||
           budgetMax ||
           wantedPropertyType ||
           rooms !== undefined) && (
-          <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm space-y-1">
+          <div className="rounded-lg border bg-muted/30 p-3 grid grid-cols-2 gap-2 text-sm">
             {preferredLocation && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-32 shrink-0">
-                  Zone souhaitée
-                </span>
-                <span className="font-medium">{preferredLocation}</span>
+              <div className="flex items-start gap-2 col-span-2">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground leading-none mb-0.5">
+                    Zone souhaitée
+                  </p>
+                  <p className="font-medium">{preferredLocation}</p>
+                </div>
               </div>
             )}
-            {budgetMax !== undefined && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-32 shrink-0">
-                  Budget max
-                </span>
-                <span className="font-medium">
-                  {budgetMax.toLocaleString()} {priceCurrency ?? "DZD"}
-                </span>
+            {(budgetMin !== undefined || budgetMax !== undefined) && (
+              <div className="flex items-start gap-2 col-span-2">
+                <Wallet className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground leading-none mb-0.5">
+                    Budget
+                  </p>
+                  <p className="font-medium flex items-center gap-3">
+                    {budgetMin !== undefined ? budgetMin.toLocaleString() : "—"}
+                    <ArrowRight size={16} />
+                    {budgetMax !== undefined
+                      ? budgetMax.toLocaleString()
+                      : "—"}{" "}
+                    <span className="text-muted-foreground font-normal">
+                      {priceCurrency ?? "DZD"}
+                    </span>
+                  </p>
+                </div>
               </div>
             )}
             {wantedPropertyType && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-32 shrink-0">
-                  Type de bien
-                </span>
-                <span className="font-medium">{wantedPropertyType}</span>
+              <div className="flex items-start gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground leading-none mb-0.5">
+                    Type de bien
+                  </p>
+                  <p className="font-medium">{wantedPropertyType}</p>
+                </div>
               </div>
             )}
             {rooms !== undefined && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-32 shrink-0">
-                  Pièces
-                </span>
-                <span className="font-medium">{rooms}</span>
+              <div className="flex items-start gap-2">
+                <LayoutGrid className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground leading-none mb-0.5">
+                    Pièces
+                  </p>
+                  <p className="font-medium">{rooms}</p>
+                </div>
               </div>
             )}
           </div>

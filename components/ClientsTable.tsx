@@ -135,6 +135,7 @@ export default function ClientsTable({
                     }
                     initialNotes={client.extraNotes}
                     preferredLocation={client.preferredLocation}
+                    budgetMin={client.budgetMin}
                     budgetMax={client.budgetMax}
                     priceCurrency={client.priceCurrency}
                     wantedPropertyType={client.wantedPropertyType}

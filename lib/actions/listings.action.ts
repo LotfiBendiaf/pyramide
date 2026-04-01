@@ -28,11 +28,11 @@ function buildListingDescription(
       ? "Une"
       : "Un";
   const situe = article === "Une" ? "située" : "situé";
+  const _city = params.location?.city?.trim();
+  const _address = params.location?.address?.trim();
   const locationLabel =
     params.location?.district?.trim() ||
-    params.location?.city?.trim() ||
-    params.location?.address?.trim() ||
-    "";
+    (_city && _address ? `${_city} - ${_address}` : _city || _address || "");
   const areaLabel = params.features.area ? `${params.features.area} m²` : "";
   const nombreEtages = params.features.nombreEtages;
   const nombreEtagesLine =
@@ -677,6 +677,41 @@ export async function fetchListingsBySellerClient(
       data: JSON.parse(JSON.stringify(listings)),
       status: 200,
     };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function rebuildAllListingDescriptions(): Promise<
+  ActionResponse<{ updated: number }>
+> {
+  try {
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const listings = await Listing.find({}).lean();
+
+    let updated = 0;
+    for (const listing of listings) {
+      const description = buildListingDescription(
+        listing as unknown as ListingInput,
+        listing.referenceCode
+      );
+      await Listing.findByIdAndUpdate(listing._id, { description });
+      updated++;
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+
+    return { success: true, data: { updated }, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

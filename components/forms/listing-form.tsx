@@ -70,16 +70,20 @@ const PROPERTY_TYPES = [
 const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
 
 const COUNTRY_CODES = [
-  { code: "+213", flag: "🇩🇿", label: "Algérie" },
-  { code: "+33", flag: "🇫🇷", label: "France" },
-  { code: "+44", flag: "🇬🇧", label: "Royaume-Uni" },
-  { code: "+34", flag: "🇪🇸", label: "Espagne" },
-  { code: "+32", flag: "🇧🇪", label: "Belgique" },
-  { code: "+216", flag: "🇹🇳", label: "Tunisie" },
-  { code: "+1", flag: "🇺🇸", label: "États-Unis" },
+  { id: "DZ", code: "+213", flag: "🇩🇿", label: "Algérie" },
+  { id: "FR", code: "+33",  flag: "🇫🇷", label: "France" },
+  { id: "GB", code: "+44",  flag: "🇬🇧", label: "Royaume-Uni" },
+  { id: "ES", code: "+34",  flag: "🇪🇸", label: "Espagne" },
+  { id: "BE", code: "+32",  flag: "🇧🇪", label: "Belgique" },
+  { id: "TN", code: "+216", flag: "🇹🇳", label: "Tunisie" },
+  { id: "US", code: "+1",   flag: "🇺🇸", label: "États-Unis" },
+  { id: "CA", code: "+1",   flag: "🇨🇦", label: "Canada" },
+  { id: "SA", code: "+966", flag: "🇸🇦", label: "Arabie Saoudite" },
+  { id: "QA", code: "+974", flag: "🇶🇦", label: "Qatar" },
+  { id: "AE", code: "+971", flag: "🇦🇪", label: "Émirats Arabes Unis" },
 ] as const;
 
-type CountryCode = (typeof COUNTRY_CODES)[number]["code"];
+type CountryId = (typeof COUNTRY_CODES)[number]["id"];
 
 const LocationPicker = dynamic(() => import("../listing/LocationPicker"), {
   ssr: false,
@@ -91,7 +95,7 @@ export default function ListingForm({
   client,
 }: ListingFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [countryCode, setCountryCode] = useState<CountryCode>("+213");
+  const [countryId, setCountryId] = useState<CountryId>("DZ");
   const isEditMode = !!listingId;
 
   const router = useRouter();
@@ -375,11 +379,9 @@ export default function ListingForm({
                     control={form.control}
                     name="sellerPhone"
                     render={({ field }) => {
-                      const selected = COUNTRY_CODES.find(
-                        (c) => c.code === countryCode
-                      )!;
-                      const localValue = field.value.startsWith(countryCode)
-                        ? field.value.slice(countryCode.length)
+                      const selected = COUNTRY_CODES.find((c) => c.id === countryId)!;
+                      const localValue = field.value.startsWith(selected.code)
+                        ? field.value.slice(selected.code.length)
                         : field.value.replace(/^\+\d+/, "");
                       return (
                         <FormItem>
@@ -387,31 +389,25 @@ export default function ListingForm({
                           <FormControl>
                             <div className="flex">
                               <Select
-                                value={countryCode}
+                                value={countryId}
                                 onValueChange={(val) => {
-                                  setCountryCode(val as CountryCode);
-                                  const digits = field.value.replace(
-                                    /^\+\d+/,
-                                    ""
-                                  );
-                                  field.onChange(
-                                    digits ? `${val}${digits}` : ""
-                                  );
+                                  const next = COUNTRY_CODES.find((c) => c.id === val)!;
+                                  setCountryId(val as CountryId);
+                                  const digits = field.value.replace(/^\+\d+/, "");
+                                  field.onChange(digits ? `${next.code}${digits}` : "");
                                 }}
                               >
                                 <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
                                   <SelectValue>
                                     <span className="flex items-center gap-1.5">
                                       <span>{selected.flag}</span>
-                                      <span className="text-xs">
-                                        {selected.code}
-                                      </span>
+                                      <span className="text-xs">{selected.code}</span>
                                     </span>
                                   </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                   {COUNTRY_CODES.map((c) => (
-                                    <SelectItem key={c.code} value={c.code}>
+                                    <SelectItem key={c.id} value={c.id}>
                                       <span className="flex items-center gap-2">
                                         <span>{c.flag}</span>
                                         <span>{c.label}</span>
@@ -429,12 +425,8 @@ export default function ListingForm({
                                 value={localValue}
                                 onChange={(e) => {
                                   const raw = e.target.value.replace(/\D/g, "");
-                                  const local = raw.startsWith("0")
-                                    ? raw.slice(1)
-                                    : raw;
-                                  field.onChange(
-                                    local ? `${countryCode}${local}` : ""
-                                  );
+                                  const local = raw.startsWith("0") ? raw.slice(1) : raw;
+                                  field.onChange(local ? `${selected.code}${local}` : "");
                                 }}
                               />
                             </div>
