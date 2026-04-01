@@ -6,6 +6,7 @@ export const clientSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
+  phone2: z.union([z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"), z.literal("")]).optional(),
   email: z.union([z.string().email(), z.literal("")]).optional(),
 
   city: z.string().optional(),
@@ -41,6 +42,7 @@ export const updateClientSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
+  phone2: z.union([z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"), z.literal("")]).optional(),
   email: z.union([z.string().email(), z.literal("")]).optional(),
   city: z.string().optional(),
   budgetMin: z.number().optional(),

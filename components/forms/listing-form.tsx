@@ -81,6 +81,7 @@ export default function ListingForm({
 }: ListingFormProps) {
   const [isPending, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<CountryId>("DZ");
+  const [countryId2, setCountryId2] = useState<CountryId>("DZ");
   const isEditMode = !!listingId;
 
   const router = useRouter();
@@ -140,6 +141,7 @@ export default function ListingForm({
           sellerFirstName: client?.firstName ?? "",
           sellerLastName: client?.lastName ?? "",
           sellerPhone: client?.phone ?? "",
+          sellerPhone2: "",
           sellerEmail: client?.email ?? "",
         }
       : {
@@ -180,6 +182,7 @@ export default function ListingForm({
           sellerFirstName: "",
           sellerLastName: "",
           sellerPhone: "",
+          sellerPhone2: "",
           sellerEmail: "",
         },
   });
@@ -359,86 +362,145 @@ export default function ListingForm({
                     )}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="sellerPhone"
-                    render={({ field }) => {
-                      const selected = COUNTRY_CODES.find((c) => c.id === countryId)!;
-                      const localValue = field.value.startsWith(selected.code)
-                        ? field.value.slice(selected.code.length)
-                        : field.value.replace(/^\+\d+/, "");
-                      return (
-                        <FormItem>
-                          <FormLabel>Téléphone du vendeur</FormLabel>
-                          <FormControl>
-                            <div className="flex">
-                              <Select
-                                value={countryId}
-                                onValueChange={(val) => {
-                                  const next = COUNTRY_CODES.find((c) => c.id === val)!;
-                                  setCountryId(val as CountryId);
-                                  const digits = field.value.replace(/^\+\d+/, "");
-                                  field.onChange(digits ? `${next.code}${digits}` : "");
-                                }}
-                              >
-                                <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
-                                  <SelectValue>
-                                    <span className="flex items-center gap-1.5">
-                                      <span>{selected.flag}</span>
-                                      <span className="text-xs">{selected.code}</span>
-                                    </span>
-                                  </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {COUNTRY_CODES.map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                      <span className="flex items-center gap-2">
-                                        <span>{c.flag}</span>
-                                        <span>{c.label}</span>
-                                        <span className="text-muted-foreground text-xs ml-auto">
-                                          {c.code}
-                                        </span>
-                                      </span>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                className="rounded-l-none"
-                                placeholder="XXXXXXXXX"
-                                value={localValue}
-                                onChange={(e) => {
-                                  const raw = e.target.value.replace(/\D/g, "");
-                                  const local = raw.startsWith("0") ? raw.slice(1) : raw;
-                                  field.onChange(local ? `${selected.code}${local}` : "");
-                                }}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="sellerEmail"
-                    render={({ field }) => (
+                <FormField
+                  control={form.control}
+                  name="sellerPhone"
+                  render={({ field }) => {
+                    const selected = COUNTRY_CODES.find((c) => c.id === countryId)!;
+                    const localValue = field.value.startsWith(selected.code)
+                      ? field.value.slice(selected.code.length)
+                      : field.value.replace(/^\+\d+/, "");
+                    return (
                       <FormItem>
-                        <FormLabel>Email du vendeur</FormLabel>
+                        <FormLabel>Téléphone du vendeur</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Email (optionnel)"
-                            type="email"
-                            {...field}
-                          />
+                          <div className="flex">
+                            <Select
+                              value={countryId}
+                              onValueChange={(val) => {
+                                const next = COUNTRY_CODES.find((c) => c.id === val)!;
+                                setCountryId(val as CountryId);
+                                const digits = field.value.replace(/^\+\d+/, "");
+                                field.onChange(digits ? `${next.code}${digits}` : "");
+                              }}
+                            >
+                              <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
+                                <SelectValue>
+                                  <span className="flex items-center gap-1.5">
+                                    <span>{selected.flag}</span>
+                                    <span className="text-xs">{selected.code}</span>
+                                  </span>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {COUNTRY_CODES.map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>
+                                    <span className="flex items-center gap-2">
+                                      <span>{c.flag}</span>
+                                      <span>{c.label}</span>
+                                      <span className="text-muted-foreground text-xs ml-auto">
+                                        {c.code}
+                                      </span>
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              className="rounded-l-none"
+                              placeholder="XXXXXXXXX"
+                              value={localValue}
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(/\D/g, "");
+                                const local = raw.startsWith("0") ? raw.slice(1) : raw;
+                                field.onChange(local ? `${selected.code}${local}` : "");
+                              }}
+                            />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
-                </div>
+                    );
+                  }}
+                />
+                <FormField
+                  control={form.control}
+                  name="sellerPhone2"
+                  render={({ field }) => {
+                    const selected2 = COUNTRY_CODES.find((c) => c.id === countryId2)!;
+                    const localValue2 = (field.value ?? "").startsWith(selected2.code)
+                      ? field.value!.slice(selected2.code.length)
+                      : (field.value ?? "").replace(/^\+\d+/, "");
+                    return (
+                      <FormItem>
+                        <FormLabel>Téléphone 2 <span className="text-muted-foreground text-xs font-normal">(optionnel)</span></FormLabel>
+                        <FormControl>
+                          <div className="flex">
+                            <Select
+                              value={countryId2}
+                              onValueChange={(val) => {
+                                const next = COUNTRY_CODES.find((c) => c.id === val)!;
+                                setCountryId2(val as CountryId);
+                                const digits = (field.value ?? "").replace(/^\+\d+/, "");
+                                field.onChange(digits ? `${next.code}${digits}` : "");
+                              }}
+                            >
+                              <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
+                                <SelectValue>
+                                  <span className="flex items-center gap-1.5">
+                                    <span>{selected2.flag}</span>
+                                    <span className="text-xs">{selected2.code}</span>
+                                  </span>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {COUNTRY_CODES.map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>
+                                    <span className="flex items-center gap-2">
+                                      <span>{c.flag}</span>
+                                      <span>{c.label}</span>
+                                      <span className="text-muted-foreground text-xs ml-auto">
+                                        {c.code}
+                                      </span>
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              className="rounded-l-none"
+                              placeholder="XXXXXXXXX"
+                              value={localValue2}
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(/\D/g, "");
+                                const local = raw.startsWith("0") ? raw.slice(1) : raw;
+                                field.onChange(local ? `${selected2.code}${local}` : "");
+                              }}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+                <FormField
+                  control={form.control}
+                  name="sellerEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email du vendeur</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Email (optionnel)"
+                          type="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 

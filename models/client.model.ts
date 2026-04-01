@@ -14,6 +14,7 @@ export interface IClient {
   firstName?: string;
   lastName?: string;
   phone: string;
+  phone2?: string;
   email?: string;
 
   budgetMin?: number;
@@ -52,6 +53,7 @@ const clientSchema = new Schema<IClient>(
     firstName: { type: String },
     lastName: { type: String },
     phone: { type: String, required: true },
+    phone2: String,
     email: String,
 
     budgetMin: Number,

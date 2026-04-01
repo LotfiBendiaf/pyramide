@@ -110,6 +110,7 @@ export const listingSchema = z
     sellerFirstName: z.string().optional(),
     sellerLastName: z.string().optional(),
     sellerPhone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)").or(z.literal("")),
+    sellerPhone2: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)").or(z.literal("")).optional(),
     sellerEmail: z
       .string()
       .email("Email invalide")

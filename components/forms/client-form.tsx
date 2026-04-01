@@ -55,12 +55,14 @@ const WANTED_PROPERTY_TYPES = [
 
 export default function ClientCreateForm() {
   const [countryId, setCountryId] = useState<CountryId>("DZ");
+  const [countryId2, setCountryId2] = useState<CountryId>("DZ");
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
       phone: "",
+      phone2: "",
       email: "",
       type: "BUYER",
       city: "",
@@ -183,6 +185,67 @@ export default function ClientCreateForm() {
                             const raw = e.target.value.replace(/\D/g, "");
                             const local = raw.startsWith("0") ? raw.slice(1) : raw;
                             field.onChange(local ? `${selected.code}${local}` : "");
+                          }}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            {/* Phone 2 */}
+            <FormField
+              control={form.control}
+              name="phone2"
+              render={({ field }) => {
+                const selected2 = COUNTRY_CODES.find((c) => c.id === countryId2)!;
+                const localValue2 = (field.value ?? "").startsWith(selected2.code)
+                  ? field.value!.slice(selected2.code.length)
+                  : (field.value ?? "").replace(/^\+\d+/, "");
+                return (
+                  <FormItem>
+                    <FormLabel>Téléphone 2 <span className="text-muted-foreground text-xs">(optionnel)</span></FormLabel>
+                    <FormControl>
+                      <div className="flex">
+                        <Select
+                          value={countryId2}
+                          onValueChange={(val) => {
+                            const next = COUNTRY_CODES.find((c) => c.id === val)!;
+                            setCountryId2(val as CountryId);
+                            const digits = (field.value ?? "").replace(/^\+\d+/, "");
+                            field.onChange(digits ? `${next.code}${digits}` : "");
+                          }}
+                        >
+                          <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
+                            <SelectValue>
+                              <span className="flex items-center gap-1.5">
+                                <span>{selected2.flag}</span>
+                                <span className="text-xs">{selected2.code}</span>
+                              </span>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COUNTRY_CODES.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                <span className="flex items-center gap-2">
+                                  <span>{c.flag}</span>
+                                  <span>{c.label}</span>
+                                  <span className="text-muted-foreground text-xs ml-auto">{c.code}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          className="rounded-l-none"
+                          placeholder="XXXXXXXXX"
+                          value={localValue2}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            const local = raw.startsWith("0") ? raw.slice(1) : raw;
+                            field.onChange(local ? `${selected2.code}${local}` : "");
                           }}
                         />
                       </div>
