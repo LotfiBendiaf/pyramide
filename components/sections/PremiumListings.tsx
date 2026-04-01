@@ -12,7 +12,7 @@ const ListingsContent = async () => {
 
   if (!result.success) {
     return (
-      <div className="text-center text-red-500 py-20">
+      <div className="text-center text-red-500">
         Impossible de charger les annonces.
       </div>
     );
@@ -39,7 +39,7 @@ const ListingsContent = async () => {
 
 export default function PremiumListings() {
   return (
-    <section className="relative container py-10 px-3 pt-20">
+    <section className="relative container px-3">
       {/* Client component */}
       <SectionHeader
         title="Biens Exclusifs"

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Star } from "lucide-react";
 
 const features = [
   "Plus de 10 ans d'expérience dans l'immobilier",
@@ -57,6 +57,22 @@ export default function AboutSection() {
               en des relations durables basées sur la confiance et
               l&apos;intégrité.
             </p>
+
+            <div className="flex items-center gap-4 pt-2">
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-5 w-5 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "fill-yellow-400/70 text-yellow-400/70"}`}
+                  />
+                ))}
+              </div>
+              <div>
+                <span className="font-bold text-foreground text-lg">4,7</span>
+                <span className="text-muted-foreground text-sm ml-1">/ 5 sur Google</span>
+                <p className="text-muted-foreground text-sm">Basé sur 85 avis clients</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

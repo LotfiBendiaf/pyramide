@@ -53,7 +53,7 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="contact" className="py-20 bg-muted/30 rounded-2xl mb-10">
+    <section id="contact" className="py-10 bg-muted/30 rounded-2xl">
       <div className="container px-5 mx-auto">
         {/* Header */}
         <div className="text-center mb-14">
@@ -96,13 +96,16 @@ export default function ContactSection() {
                 Oran, Algérie
               </div>
             </div>
+            {/* <h3 className="text-xl font-semibold">Retrouvez-nous</h3>
+
+            <LeafletMap /> */}
           </div>
 
           {/* Form */}
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="bg-background rounded-2xl shadow-md p-6 space-y-4"
+              className="bg-background rounded-2xl shadow-md p-6 flex flex-col gap-4 h-full"
             >
               <div className="grid md:grid-cols-2 gap-4">
                 <FormField
@@ -156,12 +159,12 @@ export default function ContactSection() {
                 control={form.control}
                 name="message"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex-1 flex flex-col">
                     <FormLabel>Message</FormLabel>
-                    <FormControl>
+                    <FormControl className="flex-1">
                       <Textarea
                         placeholder="Décrivez votre besoin..."
-                        className="min-h-[120px]"
+                        className="resize-none h-full min-h-[120px]"
                         {...field}
                       />
                     </FormControl>

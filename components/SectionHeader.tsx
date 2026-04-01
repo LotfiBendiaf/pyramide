@@ -10,6 +10,7 @@ interface SectionHeaderProps {
   subtitle?: string;
   buttonLabel?: string;
   buttonHref?: string;
+  buttonTarget?: string;
   watermark?: string;
   className?: string;
 }
@@ -19,6 +20,7 @@ export function SectionHeader({
   subtitle,
   buttonLabel,
   buttonHref,
+  buttonTarget,
   watermark = "PYRAMIDE",
   className,
 }: SectionHeaderProps) {
@@ -37,7 +39,7 @@ export function SectionHeader({
         </div>
 
         {buttonLabel && buttonHref && (
-          <Link href={buttonHref}>
+          <Link href={buttonHref} target={buttonTarget} rel={buttonTarget === "_blank" ? "noopener noreferrer" : undefined}>
             <Button variant="outline" className="hidden md:flex gap-2">
               {buttonLabel} <ArrowUpRight className="w-4 h-4" />
             </Button>

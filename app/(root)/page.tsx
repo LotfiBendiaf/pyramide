@@ -4,10 +4,12 @@ import Hero from "@/components/sections/Hero";
 import ListingsSection from "@/components/sections/Listings";
 import PremiumListings from "@/components/sections/PremiumListings";
 import AboutSection from "@/components/sections/AboutSection";
+import ReviewsSection from "@/components/sections/ReviewsSection";
 import ExpertiseSection from "@/components/sections/ExpertiseSection";
 
 import React from "react";
 import Navbar from "@/components/navigation/Navbar";
+import MapSection from "@/components/sections/MapSection";
 
 type ListingsSectionProps = {
   searchParams?: {
@@ -33,8 +35,10 @@ const page = ({ searchParams }: ListingsSectionProps) => {
       <AboutSection />
       <div className="container mx-auto space-y-10">
         <PremiumListings />
-        <ContactSection />
+        <ReviewsSection />
+        <MapSection />
       </div>
+      <ContactSection />
     </main>
   );
 };
