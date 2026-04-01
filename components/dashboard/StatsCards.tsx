@@ -183,7 +183,7 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
         title="Clients Qualifiés"
         value={stats.qualifiedClients}
         icon={CheckCircle2}
-        description="Prêts à acheter"
+        description="Acheteurs & locataires qualifiés"
         variant="success"
       />
 

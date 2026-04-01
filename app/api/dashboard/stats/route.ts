@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
       Client.countDocuments({
         ...clientFilter,
         qualificationStatus: "QUALIFIED",
+        type: { $in: ["BUYER", "RENTER"] },
       }),
       Client.countDocuments({
         ...clientFilter,
