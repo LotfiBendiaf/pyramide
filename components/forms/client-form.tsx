@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 import { createClient } from "@/lib/actions/client.action";
 import { clientSchema } from "@/lib/validators/client";
@@ -39,6 +40,18 @@ import { WILAYAS } from "@/constants/values";
 
 type ClientFormValues = z.infer<typeof clientSchema>;
 
+const COUNTRY_CODES = [
+  { code: "+213", flag: "🇩🇿", label: "Algérie" },
+  { code: "+33",  flag: "🇫🇷", label: "France" },
+  { code: "+44",  flag: "🇬🇧", label: "Royaume-Uni" },
+  { code: "+34",  flag: "🇪🇸", label: "Espagne" },
+  { code: "+32",  flag: "🇧🇪", label: "Belgique" },
+  { code: "+216", flag: "🇹🇳", label: "Tunisie" },
+  { code: "+1",   flag: "🇺🇸", label: "États-Unis" },
+] as const;
+
+type CountryCode = (typeof COUNTRY_CODES)[number]["code"];
+
 const WANTED_PROPERTY_TYPES = [
   "Appartement",
   "Maison",
@@ -52,6 +65,7 @@ const WANTED_PROPERTY_TYPES = [
 ] as const;
 
 export default function ClientCreateForm() {
+  const [countryCode, setCountryCode] = useState<CountryCode>("+213");
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
@@ -133,15 +147,60 @@ export default function ClientCreateForm() {
             <FormField
               control={form.control}
               name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Téléphone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Téléphone" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const selected = COUNTRY_CODES.find((c) => c.code === countryCode)!;
+                const localValue = field.value.startsWith(countryCode)
+                  ? field.value.slice(countryCode.length)
+                  : field.value.replace(/^\+\d+/, "");
+                return (
+                  <FormItem>
+                    <FormLabel>Téléphone</FormLabel>
+                    <FormControl>
+                      <div className="flex">
+                        <Select
+                          value={countryCode}
+                          onValueChange={(val) => {
+                            setCountryCode(val as CountryCode);
+                            const digits = field.value.replace(/^\+\d+/, "");
+                            field.onChange(digits ? `${val}${digits}` : "");
+                          }}
+                        >
+                          <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
+                            <SelectValue>
+                              <span className="flex items-center gap-1.5">
+                                <span>{selected.flag}</span>
+                                <span className="text-xs">{selected.code}</span>
+                              </span>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COUNTRY_CODES.map((c) => (
+                              <SelectItem key={c.code} value={c.code}>
+                                <span className="flex items-center gap-2">
+                                  <span>{c.flag}</span>
+                                  <span>{c.label}</span>
+                                  <span className="text-muted-foreground text-xs ml-auto">{c.code}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          className="rounded-l-none"
+                          placeholder="XXXXXXXXX"
+                          value={localValue}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            const local = raw.startsWith("0") ? raw.slice(1) : raw;
+                            field.onChange(local ? `${countryCode}${local}` : "");
+                          }}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             {/* Email */}

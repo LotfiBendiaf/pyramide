@@ -5,7 +5,7 @@ export const clientSchema = z.object({
 
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  phone: z.string().min(8),
+  phone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
   email: z.union([z.string().email(), z.literal("")]).optional(),
 
   city: z.string().optional(),
@@ -40,7 +40,7 @@ export const updateClientSchema = z.object({
   type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  phone: z.string().min(8),
+  phone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
   email: z.union([z.string().email(), z.literal("")]).optional(),
   city: z.string().optional(),
   budgetMin: z.number().optional(),

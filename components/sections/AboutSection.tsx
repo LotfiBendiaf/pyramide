@@ -22,10 +22,10 @@ export default function AboutSection() {
                 className="object-cover"
               />
             </div>
-            <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground p-6 rounded-xl shadow-lg hidden md:block">
+            {/* <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground p-6 rounded-xl shadow-lg hidden md:block">
               <p className="text-4xl font-bold">10+</p>
               <p className="text-sm">Années d&apos;expérience</p>
-            </div>
+            </div> */}
           </div>
 
           <div className="space-y-6">

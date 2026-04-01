@@ -4,7 +4,6 @@ import { fetchListings } from "@/lib/actions/listings.action";
 import ListingCard from "../ListingCard";
 import { ListingsSkeleton } from "../skeletons/ListingsSkeleton";
 import ROUTES from "@/constants/routes";
-import SearchFilter from "../SearchFilter";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { ArrowUpRight } from "lucide-react";
@@ -79,7 +78,7 @@ export default function ListingsSection({
       />
 
       <Suspense fallback={<ListingsSkeleton />}>
-        <SearchFilter />
+        {/* <SearchFilter /> */}
         <ListingsContent searchParams={searchParams} />
       </Suspense>
 

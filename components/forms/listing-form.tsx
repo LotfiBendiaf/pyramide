@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import dynamic from "next/dynamic";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,6 +69,18 @@ const PROPERTY_TYPES = [
 
 const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
 
+const COUNTRY_CODES = [
+  { code: "+213", flag: "🇩🇿", label: "Algérie" },
+  { code: "+33", flag: "🇫🇷", label: "France" },
+  { code: "+44", flag: "🇬🇧", label: "Royaume-Uni" },
+  { code: "+34", flag: "🇪🇸", label: "Espagne" },
+  { code: "+32", flag: "🇧🇪", label: "Belgique" },
+  { code: "+216", flag: "🇹🇳", label: "Tunisie" },
+  { code: "+1", flag: "🇺🇸", label: "États-Unis" },
+] as const;
+
+type CountryCode = (typeof COUNTRY_CODES)[number]["code"];
+
 const LocationPicker = dynamic(() => import("../listing/LocationPicker"), {
   ssr: false,
 });
@@ -79,6 +91,7 @@ export default function ListingForm({
   client,
 }: ListingFormProps) {
   const [isPending, startTransition] = useTransition();
+  const [countryCode, setCountryCode] = useState<CountryCode>("+213");
   const isEditMode = !!listingId;
 
   const router = useRouter();
@@ -148,7 +161,7 @@ export default function ListingForm({
           propertyType: "Appartement",
           propertyTypeCustom: "",
           location: {
-            city: "",
+            city: "Oran",
             district: "",
             address: "",
             coordinates: undefined,
@@ -243,10 +256,7 @@ export default function ListingForm({
                     <FormItem>
                       <FormLabel>Titre</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Appartement F3 à Hydra"
-                          {...field}
-                        />
+                        <Input placeholder="Appartement F3 à Oran" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -266,7 +276,10 @@ export default function ListingForm({
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Choisir une ville" />
+                              <SelectValue
+                                placeholder="Choisir une ville"
+                                defaultValue={"Oran"}
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -361,15 +374,75 @@ export default function ListingForm({
                   <FormField
                     control={form.control}
                     name="sellerPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Téléphone du vendeur</FormLabel>
-                        <FormControl>
-                          <Input required placeholder="Téléphone" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const selected = COUNTRY_CODES.find(
+                        (c) => c.code === countryCode
+                      )!;
+                      const localValue = field.value.startsWith(countryCode)
+                        ? field.value.slice(countryCode.length)
+                        : field.value.replace(/^\+\d+/, "");
+                      return (
+                        <FormItem>
+                          <FormLabel>Téléphone du vendeur</FormLabel>
+                          <FormControl>
+                            <div className="flex">
+                              <Select
+                                value={countryCode}
+                                onValueChange={(val) => {
+                                  setCountryCode(val as CountryCode);
+                                  const digits = field.value.replace(
+                                    /^\+\d+/,
+                                    ""
+                                  );
+                                  field.onChange(
+                                    digits ? `${val}${digits}` : ""
+                                  );
+                                }}
+                              >
+                                <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
+                                  <SelectValue>
+                                    <span className="flex items-center gap-1.5">
+                                      <span>{selected.flag}</span>
+                                      <span className="text-xs">
+                                        {selected.code}
+                                      </span>
+                                    </span>
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {COUNTRY_CODES.map((c) => (
+                                    <SelectItem key={c.code} value={c.code}>
+                                      <span className="flex items-center gap-2">
+                                        <span>{c.flag}</span>
+                                        <span>{c.label}</span>
+                                        <span className="text-muted-foreground text-xs ml-auto">
+                                          {c.code}
+                                        </span>
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                className="rounded-l-none"
+                                placeholder="XXXXXXXXX"
+                                value={localValue}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/\D/g, "");
+                                  const local = raw.startsWith("0")
+                                    ? raw.slice(1)
+                                    : raw;
+                                  field.onChange(
+                                    local ? `${countryCode}${local}` : ""
+                                  );
+                                }}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                   <FormField
                     control={form.control}

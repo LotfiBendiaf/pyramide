@@ -109,7 +109,7 @@ export const listingSchema = z
     // Seller information
     sellerFirstName: z.string().optional(),
     sellerLastName: z.string().optional(),
-    sellerPhone: z.string().min(8, "Téléphone requis").or(z.literal("")),
+    sellerPhone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)").or(z.literal("")),
     sellerEmail: z
       .string()
       .email("Email invalide")
