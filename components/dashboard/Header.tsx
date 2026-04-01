@@ -16,6 +16,7 @@ import {
 import Theme from "../navigation/Theme";
 import ROUTES from "@/constants/routes";
 import { Button } from "../ui/button";
+import { useBreadcrumbTitle } from "../navigation/BreadcrumbTitleContext";
 
 interface SiteHeaderProps {
   title?: string;
@@ -24,6 +25,7 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ title, dynamic = false }: SiteHeaderProps) {
   const pathname = usePathname();
+  const { title: contextTitle } = useBreadcrumbTitle();
 
   // Get all path segments (excluding empty ones)
   const segments = pathname.split("/").filter(Boolean);
@@ -37,6 +39,7 @@ export function SiteHeader({ title, dynamic = false }: SiteHeaderProps) {
 
   // Resolve title
   const dynamicTitle =
+    contextTitle ||
     title ||
     routeTitles[pathname] ||
     segments[segments.length - 1]?.replace(/-/g, " ").toUpperCase() ||
@@ -52,7 +55,7 @@ export function SiteHeader({ title, dynamic = false }: SiteHeaderProps) {
       <div key={href}>
         {isLast ? (
           <BreadcrumbItem>
-            <BreadcrumbPage>{title ? title : label}</BreadcrumbPage>
+            <BreadcrumbPage>{contextTitle ?? title ?? label}</BreadcrumbPage>
           </BreadcrumbItem>
         ) : (
           <div className="flex items-center gap-3">

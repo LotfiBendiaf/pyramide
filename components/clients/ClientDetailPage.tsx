@@ -23,6 +23,7 @@ import {
 import ROUTES from "@/constants/routes";
 import { CLIENT_QUALIFICATIONS } from "@/constants/values";
 import { archiveClient, restoreClient } from "@/lib/actions/client.action";
+import { SetBreadcrumbTitle } from "@/components/navigation/BreadcrumbTitleContext";
 import ClientEditForm from "./ClientEditForm";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -104,6 +105,7 @@ export default function ClientDetailPage({
 
   return (
     <section className="container py-6 space-y-6">
+      <SetBreadcrumbTitle title={client.referenceCode} />
       {/* Back link */}
       <Link
         href={ROUTES.CLIENTS_DASHBOARD}
@@ -169,7 +171,7 @@ export default function ClientDetailPage({
           <CardTitle>Suivis associés</CardTitle>
         </CardHeader>
         <CardContent>
-          <Link href={ROUTES.NEW_FOLLOWUP}>
+          <Link href={`${ROUTES.NEW_FOLLOWUP}?clientId=${client._id}`}>
             <Button className="mb-4 flex items-center gap-2">
               Ajouter un suivi <Plus className="w-4 h-4" />
             </Button>

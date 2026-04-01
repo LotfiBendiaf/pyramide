@@ -43,6 +43,7 @@ interface FollowUpFormProps {
   clients: Client[];
   userRole?: string;
   agents?: User[];
+  defaultClientId?: string;
 }
 
 export function FollowUpForm({
@@ -50,6 +51,7 @@ export function FollowUpForm({
   clients,
   userRole,
   agents = [],
+  defaultClientId,
 }: FollowUpFormProps) {
   const canAssignAgent =
     userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
@@ -64,6 +66,7 @@ export function FollowUpForm({
       title: "",
       note: "",
       reminderAt: undefined,
+      client: defaultClientId,
     },
   });
 
@@ -133,7 +136,7 @@ export function FollowUpForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Client</FormLabel>
-              <Select onValueChange={field.onChange}>
+              <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un client" />

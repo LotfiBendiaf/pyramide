@@ -71,7 +71,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.label}
-                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-secontext-secondary transition-colors"
+                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:text-orange-600 transition-colors"
                 >
                   <social.icon className="h-5 w-5" />
                 </a>
@@ -89,7 +89,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm hover:text-secondary transition-colors"
+                    className="text-sm hover:text-orange-600 transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -108,7 +108,7 @@ export default function Footer() {
                 <li key={type.name}>
                   <Link
                     href={type.href}
-                    className="text-sm hover:text-secondary transition-colors"
+                    className="text-sm hover:text-orange-600 transition-colors"
                   >
                     {type.name}
                   </Link>
@@ -127,7 +127,7 @@ export default function Footer() {
                   {info.href ? (
                     <a
                       href={info.href}
-                      className="text-sm hover:text-secondary transition-colors"
+                      className="text-sm hover:text-orange-600 transition-colors"
                     >
                       {info.text}
                     </a>
@@ -148,13 +148,13 @@ export default function Footer() {
           <div className="flex gap-6 text-sm text-muted-foreground">
             <Link
               href="/privacy"
-              className="hover:text-secondary transition-colors"
+              className="hover:text-orange-600 transition-colors"
             >
               Politique de confidentialité
             </Link>
             <Link
               href="/terms"
-              className="hover:text-secondary transition-colors"
+              className="hover:text-orange-600 transition-colors"
             >
               Conditions d&apos;utilisation
             </Link>

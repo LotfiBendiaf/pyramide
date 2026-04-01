@@ -6,7 +6,12 @@ import { fetchListings } from "@/lib/actions/listings.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { fetchAgents } from "@/lib/actions/users.action";
 
-export default async function NewFollowUpPage() {
+export default async function NewFollowUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clientId?: string }>;
+}) {
+  const { clientId } = await searchParams;
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
@@ -31,6 +36,7 @@ export default async function NewFollowUpPage() {
             clients={clients.data?.clients || []}
             userRole={currentUser.data?.role}
             agents={isAdmin ? agentsRes.data || [] : []}
+            defaultClientId={clientId}
           />
         </CardContent>
       </Card>

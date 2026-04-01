@@ -97,13 +97,13 @@ export default function ListingFilterDashboard() {
         onSubmit={handleSubmit}
         className=" bg-background rounded-2xl border shadow-md px-8 py-5 flex flex-wrap justify-between gap-3 items-center w-full z-40"
       >
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Rechercher par référence, ville..."
+            placeholder="Rechercher par référence, ville, adresse..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-10 pr-4 h-10 rounded-full border-border/60 bg-muted/40 shadow-sm focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-400 transition-all placeholder:text-muted-foreground/60"
           />
         </div>
         {/* <Input

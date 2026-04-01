@@ -72,7 +72,7 @@ function buildListingDescription(
     : "Un bien rare, alliant confort, accessibilité et standing.";
 
   const contact =
-    "Pour plus d’informations ou pour organiser une visite :\n0779 07 97 06 / 0792 11 65 96";
+    "Pour plus d’informations ou pour organiser une visite :\n0556510000 / 0779079706";
 
   return [
     statusLine,
@@ -253,7 +253,7 @@ export async function fetchListings(
     }
 
     if (bedrooms !== undefined) {
-      query["features.bedrooms"] = { $gte: bedrooms };
+      query["features.bedrooms"] = bedrooms;
     }
 
     if (minPrice !== undefined || maxPrice !== undefined) {

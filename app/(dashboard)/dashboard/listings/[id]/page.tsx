@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import ROUTES from "@/constants/routes";
 import { DeleteListingButton } from "@/components/listing/DeleteListingButton";
+import { SetBreadcrumbTitle } from "@/components/navigation/BreadcrumbTitleContext";
 
 export default async function ListingDetailsPage({
   params,
@@ -26,6 +27,7 @@ export default async function ListingDetailsPage({
 
   return (
     <section className="container">
+      <SetBreadcrumbTitle title={listing.referenceCode ?? listing.title ?? "Annonce"} />
       {/* Gallery - Staff can see all images */}
       <ListingGallery images={listing.images} isStaff={true} />
 
