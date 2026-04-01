@@ -43,6 +43,7 @@ import { createListing, updateListing } from "@/lib/actions/listings.action";
 import { useRouter } from "next/navigation";
 import { WILAYAS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
+import { COUNTRY_CODES, type CountryId } from "@/lib/country-codes";
 import { Textarea } from "../ui/textarea";
 
 // --- Types ---
@@ -68,22 +69,6 @@ const PROPERTY_TYPES = [
 ] as const;
 
 const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
-
-const COUNTRY_CODES = [
-  { id: "DZ", code: "+213", flag: "🇩🇿", label: "Algérie" },
-  { id: "FR", code: "+33",  flag: "🇫🇷", label: "France" },
-  { id: "GB", code: "+44",  flag: "🇬🇧", label: "Royaume-Uni" },
-  { id: "ES", code: "+34",  flag: "🇪🇸", label: "Espagne" },
-  { id: "BE", code: "+32",  flag: "🇧🇪", label: "Belgique" },
-  { id: "TN", code: "+216", flag: "🇹🇳", label: "Tunisie" },
-  { id: "US", code: "+1",   flag: "🇺🇸", label: "États-Unis" },
-  { id: "CA", code: "+1",   flag: "🇨🇦", label: "Canada" },
-  { id: "SA", code: "+966", flag: "🇸🇦", label: "Arabie Saoudite" },
-  { id: "QA", code: "+974", flag: "🇶🇦", label: "Qatar" },
-  { id: "AE", code: "+971", flag: "🇦🇪", label: "Émirats Arabes Unis" },
-] as const;
-
-type CountryId = (typeof COUNTRY_CODES)[number]["id"];
 
 const LocationPicker = dynamic(() => import("../listing/LocationPicker"), {
   ssr: false,
