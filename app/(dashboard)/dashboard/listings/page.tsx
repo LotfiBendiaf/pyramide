@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { fetchListings } from "@/lib/actions/listings.action";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ListingTable } from "@/components/listing/ListingTable";
@@ -22,12 +23,14 @@ type ListingsSectionProps = {
     validated?: string;
     page?: string;
     search?: string;
+    view?: string;
   };
 };
 
 async function ListingsContent({ searchParams }: ListingsSectionProps) {
-  const params = await searchParams;
+  const params = searchParams;
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
+  const isArchiveView = params?.view === "archives";
 
   const result = await fetchListings({
     search: params?.search,
@@ -40,6 +43,7 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
     isValidated: params?.validated === "true" ? true : undefined,
+    archived: isArchiveView ? true : undefined,
     page,
     limit: LISTINGS_PER_PAGE,
   });
@@ -57,7 +61,7 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   if (!listings || listings.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-20">
-        Aucune annonce trouvée.
+        {isArchiveView ? "Aucune annonce archivée." : "Aucune annonce trouvée."}
       </div>
     );
   }
@@ -72,7 +76,12 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   );
 }
 
-export default function ListingsPage({ searchParams }: ListingsSectionProps) {
+export default async function ListingsPage({
+  searchParams,
+}: ListingsSectionProps) {
+  const params = await searchParams;
+  const isArchiveView = params?.view === "archives";
+
   return (
     <section className="space-y-10">
       <SectionHeader
@@ -81,8 +90,31 @@ export default function ListingsPage({ searchParams }: ListingsSectionProps) {
         buttonHref={ROUTES.LISTING_ADD}
       />
 
+      <div className="flex gap-2 border-b">
+        <Link
+          href={ROUTES.LISTINGS_DASHBOARD}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            !isArchiveView
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Annonces actives
+        </Link>
+        <Link
+          href={`${ROUTES.LISTINGS_DASHBOARD}?view=archives`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            isArchiveView
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Archives
+        </Link>
+      </div>
+
       <Suspense fallback={<TableSkeleton />}>
-        <ListingFilterDashboard />
+        {!isArchiveView && <ListingFilterDashboard />}
         <ListingsContent searchParams={searchParams} />
       </Suspense>
     </section>

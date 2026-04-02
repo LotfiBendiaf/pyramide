@@ -134,6 +134,9 @@ interface Listing {
   validatedAt?: Date;
   validatedBy?: string;
 
+  archived?: boolean;
+  archivedAt?: Date;
+
   views: number;
   likes: number;
   isFeatured: boolean;

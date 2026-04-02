@@ -199,6 +199,7 @@ export async function createListing(
 interface FetchListingsParams {
   isPublished?: boolean;
   isValidated?: boolean;
+  archived?: boolean;
   status?: "En Vente" | "En Location";
   city?: string;
   propertyType?: string;
@@ -219,6 +220,7 @@ export async function fetchListings(
     const {
       isPublished,
       isValidated,
+      archived,
       status,
       city,
       propertyType,
@@ -242,6 +244,13 @@ export async function fetchListings(
 
     if (isValidated !== undefined) {
       query.isValidated = isValidated;
+    }
+
+    // By default exclude archived listings; pass archived: true to fetch only archived
+    if (archived === true) {
+      query.archived = true;
+    } else {
+      query.archived = { $ne: true };
     }
 
     if (status) query.status = status;
@@ -593,9 +602,11 @@ export async function toggleListingValidation(
         status: 200,
       };
     } else {
-      // — Unvalidate: keep reference code, just flip the flag —
+      // — Unvalidate: archive the listing (remove from main list) —
       await Listing.findByIdAndUpdate(listingId, {
         isValidated: false,
+        archived: true,
+        archivedAt: new Date(),
         $unset: { validatedAt: 1, validatedBy: 1 },
       });
 
@@ -608,6 +619,79 @@ export async function toggleListingValidation(
         status: 200,
       };
     }
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function setListingNeutre(
+  listingId: string
+): Promise<ActionResponse<null>> {
+  try {
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d'annonce invalide" },
+        status: 400,
+      };
+    }
+
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    await Listing.findByIdAndUpdate(listingId, {
+      isValidated: false,
+      archived: false,
+      $unset: { validatedAt: 1, validatedBy: 1, archivedAt: 1 },
+    });
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+
+    return { success: true, data: null, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function unarchiveListing(
+  listingId: string
+): Promise<ActionResponse<null>> {
+  try {
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d'annonce invalide" },
+        status: 400,
+      };
+    }
+
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    await Listing.findByIdAndUpdate(listingId, {
+      archived: false,
+      $unset: { archivedAt: 1 },
+    });
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+
+    return { success: true, data: null, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

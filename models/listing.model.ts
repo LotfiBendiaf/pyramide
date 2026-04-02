@@ -81,6 +81,9 @@ export interface IListing {
   validatedAt?: Date;
   validatedBy?: Schema.Types.ObjectId;
 
+  archived: boolean;
+  archivedAt?: Date;
+
   views: number;
   likes: number;
   isFeatured: boolean;
@@ -206,6 +209,8 @@ const listingSchema = new Schema<IListing>(
     isValidated: { type: Boolean, default: false },
     validatedAt: { type: Date },
     validatedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    archived: { type: Boolean, default: false },
+    archivedAt: { type: Date },
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },
@@ -224,6 +229,7 @@ listingSchema.index({ status: 1 });
 listingSchema.index({ propertyType: 1 });
 listingSchema.index({ isFeatured: 1 });
 listingSchema.index({ isValidated: 1 });
+listingSchema.index({ archived: 1 });
 listingSchema.index({ "evaluation.finalScore": -1 });
 
 /* ---------------------------------
