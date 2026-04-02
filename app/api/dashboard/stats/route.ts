@@ -22,6 +22,9 @@ export async function GET(request: NextRequest) {
           archived: false,
           $or: [{ assignedAgent: userId }, { createdBy: userId }],
         };
+    const allClientsFilter = isAdmin
+      ? {}
+      : { $or: [{ assignedAgent: userId }, { createdBy: userId }] };
     const followUpFilter = isAdmin ? {} : { agent: userId };
 
     // 2. Calculate date ranges
@@ -46,6 +49,8 @@ export async function GET(request: NextRequest) {
       newClients,
       qualifiedClients,
       totalBuyerRenterClients,
+      qualifiedBuyerRenterThisMonth,
+      buyerRenterClientsThisMonth,
       clientsThisMonth,
       clientsLastMonth,
 
@@ -93,8 +98,19 @@ export async function GET(request: NextRequest) {
         type: { $in: ["BUYER", "RENTER"] },
       }),
       Client.countDocuments({
-        ...clientFilter,
+        ...allClientsFilter,
         type: { $in: ["BUYER", "RENTER"] },
+      }),
+      Client.countDocuments({
+        ...clientFilter,
+        qualificationStatus: "QUALIFIED",
+        type: { $in: ["BUYER", "RENTER"] },
+        createdAt: { $gte: startOfMonth },
+      }),
+      Client.countDocuments({
+        ...allClientsFilter,
+        type: { $in: ["BUYER", "RENTER"] },
+        createdAt: { $gte: startOfMonth },
       }),
       Client.countDocuments({
         ...clientFilter,
@@ -417,6 +433,8 @@ export async function GET(request: NextRequest) {
           newClients,
           qualifiedClients,
           totalBuyerRenterClients,
+          qualifiedBuyerRenterThisMonth,
+          buyerRenterClientsThisMonth,
           pendingFollowUps,
           overdueFollowUps,
           todayFollowUps,

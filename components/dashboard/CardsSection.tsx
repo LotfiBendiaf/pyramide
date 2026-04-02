@@ -23,6 +23,8 @@ interface SectionCardsProps {
     totalClients: number;
     qualifiedClients: number;
     totalBuyerRenterClients: number;
+    qualifiedBuyerRenterThisMonth: number;
+    buyerRenterClientsThisMonth: number;
     clientsThisMonth: number;
     clientsLastMonth: number;
   };
@@ -47,15 +49,11 @@ export function SectionCards({ stats }: SectionCardsProps) {
       ? ((stats.qualifiedClients / stats.totalBuyerRenterClients) * 100).toFixed(1)
       : "0.0";
 
-  // Previous conversion rate approximation for comparison
+  // Previous conversion rate: subtract this month's additions to approximate last month's rate
+  const prevQualified = stats.qualifiedClients - stats.qualifiedBuyerRenterThisMonth;
+  const prevTotal = stats.totalBuyerRenterClients - stats.buyerRenterClientsThisMonth;
   const previousConversionRate =
-    stats.totalClients - stats.clientsThisMonth > 0
-      ? (
-          ((stats.qualifiedClients - Math.floor(stats.clientsThisMonth * 0.1)) /
-            (stats.totalClients - stats.clientsThisMonth)) *
-          100
-        ).toFixed(1)
-      : "0.0";
+    prevTotal > 0 ? ((prevQualified / prevTotal) * 100).toFixed(1) : "0.0";
 
   const conversionChange = (
     parseFloat(conversionRate) - parseFloat(previousConversionRate)
