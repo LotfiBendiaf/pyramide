@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatPriceAlgeria } from "@/lib/utils";
 import {
   Building2,
   Users,
@@ -168,10 +168,7 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
       {/* Monthly Revenue */}
       <StatCard
         title="Revenu du Mois"
-        value={formatPrice(stats.monthlyRevenue, "fr-DZ", "DZD").replace(
-          /\s?DZD/,
-          " DA"
-        )}
+        value={`${formatPriceAlgeria(stats.monthlyRevenue)} DA`}
         icon={DollarSign}
         trend="up"
         description={`${stats.soldListings} ventes réalisées`}
@@ -208,10 +205,7 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
       {/* Total Revenue */}
       <StatCard
         title="Revenu Total"
-        value={formatPrice(stats.totalRevenue, "fr-DZ", "DZD").replace(
-          /\s?DZD/,
-          " DA"
-        )}
+        value={`${formatPriceAlgeria(stats.totalRevenue)} DA`}
         icon={DollarSign}
         description="Tous les temps"
         variant="default"

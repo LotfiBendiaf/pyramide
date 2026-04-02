@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TrendingDown, TrendingUp, Minus } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPriceAlgeria } from "@/lib/utils";
 
 interface SectionCardsProps {
   stats: {
@@ -61,9 +61,7 @@ export function SectionCards({ stats }: SectionCardsProps) {
   ).toFixed(1);
 
   // Format revenue
-  const formattedRevenue = formatPrice(stats.totalRevenue, "fr-DZ", "DZD")
-    .replace(/\s?DZD/, "")
-    .trim();
+  const formattedRevenue = formatPriceAlgeria(stats.totalRevenue);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -100,10 +98,7 @@ export function SectionCards({ stats }: SectionCardsProps) {
           >
             {stats.monthlyRevenue > 0 ? (
               <>
-                {formatPrice(stats.monthlyRevenue, "fr-DZ", "DZD")
-                  .replace(/\s?DZD/, "")
-                  .trim()}{" "}
-                DA ce mois
+                {formatPriceAlgeria(stats.monthlyRevenue)} DA ce mois
                 <TrendingUp className="size-4" />
               </>
             ) : (
