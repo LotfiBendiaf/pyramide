@@ -28,7 +28,7 @@ type ListingsSectionProps = {
 };
 
 async function ListingsContent({ searchParams }: ListingsSectionProps) {
-  const params = searchParams;
+  const params = await searchParams;
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
   const isArchiveView = params?.view === "archives";
 
