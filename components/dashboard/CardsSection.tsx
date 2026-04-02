@@ -22,6 +22,7 @@ interface SectionCardsProps {
     listingsLastMonth: number;
     totalClients: number;
     qualifiedClients: number;
+    totalBuyerRenterClients: number;
     clientsThisMonth: number;
     clientsLastMonth: number;
   };
@@ -42,8 +43,8 @@ export function SectionCards({ stats }: SectionCardsProps) {
 
   // Calculate conversion rate (qualified clients / total clients)
   const conversionRate =
-    stats.totalClients > 0
-      ? ((stats.qualifiedClients / stats.totalClients) * 100).toFixed(1)
+    stats.totalBuyerRenterClients > 0
+      ? ((stats.qualifiedClients / stats.totalBuyerRenterClients) * 100).toFixed(1)
       : "0.0";
 
   // Previous conversion rate approximation for comparison
@@ -198,8 +199,8 @@ export function SectionCards({ stats }: SectionCardsProps) {
             )}
           </div>
           <div className="text-muted-foreground">
-            {stats.qualifiedClients} clients qualifiés sur {stats.totalClients}{" "}
-            total.
+            {stats.qualifiedClients} qualifiés sur {stats.totalBuyerRenterClients}{" "}
+            acheteurs/locataires évalués.
           </div>
         </CardFooter>
       </Card>

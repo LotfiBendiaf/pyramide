@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       totalClients,
       newClients,
       qualifiedClients,
+      totalBuyerRenterClients,
       clientsThisMonth,
       clientsLastMonth,
 
@@ -89,6 +90,10 @@ export async function GET(request: NextRequest) {
       Client.countDocuments({
         ...clientFilter,
         qualificationStatus: "QUALIFIED",
+        type: { $in: ["BUYER", "RENTER"] },
+      }),
+      Client.countDocuments({
+        ...clientFilter,
         type: { $in: ["BUYER", "RENTER"] },
       }),
       Client.countDocuments({
@@ -411,6 +416,7 @@ export async function GET(request: NextRequest) {
           totalClients,
           newClients,
           qualifiedClients,
+          totalBuyerRenterClients,
           pendingFollowUps,
           overdueFollowUps,
           todayFollowUps,
