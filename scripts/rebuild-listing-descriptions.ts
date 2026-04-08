@@ -42,10 +42,9 @@ function buildListingDescription(listing: any, referenceCode?: string): string {
   const typeLabel =
     listing.propertyTypeCustom?.trim() || listing.propertyType;
   const lowerType = typeLabel.toLowerCase();
+  const isVilla = lowerType.startsWith("villa");
   const article =
-    lowerType.startsWith("maison") || lowerType.startsWith("villa")
-      ? "Une"
-      : "Un";
+    lowerType.startsWith("maison") || isVilla ? "Une" : "Un";
   const situe = article === "Une" ? "située" : "situé";
 
   const _city = listing.location?.city?.trim();
@@ -63,17 +62,22 @@ function buildListingDescription(listing: any, referenceCode?: string): string {
   const elevatorText = listing.features?.elevator ? " avec ascenseur" : "";
   const etageLine =
     etage !== undefined
-      ? `Étage : ${etage}${etageSuffix}${elevatorText}`
+      ? isVilla
+        ? `R+${etage}${elevatorText}`
+        : `Étage : ${etage}${etageSuffix}${elevatorText}`
       : undefined;
 
   const priceLabel = `${formatPriceAlgeria(listing.price ?? 0).replace(".", ",")} DA`;
 
+  const villaTypeLabel =
+    isVilla && etage !== undefined ? `${lowerType} R+${etage}` : lowerType;
+
   const intro =
     locationLabel && areaLabel
-      ? `${article} ${lowerType} de ${areaLabel}, ${situe}${
-          etage !== undefined ? ` au ${etage}${etageSuffix} étage` : ""
+      ? `${article} ${villaTypeLabel} de ${areaLabel}, ${situe}${
+          !isVilla && etage !== undefined ? ` au ${etage}${etageSuffix} étage` : ""
         } à ${locationLabel}.`
-      : `${article} ${lowerType} spacieux et lumineux.`;
+      : `${article} ${villaTypeLabel} spacieux et lumineux.`;
 
   const details = [
     referenceCode ? `Réf : ${referenceCode}` : undefined,
