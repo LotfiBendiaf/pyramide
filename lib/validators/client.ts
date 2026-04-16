@@ -35,6 +35,7 @@ export const fetchClientsSchema = z.object({
   search: z.string().min(1).optional(),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),
+  archived: z.boolean().optional(),
 });
 
 export const updateClientSchema = z.object({

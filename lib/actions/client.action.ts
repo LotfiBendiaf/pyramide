@@ -149,10 +149,18 @@ export async function fetchClients(
       search,
       page = 1,
       limit = 10,
+      archived,
     } = validationResult.params;
 
     // 3. Build MongoDB filter
     const filter: FilterQuery<Client> = { type: { $ne: "SELLER" } };
+
+    // Archive filtering: by default exclude archived clients
+    if (archived === true) {
+      filter.archived = true;
+    } else {
+      filter.archived = { $ne: true };
+    }
 
     // Role-based filtering: AGENT only sees their own clients
     const isAdmin =
@@ -178,14 +186,15 @@ export async function fetchClients(
     // Search (name, phone, email, reference, rooms via "f3" pattern)
     if (search) {
       const roomMatch = search.match(/^f(\d+)$/i);
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const searchConditions = roomMatch
         ? [{ rooms: parseInt(roomMatch[1], 10) }]
         : [
-            { firstName: { $regex: search, $options: "i" } },
-            { lastName: { $regex: search, $options: "i" } },
-            { phone: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-            { referenceCode: { $regex: search, $options: "i" } },
+            { firstName: { $regex: escapedSearch, $options: "i" } },
+            { lastName: { $regex: escapedSearch, $options: "i" } },
+            { phone: { $regex: escapedSearch, $options: "i" } },
+            { email: { $regex: escapedSearch, $options: "i" } },
+            { referenceCode: { $regex: escapedSearch, $options: "i" } },
           ];
       // Combine role filter with search filter
       if (filter.$or) {

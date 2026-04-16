@@ -276,17 +276,28 @@ export async function fetchListings(
     }
 
     if (search) {
-      const regex = new RegExp(search, "i");
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escapedSearch, "i");
+
+      // Find seller clients matching the search term (phone, name, email)
+      const matchingClientIds = await Client.find({
+        $or: [
+          { phone: regex },
+          { firstName: regex },
+          { lastName: regex },
+          { email: regex },
+        ],
+      }).distinct("_id");
+
       query.$or = [
         { referenceCode: regex },
         { title: regex },
         { "location.city": regex },
         { "location.district": regex },
         { "location.address": regex },
-        { "sellerClient.firstName": regex },
-        { "sellerClient.lastName": regex },
-        { "sellerClient.email": regex },
-        { "sellerClient.phone": regex },
+        ...(matchingClientIds.length > 0
+          ? [{ sellerClient: { $in: matchingClientIds } }]
+          : []),
       ];
     }
 

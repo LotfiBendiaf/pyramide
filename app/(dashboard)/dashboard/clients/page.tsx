@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { SectionHeader } from "@/components/SectionHeader";
 import { fetchClients } from "@/lib/actions/client.action";
 import { fetchTeamMembers } from "@/lib/actions/users.action";
@@ -8,6 +9,7 @@ import ClientsTable from "@/components/ClientsTable";
 import ClientsFilter from "@/components/ClientsFilter";
 import { PaginationControls } from "@/components/PaginationControls";
 import { ClientFilters } from "@/types/client";
+import ROUTES from "@/constants/routes";
 
 const CLIENTS_PER_PAGE = 10;
 
@@ -18,6 +20,7 @@ type SearchParams = {
   propertyType?: string;
   search?: string;
   page?: string;
+  view?: string;
 };
 
 async function ClientsContent({
@@ -29,26 +32,33 @@ async function ClientsContent({
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
 
+  const isArchiveView = searchParams.view === "archives";
   const page = searchParams.page ? Math.max(1, Number(searchParams.page)) : 1;
 
   // Build filter params, excluding "__all__" values
-  const filterParams: ClientFilters = { page, limit: CLIENTS_PER_PAGE };
+  const filterParams: ClientFilters = {
+    page,
+    limit: CLIENTS_PER_PAGE,
+    archived: isArchiveView ? true : undefined,
+  };
 
-  if (searchParams.agentId && searchParams.agentId !== "__all__") {
-    filterParams.agentId = searchParams.agentId;
-  }
-  if (searchParams.qualification && searchParams.qualification !== "__all__") {
-    filterParams.qualificationStatus =
-      searchParams.qualification as ClientFilters["qualificationStatus"];
-  }
-  if (searchParams.type && searchParams.type !== "__all__") {
-    filterParams.type = searchParams.type as ClientFilters["type"];
-  }
-  if (searchParams.propertyType && searchParams.propertyType !== "__all__") {
-    filterParams.wantedPropertyType = searchParams.propertyType;
-  }
-  if (searchParams.search) {
-    filterParams.search = searchParams.search;
+  if (!isArchiveView) {
+    if (searchParams.agentId && searchParams.agentId !== "__all__") {
+      filterParams.agentId = searchParams.agentId;
+    }
+    if (searchParams.qualification && searchParams.qualification !== "__all__") {
+      filterParams.qualificationStatus =
+        searchParams.qualification as ClientFilters["qualificationStatus"];
+    }
+    if (searchParams.type && searchParams.type !== "__all__") {
+      filterParams.type = searchParams.type as ClientFilters["type"];
+    }
+    if (searchParams.propertyType && searchParams.propertyType !== "__all__") {
+      filterParams.wantedPropertyType = searchParams.propertyType;
+    }
+    if (searchParams.search) {
+      filterParams.search = searchParams.search;
+    }
   }
 
   const [result, agentsResult] = await Promise.all([
@@ -69,7 +79,7 @@ async function ClientsContent({
   if (!clients || clients.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-20">
-        Aucun client trouvé.
+        {isArchiveView ? "Aucun client archivé." : "Aucun client trouvé."}
       </div>
     );
   }
@@ -97,6 +107,7 @@ export default async function ClientPage({
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+  const isArchiveView = params?.view === "archives";
 
   const agentsResult = isAdmin
     ? await fetchTeamMembers()
@@ -109,10 +120,37 @@ export default async function ClientPage({
         subtitle="Gérez et qualifiez vos clients"
       />
 
-      <ClientsFilter
-        agents={isAdmin ? agentsResult.data || [] : []}
-        canFilterByAgent={isAdmin}
-      />
+      {isAdmin && (
+        <div className="flex gap-2 border-b">
+          <Link
+            href={ROUTES.CLIENTS_DASHBOARD}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              !isArchiveView
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Clients actifs
+          </Link>
+          <Link
+            href={`${ROUTES.CLIENTS_DASHBOARD}?view=archives`}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              isArchiveView
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Archives
+          </Link>
+        </div>
+      )}
+
+      {!isArchiveView && (
+        <ClientsFilter
+          agents={isAdmin ? agentsResult.data || [] : []}
+          canFilterByAgent={isAdmin}
+        />
+      )}
 
       <Suspense fallback={<ListingsSkeleton />}>
         <ClientsContent searchParams={params} />

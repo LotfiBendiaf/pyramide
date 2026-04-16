@@ -53,4 +53,5 @@ export type ClientFilters = {
   toDate?: Date;
   page?: number;
   limit?: number;
+  archived?: boolean;
 };
