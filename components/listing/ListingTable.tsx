@@ -29,6 +29,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  ArrowDownUp,
+  ArrowUp,
+  ArrowDown,
   Bed,
   Car,
   ChevronDown,
@@ -37,6 +40,7 @@ import {
   Loader2,
   ShowerHead,
 } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
 import { StatusAction } from "./StatusButton";
@@ -84,6 +88,35 @@ function ValidationBadge({ state }: { state: ValidationState }) {
 }
 
 export function ListingTable({ listings }: ListingTableProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentSortBy = searchParams.get("sortBy");
+  const currentSortOrder = searchParams.get("sortOrder") as
+    | "asc"
+    | "desc"
+    | null;
+
+  const handleSortByRef = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (currentSortBy === "referenceCode") {
+      params.set("sortOrder", currentSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      params.set("sortBy", "referenceCode");
+      params.set("sortOrder", "desc");
+    }
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const RefSortIcon =
+    currentSortBy === "referenceCode"
+      ? currentSortOrder === "asc"
+        ? ArrowUp
+        : ArrowDown
+      : ArrowDownUp;
+
   const [publishingStates, setPublishingStates] = useState<
     Record<string, boolean>
   >({});
@@ -169,7 +202,15 @@ export function ListingTable({ listings }: ListingTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Référence</TableHead>
+              <TableHead>
+                <button
+                  onClick={handleSortByRef}
+                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                >
+                  Référence
+                  <RefSortIcon className="h-3 w-3" />
+                </button>
+              </TableHead>
               <TableHead>Image</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Ville & Quartier</TableHead>

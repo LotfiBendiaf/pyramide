@@ -215,6 +215,8 @@ interface FetchListingsParams {
   isPremium?: boolean;
   minScore?: number;
   search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 export async function fetchListings(
@@ -236,6 +238,8 @@ export async function fetchListings(
       isPremium,
       minScore,
       search,
+      sortBy,
+      sortOrder,
     } = params;
 
     const skip = limit ? (page - 1) * limit : 0;
@@ -246,8 +250,11 @@ export async function fetchListings(
       query.isPublished = isPublished;
     }
 
-    if (isValidated !== undefined) {
-      query.isValidated = isValidated;
+    if (isValidated === true) {
+      query.isValidated = true;
+    } else if (isValidated === false) {
+      // Catch both explicit false and documents where the field is not set
+      query.isValidated = { $ne: true };
     }
 
     // By default exclude archived listings; pass archived: true to fetch only archived
@@ -304,9 +311,16 @@ export async function fetchListings(
     await dbConnect();
 
     // 2. Fetch listings and total count in parallel
+    const sortField = sortBy || "createdAt";
+    const sortDirection = sortBy
+      ? sortOrder === "asc"
+        ? 1
+        : -1
+      : -1;
+
     const [listings, total] = await Promise.all([
       Listing.find(query)
-        .sort({ createdAt: -1 })
+        .sort({ [sortField]: sortDirection })
         .populate("agent", "name firstname lastname email phone")
         .skip(skip)
         .limit(limit ?? 0)

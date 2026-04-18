@@ -24,6 +24,8 @@ type ListingsSectionProps = {
     page?: string;
     search?: string;
     view?: string;
+    sortBy?: string;
+    sortOrder?: string;
   };
 };
 
@@ -31,6 +33,12 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   const params = await searchParams;
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
   const isArchiveView = params?.view === "archives";
+  const isNeutreView = params?.view === "neutre";
+  const isActiveView = !isArchiveView && !isNeutreView;
+
+  // Annonces validées: always filter isValidated=true and default sort by referenceCode asc
+  const sortBy = params?.sortBy ?? (isActiveView ? "referenceCode" : undefined);
+  const sortOrder = (params?.sortOrder as "asc" | "desc" | undefined) ?? (isActiveView ? "desc" : undefined);
 
   const result = await fetchListings({
     search: params?.search,
@@ -42,10 +50,12 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
-    isValidated: params?.validated === "true" ? true : undefined,
+    isValidated: isActiveView ? true : isNeutreView ? false : undefined,
     archived: isArchiveView ? true : undefined,
     page,
     limit: LISTINGS_PER_PAGE,
+    sortBy,
+    sortOrder,
   });
 
   if (!result.success) {
@@ -61,7 +71,11 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   if (!listings || listings.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-20">
-        {isArchiveView ? "Aucune annonce archivée." : "Aucune annonce trouvée."}
+        {isArchiveView
+          ? "Aucune annonce archivée."
+          : isNeutreView
+          ? "Aucune nouvelle annonce en attente."
+          : "Aucune annonce trouvée."}
       </div>
     );
   }
@@ -81,6 +95,15 @@ export default async function ListingsPage({
 }: ListingsSectionProps) {
   const params = await searchParams;
   const isArchiveView = params?.view === "archives";
+  const isNeutreView = params?.view === "neutre";
+  const isActiveView = !isArchiveView && !isNeutreView;
+
+  const tabClass = (active: boolean) =>
+    `px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+      active
+        ? "border-blue-600 text-blue-600"
+        : "border-transparent text-muted-foreground hover:text-foreground"
+    }`;
 
   return (
     <section className="space-y-10">
@@ -93,28 +116,26 @@ export default async function ListingsPage({
       <div className="flex gap-2 border-b">
         <Link
           href={ROUTES.LISTINGS_DASHBOARD}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            !isArchiveView
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
+          className={tabClass(isActiveView)}
         >
-          Annonces actives
+          Annonces validées
+        </Link>
+        <Link
+          href={`${ROUTES.LISTINGS_DASHBOARD}?view=neutre`}
+          className={tabClass(isNeutreView)}
+        >
+          Nouvelles annonces
         </Link>
         <Link
           href={`${ROUTES.LISTINGS_DASHBOARD}?view=archives`}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            isArchiveView
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
+          className={tabClass(isArchiveView)}
         >
           Archives
         </Link>
       </div>
 
       <Suspense fallback={<TableSkeleton />}>
-        {!isArchiveView && <ListingFilterDashboard />}
+        {isActiveView && <ListingFilterDashboard />}
         <ListingsContent searchParams={searchParams} />
       </Suspense>
     </section>
