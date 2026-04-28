@@ -26,6 +26,7 @@ import { Types } from "mongoose";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
+import { notify, notifyManagers } from "../notifications/notify";
 
 /* ─────────────────────── Open Negotiation ─────────────────────── */
 
@@ -122,6 +123,14 @@ export async function openNegotiation(
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
 
+    await notifyManagers({
+      type: "NEGOTIATION_OPENED",
+      title: "Nouvelle négociation ouverte",
+      body: "Une négociation a été ouverte sur un bien du portefeuille.",
+      link: ROUTES.NEGOTIATION_DETAIL(negotiation._id.toString()),
+      relatedEntity: { type: "NEGOTIATION", id: negotiation._id.toString() },
+    });
+
     return {
       success: true,
       data: JSON.parse(JSON.stringify(negotiation)),
@@ -204,6 +213,14 @@ export async function requestBlock(
     });
 
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
+
+    await notifyManagers({
+      type: "BLOCK_REQUESTED",
+      title: "Demande de blocage en attente",
+      body: `Une demande de blocage de ${durationDays} jour(s) nécessite votre approbation.`,
+      link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+      relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+    });
 
     return { success: true, status: 201 };
   } catch (error) {
@@ -295,6 +312,15 @@ export async function approveBlock(
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
 
+    await notify({
+      recipientId: negotiation.agent.toString(),
+      type: "BLOCK_APPROVED",
+      title: "Blocage approuvé",
+      body: `Votre demande de blocage de ${blockReq.durationDays} jour(s) a été approuvée.`,
+      link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+      relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+    });
+
     return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
@@ -374,6 +400,15 @@ export async function rejectBlock(
 
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
 
+    await notify({
+      recipientId: negotiation.agent.toString(),
+      type: "BLOCK_REJECTED",
+      title: "Blocage refusé",
+      body: "Votre demande de blocage a été refusée.",
+      link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+      relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+    });
+
     return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
@@ -445,6 +480,14 @@ export async function confirmDeposit(
 
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
+
+    await notifyManagers({
+      type: "DEPOSIT_CONFIRMED",
+      title: "Acompte confirmé — Closing en cours",
+      body: "Un acompte a été enregistré. La négociation est maintenant en phase de closing.",
+      link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+      relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+    });
 
     return { success: true, status: 200 };
   } catch (error) {
@@ -528,6 +571,27 @@ export async function closeDeal(
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
     revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
 
+    const dealPayloads = [
+      {
+        recipientId: negotiation.agent.toString(),
+        type: "DEAL_DONE" as const,
+        title: "Affaire conclue !",
+        body: "La vente a été finalisée avec succès. Félicitations !",
+        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+        relatedEntity: { type: "NEGOTIATION" as const, id: negotiationId },
+      },
+    ];
+    await Promise.all([
+      notify(dealPayloads),
+      notifyManagers({
+        type: "DEAL_DONE",
+        title: "Affaire conclue !",
+        body: "Une vente a été finalisée avec succès.",
+        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+        relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+      }),
+    ]);
+
     return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
@@ -603,6 +667,25 @@ export async function cancelNegotiation(
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
     revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
+
+    if (isManager) {
+      await notify({
+        recipientId: negotiation.agent.toString(),
+        type: "NEGOTIATION_CANCELLED",
+        title: "Négociation annulée",
+        body: "La négociation a été annulée par le gérant.",
+        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+        relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+      });
+    } else {
+      await notifyManagers({
+        type: "NEGOTIATION_CANCELLED",
+        title: "Négociation annulée",
+        body: "Un agent a annulé une négociation en cours.",
+        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+        relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+      });
+    }
 
     return { success: true, status: 200 };
   } catch (error) {

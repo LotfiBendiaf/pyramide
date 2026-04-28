@@ -21,6 +21,7 @@ import { Types } from "mongoose";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
+import { notify } from "../notifications/notify";
 
 /* ─────────────────────── Schedule Visit ─────────────────────── */
 
@@ -262,6 +263,18 @@ export async function cancelVisit(
 
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(visit.client.toString()));
+
+    // Notify the visit agent if a manager is doing the cancellation
+    if (isManager && visit.agent && !isVisitAgent) {
+      await notify({
+        recipientId: visit.agent.toString(),
+        type: "VISIT_CANCELLED",
+        title: "Visite annulée",
+        body: "Une de vos visites planifiées a été annulée par le gérant.",
+        link: ROUTES.VISITS,
+        relatedEntity: { type: "VISIT", id: visitId },
+      });
+    }
 
     return { success: true, status: 200 };
   } catch (error) {

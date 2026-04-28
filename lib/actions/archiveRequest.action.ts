@@ -14,6 +14,7 @@ import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
 import { isElevatedRole } from "@/constants/values";
+import { notify, notifyManagers } from "../notifications/notify";
 
 /* ─────────────────────── Request Archive ─────────────────────── */
 
@@ -65,6 +66,17 @@ export async function requestArchive(
     });
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+
+    await notifyManagers({
+      type: "ARCHIVE_REQUESTED",
+      title: "Demande d'archivage en attente",
+      body: "Une demande d'archivage nécessite votre validation.",
+      link: ROUTES.CLIENTS_DASHBOARD,
+      relatedEntity: {
+        type: entityType === "CLIENT" ? "CLIENT" : "LISTING",
+        id: entityId,
+      },
+    });
 
     return { success: true, status: 201 };
   } catch (error) {
@@ -153,6 +165,14 @@ export async function approveArchiveRequest(
       revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     }
 
+    await notify({
+      recipientId: archiveRequest.requestedBy.toString(),
+      type: "ARCHIVE_APPROVED",
+      title: "Demande d'archivage approuvée",
+      body: "Votre demande d'archivage a été approuvée.",
+      link: ROUTES.CLIENTS_DASHBOARD,
+    });
+
     return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
@@ -215,6 +235,14 @@ export async function rejectArchiveRequest(
     await archiveRequest.save();
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+
+    await notify({
+      recipientId: archiveRequest.requestedBy.toString(),
+      type: "ARCHIVE_REJECTED",
+      title: "Demande d'archivage refusée",
+      body: "Votre demande d'archivage a été refusée.",
+      link: ROUTES.CLIENTS_DASHBOARD,
+    });
 
     return { success: true, status: 200 };
   } catch (error) {

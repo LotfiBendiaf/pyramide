@@ -31,6 +31,7 @@ import { ClientQualification, isElevatedRole } from "@/constants/values";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
+import { notify, notifyManagers } from "../notifications/notify";
 
 export async function createClient(
   params: ClientInput
@@ -657,6 +658,23 @@ export async function approvePhase1(
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
 
+    await notifyManagers({
+      type: "CLIENT_PHASE1_APPROVED",
+      title: "Client qualifié — Phase 2 en attente",
+      body: "Un client a été approuvé en Phase 1 et attend la validation Phase 2.",
+      link: ROUTES.CLIENT_DETAIL(clientId),
+      relatedEntity: { type: "CLIENT", id: clientId },
+    });
+
+    await notify({
+      recipientId: phase2AgentId,
+      type: "CLIENT_PHASE1_APPROVED",
+      title: "Client assigné — Phase 2 à valider",
+      body: "Un client vous a été assigné pour la validation Phase 2.",
+      link: ROUTES.CLIENT_DETAIL(clientId),
+      relatedEntity: { type: "CLIENT", id: clientId },
+    });
+
     return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
@@ -716,6 +734,15 @@ export async function rejectPhase1(
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+    await notify({
+      recipientId: client.createdBy.toString(),
+      type: "CLIENT_PHASE1_REJECTED",
+      title: "Client rejeté — Phase 1",
+      body: "Le client a été rejeté lors de la validation Phase 1.",
+      link: ROUTES.CLIENT_DETAIL(clientId),
+      relatedEntity: { type: "CLIENT", id: clientId },
+    });
 
     return { success: true, status: 200 };
   } catch (error) {
@@ -795,6 +822,14 @@ export async function approvePhase2(
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
 
+    await notifyManagers({
+      type: "CLIENT_PHASE2_APPROVED",
+      title: "Client qualifié — Phase 2 validée",
+      body: "Un client a été qualifié avec succès et rejoint le pipeline actif.",
+      link: ROUTES.CLIENT_DETAIL(clientId),
+      relatedEntity: { type: "CLIENT", id: clientId },
+    });
+
     return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
@@ -866,6 +901,14 @@ export async function rejectPhase2(
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
 
+    await notifyManagers({
+      type: "CLIENT_PHASE2_REJECTED",
+      title: "Client rejeté — Phase 2",
+      body: "Un client a été rejeté lors de la validation Phase 2.",
+      link: ROUTES.CLIENT_DETAIL(clientId),
+      relatedEntity: { type: "CLIENT", id: clientId },
+    });
+
     return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
@@ -899,6 +942,14 @@ export async function submitToPhase1(clientId: string): Promise<ActionResponse> 
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+    await notifyManagers({
+      type: "CLIENT_PHASE1_SUBMITTED",
+      title: "Client en attente de validation",
+      body: "Un nouveau client a été soumis pour validation Phase 1.",
+      link: ROUTES.CLIENT_DETAIL(clientId),
+      relatedEntity: { type: "CLIENT", id: clientId },
+    });
 
     return { success: true, status: 200 };
   } catch (error) {
