@@ -9,6 +9,7 @@ import { DailyReport } from "./dailyReport.model";
 import CalendarEvent from "./calendarEvent.model";
 import Message from "./message.model";
 import ArchiveRequest from "./archiveRequest.model";
+import Visit from "./visit.model";
 
 export {
   Account,
@@ -22,4 +23,5 @@ export {
   CalendarEvent,
   Message,
   ArchiveRequest,
+  Visit,
 };

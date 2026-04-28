@@ -13,6 +13,7 @@ import { Types } from "mongoose";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
+import { isElevatedRole } from "@/constants/values";
 
 /* ─────────────────────── Request Archive ─────────────────────── */
 
@@ -41,8 +42,6 @@ export async function requestArchive(
   }
 
   try {
-    await dbConnect();
-
     // Prevent duplicate pending requests for the same entity
     const existing = await ArchiveRequest.findOne({
       entityId,
@@ -93,10 +92,7 @@ export async function approveArchiveRequest(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager =
-    user.data.role === "MANAGER" ||
-    user.data.role === "ADMIN" ||
-    user.data.role === "DEVELOPER";
+  const isManager = isElevatedRole(user.data.role);
   if (!isManager) {
     return {
       success: false,
@@ -112,8 +108,6 @@ export async function approveArchiveRequest(
   }
 
   try {
-    await dbConnect();
-
     const archiveRequest = await ArchiveRequest.findById(requestId);
     if (!archiveRequest) {
       return { success: false, error: { message: "Demande introuvable" }, status: 404 };
@@ -127,28 +121,35 @@ export async function approveArchiveRequest(
       };
     }
 
-    // Update the request status
-    archiveRequest.status = "APPROVED";
-    archiveRequest.reviewedBy = user.data._id;
-    archiveRequest.reviewedAt = new Date();
-    archiveRequest.managerNote = managerNote;
-    await archiveRequest.save();
+    const reviewFields = {
+      status: "APPROVED" as const,
+      reviewedBy: user.data._id,
+      reviewedAt: new Date(),
+      managerNote,
+    };
 
-    // Apply archival to the entity
+    const entityUpdate =
+      archiveRequest.entityType === "CLIENT"
+        ? Client.findByIdAndUpdate(archiveRequest.entityId, {
+            archived: true,
+            qualificationStatus: "ARCHIVED",
+            pipelineStage: "ARCHIVED",
+          })
+        : Listing.findByIdAndUpdate(archiveRequest.entityId, {
+            archived: true,
+            archivedAt: new Date(),
+            pipelineStatus: "ARCHIVED",
+          });
+
+    await Promise.all([
+      ArchiveRequest.findByIdAndUpdate(requestId, reviewFields),
+      entityUpdate,
+    ]);
+
     if (archiveRequest.entityType === "CLIENT") {
-      await Client.findByIdAndUpdate(archiveRequest.entityId, {
-        archived: true,
-        qualificationStatus: "ARCHIVED",
-        pipelineStage: "ARCHIVED",
-      });
       revalidatePath(ROUTES.CLIENTS_DASHBOARD);
       revalidatePath(ROUTES.CLIENT_DETAIL(archiveRequest.entityId.toString()));
-    } else if (archiveRequest.entityType === "LISTING") {
-      await Listing.findByIdAndUpdate(archiveRequest.entityId, {
-        archived: true,
-        archivedAt: new Date(),
-        pipelineStatus: "ARCHIVED",
-      });
+    } else {
       revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     }
 
@@ -178,10 +179,7 @@ export async function rejectArchiveRequest(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager =
-    user.data.role === "MANAGER" ||
-    user.data.role === "ADMIN" ||
-    user.data.role === "DEVELOPER";
+  const isManager = isElevatedRole(user.data.role);
   if (!isManager) {
     return {
       success: false,
@@ -197,8 +195,6 @@ export async function rejectArchiveRequest(
   }
 
   try {
-    await dbConnect();
-
     const archiveRequest = await ArchiveRequest.findById(requestId);
     if (!archiveRequest) {
       return { success: false, error: { message: "Demande introuvable" }, status: 404 };
@@ -236,10 +232,7 @@ export async function fetchPendingArchiveRequests(): Promise<
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager =
-    user.data.role === "MANAGER" ||
-    user.data.role === "ADMIN" ||
-    user.data.role === "DEVELOPER";
+  const isManager = isElevatedRole(user.data.role);
   if (!isManager) {
     return {
       success: false,

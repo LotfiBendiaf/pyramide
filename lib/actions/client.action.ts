@@ -5,7 +5,7 @@ import { IClient, QualificationStatus } from "@/models/client.model";
 
 import {
   clientSchema,
-  fetchClientsSchema,
+  fetchClientsWithPipelineSchema,
   updateClientAgentSchema,
   updateClientSchema,
   phase1ApprovalSchema,
@@ -27,7 +27,7 @@ import {
   Phase2RejectionInput,
 } from "@/types/client";
 import { FilterQuery, Types } from "mongoose";
-import { ClientQualification } from "@/constants/values";
+import { ClientQualification, isElevatedRole } from "@/constants/values";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
@@ -65,10 +65,7 @@ export async function createClient(
     const { type, assignedAgent: providedAgent } = validationResult.params;
 
     // 4️⃣ Determine assigned agent
-    const isAdmin =
-      user.data.role === "ADMIN" ||
-      user.data.role === "MANAGER" ||
-      user.data.role === "DEVELOPER";
+    const isAdmin = isElevatedRole(user.data.role);
     const assignedAgent = isAdmin && providedAgent ? providedAgent : undefined;
 
     // 3️⃣ Generate reference code with retry on duplicate key (race condition)
@@ -133,7 +130,7 @@ export async function fetchClients(
   // 1. Validate + authorize
   const validationResult = await action({
     params,
-    schema: fetchClientsSchema,
+    schema: fetchClientsWithPipelineSchema,
     authorize: true,
   });
 
@@ -177,10 +174,7 @@ export async function fetchClients(
     }
 
     // Role-based filtering: AGENT only sees their own clients
-    const isAdmin =
-      user.data.role === "ADMIN" ||
-      user.data.role === "MANAGER" ||
-      user.data.role === "DEVELOPER";
+    const isAdmin = isElevatedRole(user.data.role);
     if (!isAdmin) {
       filter.$or = [
         { assignedAgent: user.data._id },
@@ -626,10 +620,7 @@ export async function approvePhase1(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager =
-    user.data.role === "MANAGER" ||
-    user.data.role === "ADMIN" ||
-    user.data.role === "DEVELOPER";
+  const isManager = isElevatedRole(user.data.role);
   if (!isManager) {
     return {
       success: false,
@@ -645,8 +636,6 @@ export async function approvePhase1(
   }
 
   try {
-    await dbConnect();
-
     const client = await Client.findByIdAndUpdate(
       clientId,
       {
@@ -692,10 +681,7 @@ export async function rejectPhase1(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager =
-    user.data.role === "MANAGER" ||
-    user.data.role === "ADMIN" ||
-    user.data.role === "DEVELOPER";
+  const isManager = isElevatedRole(user.data.role);
   if (!isManager) {
     return {
       success: false,
@@ -711,8 +697,6 @@ export async function rejectPhase1(
   }
 
   try {
-    await dbConnect();
-
     const client = await Client.findByIdAndUpdate(
       clientId,
       {
@@ -766,8 +750,6 @@ export async function approvePhase2(
   }
 
   try {
-    await dbConnect();
-
     // Verify the caller is the assigned Phase 2 agent (or a manager)
     const existing = await Client.findById(clientId).lean<IClient>();
     if (!existing) {
@@ -844,8 +826,6 @@ export async function rejectPhase2(
   }
 
   try {
-    await dbConnect();
-
     const existing = await Client.findById(clientId).lean<IClient>();
     if (!existing) {
       return { success: false, error: { message: "Client introuvable" }, status: 404 };

@@ -10,6 +10,10 @@ export const ROLES = [
 
 export type Role = (typeof ROLES)[number];
 
+export const ELEVATED_ROLES = ["MANAGER", "ADMIN", "DEVELOPER"] as const;
+export const isElevatedRole = (role: string): boolean =>
+  (ELEVATED_ROLES as readonly string[]).includes(role);
+
 export const ROLE_LABELS = {
   MANAGER: "Gérant",
   ADMIN: "Administrateur",
@@ -125,6 +129,21 @@ export const routeTitles: Record<string, string> = {
 };
 
 export const WILAYAS = ["Oran"];
+
+// ─── Visits ────────────────────────────────────────────────────────────────
+
+export const VISIT_STATUSES = [
+  { value: "SCHEDULED", label: "Planifiée", color: "warning" },
+  { value: "COMPLETED", label: "Effectuée", color: "success" },
+  { value: "CANCELLED", label: "Annulée", color: "secondary" },
+  { value: "NO_SHOW", label: "Absent", color: "destructive" },
+] as const;
+
+export const VISIT_OUTCOMES = [
+  { value: "INTERESTED", label: "Intéressé", color: "success" },
+  { value: "NOT_INTERESTED", label: "Pas intéressé", color: "secondary" },
+  { value: "UNDECIDED", label: "Indécis", color: "warning" },
+] as const;
 
 // ─── Listing Pipeline ──────────────────────────────────────────────────────
 

@@ -17,7 +17,7 @@ import {
 import dbConnect from "../mongoose";
 import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
-import { PropertyStatus } from "@/constants/values";
+import { PropertyStatus, isElevatedRole } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { clientPrefix, formatPriceAlgeria } from "../utils";
 
@@ -890,8 +890,6 @@ export async function schedulePhotoVisit(
   }
 
   try {
-    await dbConnect();
-
     const listing = await Listing.findByIdAndUpdate(
       listingId,
       { photoVisitScheduledAt: scheduledAt },
@@ -937,18 +935,13 @@ export async function completePhotoVisit(
   }
 
   try {
-    await dbConnect();
-
     const listing = await Listing.findById(listingId);
     if (!listing) {
       return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
     }
 
     // Only the listing agent or a manager can complete the photo visit
-    const isManager =
-      user.data.role === "MANAGER" ||
-      user.data.role === "ADMIN" ||
-      user.data.role === "DEVELOPER";
+    const isManager = isElevatedRole(user.data.role);
     const isListingAgent = listing.agent?.toString() === user.data._id?.toString();
 
     if (!isManager && !isListingAgent) {
@@ -1003,17 +996,12 @@ export async function updateKeyAvailability(
   }
 
   try {
-    await dbConnect();
-
     const listing = await Listing.findById(listingId);
     if (!listing) {
       return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
     }
 
-    const isManager =
-      user.data.role === "MANAGER" ||
-      user.data.role === "ADMIN" ||
-      user.data.role === "DEVELOPER";
+    const isManager = isElevatedRole(user.data.role);
     const isListingAgent = listing.agent?.toString() === user.data._id?.toString();
 
     if (!isManager && !isListingAgent) {

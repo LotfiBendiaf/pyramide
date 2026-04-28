@@ -36,6 +36,9 @@ const ROUTES = {
   CALENDAR_SETTINGS: "/dashboard/settings/calendar",
   // Documents
   DOCUMENTS: "/dashboard/documents",
+  // Visits
+  VISITS: "/dashboard/visits",
+  VISIT_DETAIL: (id: string) => `/dashboard/visits/${id}`,
 };
 
 export default ROUTES;
