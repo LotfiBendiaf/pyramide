@@ -10,6 +10,7 @@ import CalendarEvent from "./calendarEvent.model";
 import Message from "./message.model";
 import ArchiveRequest from "./archiveRequest.model";
 import Visit from "./visit.model";
+import Negotiation from "./negotiation.model";
 
 export {
   Account,
@@ -24,4 +25,5 @@ export {
   Message,
   ArchiveRequest,
   Visit,
+  Negotiation,
 };

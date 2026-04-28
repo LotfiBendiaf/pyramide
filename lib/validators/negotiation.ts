@@ -1,0 +1,58 @@
+import { z } from "zod";
+
+export const openNegotiationSchema = z.object({
+  listingId: z.string().min(1, "Annonce requise"),
+  clientId: z.string().min(1, "Client requis"),
+  visitId: z.string().optional(),
+  notes: z.string().trim().optional(),
+});
+
+export const requestBlockSchema = z.object({
+  negotiationId: z.string().min(1),
+  durationDays: z
+    .number({ required_error: "Durée requise" })
+    .int()
+    .min(1, "Minimum 1 jour")
+    .max(90, "Maximum 90 jours"),
+  reason: z.string().trim().optional(),
+});
+
+export const reviewBlockSchema = z.object({
+  negotiationId: z.string().min(1),
+  blockingRequestId: z.string().min(1),
+  managerNote: z.string().trim().optional(),
+});
+
+export const confirmDepositSchema = z.object({
+  negotiationId: z.string().min(1),
+  depositAmount: z.number({ required_error: "Montant du dépôt requis" }).positive(),
+  finalPrice: z.number({ required_error: "Prix final requis" }).positive(),
+  notes: z.string().trim().optional(),
+});
+
+export const closeDealSchema = z.object({
+  negotiationId: z.string().min(1),
+  finalPrice: z.number({ required_error: "Prix final requis" }).positive(),
+  notes: z.string().trim().optional(),
+});
+
+export const cancelNegotiationSchema = z.object({
+  negotiationId: z.string().min(1),
+  cancelReason: z.string().min(1, "Raison d'annulation requise"),
+});
+
+export const negotiationFiltersSchema = z.object({
+  status: z.enum(["ACTIVE", "CLOSING", "DEAL_DONE", "CANCELLED"]).optional(),
+  agentId: z.string().optional(),
+  listingId: z.string().optional(),
+  clientId: z.string().optional(),
+  page: z.number().min(1).optional(),
+  limit: z.number().min(1).max(100).optional(),
+});
+
+export type OpenNegotiationInput = z.infer<typeof openNegotiationSchema>;
+export type RequestBlockInput = z.infer<typeof requestBlockSchema>;
+export type ReviewBlockInput = z.infer<typeof reviewBlockSchema>;
+export type ConfirmDepositInput = z.infer<typeof confirmDepositSchema>;
+export type CloseDealInput = z.infer<typeof closeDealSchema>;
+export type CancelNegotiationInput = z.infer<typeof cancelNegotiationSchema>;

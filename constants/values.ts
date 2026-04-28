@@ -190,3 +190,22 @@ export const CLIENT_TEMPERATURES = [
 
 export type ClientTemperatureValue =
   (typeof CLIENT_TEMPERATURES)[number]["value"];
+
+// ─── Negotiations ──────────────────────────────────────────────────────────
+
+export const NEGOTIATION_STATUSES = [
+  { value: "ACTIVE", label: "En cours", color: "destructive" },
+  { value: "CLOSING", label: "Closing", color: "info" },
+  { value: "DEAL_DONE", label: "Conclu", color: "success" },
+  { value: "CANCELLED", label: "Annulée", color: "secondary" },
+] as const;
+
+export type NegotiationStatusValue =
+  (typeof NEGOTIATION_STATUSES)[number]["value"];
+
+export const BLOCK_DURATIONS = [
+  { days: 3, label: "3 jours" },
+  { days: 7, label: "1 semaine" },
+  { days: 14, label: "2 semaines" },
+  { days: 30, label: "1 mois" },
+] as const;

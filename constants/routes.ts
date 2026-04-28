@@ -39,6 +39,9 @@ const ROUTES = {
   // Visits
   VISITS: "/dashboard/visits",
   VISIT_DETAIL: (id: string) => `/dashboard/visits/${id}`,
+  // Negotiations
+  NEGOTIATIONS: "/dashboard/negotiations",
+  NEGOTIATION_DETAIL: (id: string) => `/dashboard/negotiations/${id}`,
 };
 
 export default ROUTES;
