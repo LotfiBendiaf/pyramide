@@ -17,7 +17,8 @@ export interface IBlockingRequest {
 }
 
 export interface INegotiation {
-  listing: Schema.Types.ObjectId;
+  _id?: Schema.Types.ObjectId;
+  listing: Schema.Types.ObjectId | { _id: Schema.Types.ObjectId; referenceCode?: string; title?: string };
   client: Schema.Types.ObjectId;
   agent: Schema.Types.ObjectId;
   visit?: Schema.Types.ObjectId;

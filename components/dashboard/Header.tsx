@@ -15,6 +15,7 @@ import {
 } from "../ui/breadcrumb";
 import Theme from "../navigation/Theme";
 import ROUTES from "@/constants/routes";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Button } from "../ui/button";
 import { useBreadcrumbTitle } from "../navigation/BreadcrumbTitleContext";
 
@@ -84,7 +85,7 @@ export function SiteHeader({ title, dynamic = false }: SiteHeaderProps) {
             {dynamicTitle}
           </h1>
           <div className="ml-auto flex items-center gap-2">
-            {/* <NotificationBell response={response} /> */}
+            <NotificationBell />
             <Theme />
 
             {/* <Button

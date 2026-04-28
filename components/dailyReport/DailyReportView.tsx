@@ -12,6 +12,9 @@ import {
   MapPin,
   Save,
   Loader2,
+  CalendarCheck,
+  Handshake,
+  Trophy,
   LucideIcon,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
@@ -30,6 +33,10 @@ interface DailyReportData {
   propertiesVisitedCount: number;
   followUpsCompletedCount: number;
   tasksCompletedCount: number;
+  visitsScheduledCount?: number;
+  visitsCompletedCount?: number;
+  negotiationsOpenedCount?: number;
+  dealsClosedCount?: number;
   notes?: string;
   newClients?: Array<{
     _id: string;
@@ -77,9 +84,9 @@ function StatCard({
 }) {
   const variantStyles = {
     default: "border-border bg-card",
-    success: "border-green-200 bg-green-50/50",
-    info: "border-blue-200 bg-blue-50/50",
-    warning: "border-orange-200 bg-orange-50/50",
+    success: "border-green-200",
+    info: "border-blue-200",
+    warning: "border-orange-200",
   };
 
   const iconStyles = {
@@ -177,6 +184,30 @@ export function DailyReportView({ report }: DailyReportViewProps) {
           value={report.tasksCompletedCount}
           icon={CheckCircle2}
           variant="default"
+        />
+        <StatCard
+          title="Visites Planifiées"
+          value={report.visitsScheduledCount ?? 0}
+          icon={CalendarCheck}
+          variant="info"
+        />
+        <StatCard
+          title="Visites Effectuées"
+          value={report.visitsCompletedCount ?? 0}
+          icon={CalendarCheck}
+          variant="success"
+        />
+        <StatCard
+          title="Négociations Ouvertes"
+          value={report.negotiationsOpenedCount ?? 0}
+          icon={Handshake}
+          variant="warning"
+        />
+        <StatCard
+          title="Affaires Conclues"
+          value={report.dealsClosedCount ?? 0}
+          icon={Trophy}
+          variant="success"
         />
       </div>
 

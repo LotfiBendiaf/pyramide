@@ -172,6 +172,13 @@ interface Client {
   qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
   qualificationNotes?: string;
 
+  pipelineStage: string;
+  clientTemperature?: string;
+  phase1Notes?: string;
+  phase2Agent?: string;
+  phase2Notes?: string;
+  lastContactedAt?: string | Date;
+
   createdBy: Schema.Types.ObjectId; // Agent / Assistant
   assignedAgent?: Schema.Types.ObjectId;
 

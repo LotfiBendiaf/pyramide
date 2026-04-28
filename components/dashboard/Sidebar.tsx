@@ -47,7 +47,8 @@ import {
   Loader2,
   Mail,
   Shuffle,
-  // Shuffle,
+  CalendarCheck,
+  Handshake,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -137,6 +138,21 @@ const sidebarConfig: SidebarGroup[] = [
         url: ROUTES.NEW_FOLLOWUP,
         icon: CalendarArrowUp,
         roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
+    ],
+  },
+  {
+    label: "Pipeline",
+    items: [
+      {
+        title: "Visites",
+        url: ROUTES.VISITS,
+        icon: CalendarCheck,
+      },
+      {
+        title: "Négociations",
+        url: ROUTES.NEGOTIATIONS,
+        icon: Handshake,
       },
     ],
   },

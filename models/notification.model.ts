@@ -28,6 +28,7 @@ export type NotificationEntityType =
   | "ARCHIVE_REQUEST";
 
 export interface INotification {
+  _id?: Schema.Types.ObjectId;
   recipient: Schema.Types.ObjectId;
   type: NotificationType;
   title: string;
