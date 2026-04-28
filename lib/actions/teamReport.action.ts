@@ -17,6 +17,10 @@ interface AgentReport {
   propertiesVisitedCount: number;
   followUpsCompletedCount: number;
   tasksCompletedCount: number;
+  visitsScheduledCount: number;
+  visitsCompletedCount: number;
+  negotiationsOpenedCount: number;
+  dealsClosedCount: number;
   notes?: string;
 }
 
@@ -30,6 +34,10 @@ interface TeamTotals {
   totalPropertiesVisited: number;
   totalFollowUpsCompleted: number;
   totalTasksCompleted: number;
+  totalVisitsScheduled: number;
+  totalVisitsCompleted: number;
+  totalNegotiationsOpened: number;
+  totalDealsClosed: number;
   activeAgents: number;
   totalAgents: number;
 }
@@ -46,98 +54,86 @@ interface TeamReportResponse {
   error?: { message: string };
 }
 
+const EMPTY_REPORT: AgentReport = {
+  _id: null,
+  newClientsCount: 0,
+  propertiesVisitedCount: 0,
+  followUpsCompletedCount: 0,
+  tasksCompletedCount: 0,
+  visitsScheduledCount: 0,
+  visitsCompletedCount: 0,
+  negotiationsOpenedCount: 0,
+  dealsClosedCount: 0,
+  notes: "",
+};
+
 export async function getTeamReport(date?: Date): Promise<TeamReportResponse> {
   try {
     await dbConnect();
 
-    // Set date range for today if no date specified
     const targetDate = date || new Date();
     const startOfDay = new Date(targetDate);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Get all agents
-    const agents = await User.find({
-      role: { $in: ["AGENT", "MANAGER", "ADMIN"] },
-    })
-      .select("name email profileImage role")
-      .lean();
+    const [agents, reports] = await Promise.all([
+      User.find({ role: { $in: ["AGENT", "MANAGER", "ADMIN"] } })
+        .select("name email profileImage role")
+        .lean(),
+      DailyReport.find({ date: { $gte: startOfDay, $lte: endOfDay } })
+        .populate("agent", "name email profileImage role")
+        .lean(),
+    ]);
 
-    // Fetch all reports for this date
-    const reports = await DailyReport.find({
-      date: {
-        $gte: startOfDay,
-        $lte: endOfDay,
-      },
-    })
-      .populate("agent", "name email profileImage role")
-      .lean();
-
-    // Create a map of agent reports
     const reportMap = new Map(
-      reports.map((report) => [report.agent._id.toString(), report])
+      reports.map((r) => [r.agent._id.toString(), r])
     );
 
-    // Build team report data
-    const teamReports = agents.map((agent) => {
-      const agentIdStr = String(agent._id);
-      const report = reportMap.get(agentIdStr);
+    const teamReports: TeamMemberReport[] = agents.map((agent) => {
+      const r = reportMap.get(String(agent._id));
 
       return {
         agent: {
-          _id: agentIdStr,
+          _id: String(agent._id),
           name: agent.name,
           email: agent.email,
           profileImage: agent.profileImage,
           role: agent.role,
         },
-        report: report
+        report: r
           ? {
-              newClientsCount: report.newClientsCount,
-              propertiesVisitedCount: report.propertiesVisitedCount,
-              followUpsCompletedCount: report.followUpsCompletedCount,
-              tasksCompletedCount: report.tasksCompletedCount,
-              notes: report.notes,
-              _id: String(report._id),
+              _id: String(r._id),
+              newClientsCount: r.newClientsCount ?? 0,
+              propertiesVisitedCount: r.propertiesVisitedCount ?? 0,
+              followUpsCompletedCount: r.followUpsCompletedCount ?? 0,
+              tasksCompletedCount: r.tasksCompletedCount ?? 0,
+              visitsScheduledCount: r.visitsScheduledCount ?? 0,
+              visitsCompletedCount: r.visitsCompletedCount ?? 0,
+              negotiationsOpenedCount: r.negotiationsOpenedCount ?? 0,
+              dealsClosedCount: r.dealsClosedCount ?? 0,
+              notes: r.notes,
             }
-          : {
-              newClientsCount: 0,
-              propertiesVisitedCount: 0,
-              followUpsCompletedCount: 0,
-              tasksCompletedCount: 0,
-              notes: "",
-              _id: null,
-            },
+          : { ...EMPTY_REPORT },
       };
     });
 
-    // Calculate team totals
-    const teamTotals = {
-      totalNewClients: reports.reduce((sum, r) => sum + r.newClientsCount, 0),
-      totalPropertiesVisited: reports.reduce(
-        (sum, r) => sum + r.propertiesVisitedCount,
-        0
-      ),
-      totalFollowUpsCompleted: reports.reduce(
-        (sum, r) => sum + r.followUpsCompletedCount,
-        0
-      ),
-      totalTasksCompleted: reports.reduce(
-        (sum, r) => sum + r.tasksCompletedCount,
-        0
-      ),
+    const teamTotals: TeamTotals = {
+      totalNewClients: reports.reduce((s, r) => s + (r.newClientsCount ?? 0), 0),
+      totalPropertiesVisited: reports.reduce((s, r) => s + (r.propertiesVisitedCount ?? 0), 0),
+      totalFollowUpsCompleted: reports.reduce((s, r) => s + (r.followUpsCompletedCount ?? 0), 0),
+      totalTasksCompleted: reports.reduce((s, r) => s + (r.tasksCompletedCount ?? 0), 0),
+      totalVisitsScheduled: reports.reduce((s, r) => s + (r.visitsScheduledCount ?? 0), 0),
+      totalVisitsCompleted: reports.reduce((s, r) => s + (r.visitsCompletedCount ?? 0), 0),
+      totalNegotiationsOpened: reports.reduce((s, r) => s + (r.negotiationsOpenedCount ?? 0), 0),
+      totalDealsClosed: reports.reduce((s, r) => s + (r.dealsClosedCount ?? 0), 0),
       activeAgents: reports.length,
       totalAgents: agents.length,
     };
 
     return {
       success: true,
-      data: {
-        date: targetDate,
-        teamReports,
-        teamTotals,
-      },
+      data: { date: targetDate, teamReports, teamTotals },
     };
   } catch (error) {
     console.error("Team daily report error:", error);

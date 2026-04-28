@@ -9,13 +9,19 @@ export interface IDailyReport {
   propertiesVisitedCount: number;
   followUpsCompletedCount: number;
   tasksCompletedCount: number;
+  visitsScheduledCount: number;
+  visitsCompletedCount: number;
+  negotiationsOpenedCount: number;
+  dealsClosedCount: number;
   notes?: string;
 
   // Reference arrays for detailed tracking
   newClients: Schema.Types.ObjectId[];
-  propertiesVisited: Schema.Types.ObjectId[]; // FollowUp IDs with VISIT channel
+  propertiesVisited: Schema.Types.ObjectId[]; // Legacy: FollowUp IDs with VISIT channel
   followUpsCompleted: Schema.Types.ObjectId[];
   tasksCompleted: Schema.Types.ObjectId[];
+  visits: Schema.Types.ObjectId[];        // Visit model IDs
+  negotiations: Schema.Types.ObjectId[];  // Negotiation model IDs
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -48,33 +54,31 @@ const DailyReportSchema = new Schema<IDailyReport>(
       type: Number,
       default: 0,
     },
+    visitsScheduledCount: {
+      type: Number,
+      default: 0,
+    },
+    visitsCompletedCount: {
+      type: Number,
+      default: 0,
+    },
+    negotiationsOpenedCount: {
+      type: Number,
+      default: 0,
+    },
+    dealsClosedCount: {
+      type: Number,
+      default: 0,
+    },
     notes: String,
 
     // Reference arrays
-    newClients: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Client",
-      },
-    ],
-    propertiesVisited: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "FollowUp",
-      },
-    ],
-    followUpsCompleted: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "FollowUp",
-      },
-    ],
-    tasksCompleted: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Task",
-      },
-    ],
+    newClients: [{ type: Schema.Types.ObjectId, ref: "Client" }],
+    propertiesVisited: [{ type: Schema.Types.ObjectId, ref: "FollowUp" }],
+    followUpsCompleted: [{ type: Schema.Types.ObjectId, ref: "FollowUp" }],
+    tasksCompleted: [{ type: Schema.Types.ObjectId, ref: "Task" }],
+    visits: [{ type: Schema.Types.ObjectId, ref: "Visit" }],
+    negotiations: [{ type: Schema.Types.ObjectId, ref: "Negotiation" }],
   },
   { timestamps: true }
 );
