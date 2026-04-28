@@ -7,8 +7,20 @@ export type QualificationStatus =
   | "NOT_RELEVANT"
   | "ARCHIVED";
 
+export type ClientTemperature = "HOT" | "WARM" | "COLD";
+
+export type PipelineStage =
+  | "LEAD"
+  | "PHASE_1_REVIEW"
+  | "PHASE_2_REVIEW"
+  | "ACTIVE_SEARCH"
+  | "FOLLOW_UP"
+  | "IN_NEGOTIATION"
+  | "CLOSED"
+  | "ARCHIVED";
+
 export interface IClient {
-  referenceCode: string; // BUY-032
+  referenceCode: string;
   type: ClientType;
 
   firstName?: string;
@@ -32,7 +44,25 @@ export interface IClient {
   qualificationStatus: QualificationStatus;
   qualificationNotes?: string;
 
-  createdBy: Schema.Types.ObjectId; // Agent / Assistant
+  // Pipeline fields
+  pipelineStage: PipelineStage;
+  clientTemperature?: ClientTemperature;
+
+  // Phase 1 — manager qualification
+  phase1ApprovedBy?: Schema.Types.ObjectId;
+  phase1ApprovedAt?: Date;
+  phase1Notes?: string;
+
+  // Phase 2 — agent qualification (agent assigned at Phase 1 approval)
+  phase2Agent?: Schema.Types.ObjectId;
+  phase2ApprovedBy?: Schema.Types.ObjectId;
+  phase2ApprovedAt?: Date;
+  phase2Notes?: string;
+
+  // Inactivity tracking for HOT client alerts
+  lastContactedAt?: Date;
+
+  createdBy: Schema.Types.ObjectId;
   assignedAgent?: Schema.Types.ObjectId;
 
   archived: boolean;
@@ -74,6 +104,39 @@ const clientSchema = new Schema<IClient>(
       default: "NEW",
     },
     qualificationNotes: String,
+
+    // Pipeline
+    pipelineStage: {
+      type: String,
+      enum: [
+        "LEAD",
+        "PHASE_1_REVIEW",
+        "PHASE_2_REVIEW",
+        "ACTIVE_SEARCH",
+        "FOLLOW_UP",
+        "IN_NEGOTIATION",
+        "CLOSED",
+        "ARCHIVED",
+      ],
+      default: "LEAD",
+    },
+    clientTemperature: {
+      type: String,
+      enum: ["HOT", "WARM", "COLD"],
+    },
+
+    // Phase 1
+    phase1ApprovedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    phase1ApprovedAt: Date,
+    phase1Notes: String,
+
+    // Phase 2
+    phase2Agent: { type: Schema.Types.ObjectId, ref: "User" },
+    phase2ApprovedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    phase2ApprovedAt: Date,
+    phase2Notes: String,
+
+    lastContactedAt: Date,
 
     createdBy: {
       type: Schema.Types.ObjectId,

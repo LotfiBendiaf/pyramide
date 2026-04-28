@@ -8,6 +8,7 @@ import { Task } from "./task.model";
 import { DailyReport } from "./dailyReport.model";
 import CalendarEvent from "./calendarEvent.model";
 import Message from "./message.model";
+import ArchiveRequest from "./archiveRequest.model";
 
 export {
   Account,
@@ -20,4 +21,5 @@ export {
   DailyReport,
   CalendarEvent,
   Message,
+  ArchiveRequest,
 };

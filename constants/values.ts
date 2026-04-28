@@ -125,3 +125,27 @@ export const routeTitles: Record<string, string> = {
 };
 
 export const WILAYAS = ["Oran"];
+
+// ─── Client Pipeline ───────────────────────────────────────────────────────
+
+export const PIPELINE_STAGES = [
+  { value: "LEAD", label: "Nouveau lead", color: "secondary" },
+  { value: "PHASE_1_REVIEW", label: "En attente Phase 1", color: "warning" },
+  { value: "PHASE_2_REVIEW", label: "En attente Phase 2", color: "warning" },
+  { value: "ACTIVE_SEARCH", label: "Recherche active", color: "success" },
+  { value: "FOLLOW_UP", label: "Suivi", color: "info" },
+  { value: "IN_NEGOTIATION", label: "En négociation", color: "destructive" },
+  { value: "CLOSED", label: "Clôturé", color: "outline" },
+  { value: "ARCHIVED", label: "Archivé", color: "outline" },
+] as const;
+
+export type PipelineStageValue = (typeof PIPELINE_STAGES)[number]["value"];
+
+export const CLIENT_TEMPERATURES = [
+  { value: "HOT", label: "Chaud", color: "destructive", followUpDays: 2 },
+  { value: "WARM", label: "Normal", color: "warning", followUpDays: 7 },
+  { value: "COLD", label: "Froid", color: "secondary", followUpDays: 180 },
+] as const;
+
+export type ClientTemperatureValue =
+  (typeof CLIENT_TEMPERATURES)[number]["value"];
