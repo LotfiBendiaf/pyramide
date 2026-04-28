@@ -1,3 +1,15 @@
+type ListingPipelineStatus =
+  | "DRAFT"
+  | "PENDING_VALIDATION"
+  | "PHOTO_VISIT_PENDING"
+  | "ACTIVE"
+  | "UNDER_NEGOTIATION"
+  | "CLOSING"
+  | "SOLD"
+  | "ARCHIVED";
+
+type SellerMotivation = "LOW" | "MEDIUM" | "HIGH";
+
 interface ListingInput {
   title: string;
   slug: string;
@@ -54,6 +66,15 @@ interface ListingInput {
   isFeatured?: boolean;
   isPublished: boolean;
 }
+
+interface PhotoVisitInput {
+  listingId: string;
+  sellerMotivation: SellerMotivation;
+  listingAgentEvalPrice?: number;
+  photoVisitNotes?: string;
+  scheduledAt?: Date;
+}
+
 interface ListingItem {
   id: string;
   title: string;

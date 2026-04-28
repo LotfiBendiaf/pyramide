@@ -126,6 +126,28 @@ export const routeTitles: Record<string, string> = {
 
 export const WILAYAS = ["Oran"];
 
+// ─── Listing Pipeline ──────────────────────────────────────────────────────
+
+export const LISTING_PIPELINE_STAGES = [
+  { value: "DRAFT", label: "Brouillon", color: "secondary" },
+  { value: "PENDING_VALIDATION", label: "En attente de validation", color: "warning" },
+  { value: "PHOTO_VISIT_PENDING", label: "Visite photo à planifier", color: "warning" },
+  { value: "ACTIVE", label: "Actif", color: "success" },
+  { value: "UNDER_NEGOTIATION", label: "En négociation", color: "destructive" },
+  { value: "CLOSING", label: "Closing", color: "info" },
+  { value: "SOLD", label: "Vendu", color: "outline" },
+  { value: "ARCHIVED", label: "Archivé", color: "outline" },
+] as const;
+
+export type ListingPipelineStageValue =
+  (typeof LISTING_PIPELINE_STAGES)[number]["value"];
+
+export const SELLER_MOTIVATIONS = [
+  { value: "LOW", label: "Faible", color: "secondary" },
+  { value: "MEDIUM", label: "Moyenne", color: "warning" },
+  { value: "HIGH", label: "Élevée", color: "success" },
+] as const;
+
 // ─── Client Pipeline ───────────────────────────────────────────────────────
 
 export const PIPELINE_STAGES = [

@@ -3,6 +3,18 @@ import { Schema, model, models } from "mongoose";
 /* ---------------------------------
    TypeScript Interface
 ----------------------------------*/
+export type ListingPipelineStatus =
+  | "DRAFT"
+  | "PENDING_VALIDATION"
+  | "PHOTO_VISIT_PENDING"
+  | "ACTIVE"
+  | "UNDER_NEGOTIATION"
+  | "CLOSING"
+  | "SOLD"
+  | "ARCHIVED";
+
+export type SellerMotivation = "LOW" | "MEDIUM" | "HIGH";
+
 export interface IListing {
   referenceCode?: string; // VA-0001 (Vente Appartement), LV-0001 (Location Villa) — assigned on validation
   title?: string;
@@ -15,6 +27,26 @@ export interface IListing {
   offeredPrice?: number; // Final agreed price
 
   status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
+
+  // Internal pipeline tracking (separate from public-facing status)
+  pipelineStatus: ListingPipelineStatus;
+
+  // Key availability for visit scheduling
+  keyAvailable: boolean;
+
+  // Temporary blocking during negotiation
+  blockedUntil?: Date;
+  blockedForClient?: Schema.Types.ObjectId;
+
+  // Photo visit tracking (done by listing agent after validation)
+  photoVisitScheduledAt?: Date;
+  photoVisitCompletedAt?: Date;
+  photoVisitNotes?: string;
+
+  // Seller info from photo visit evaluation
+  sellerMotivation?: SellerMotivation;
+  listingAgentEvalPrice?: number;
+
   propertyType:
     | "Appartement"
     | "Maison"
@@ -115,6 +147,32 @@ const listingSchema = new Schema<IListing>(
       enum: ["En Vente", "En Location", "Vendu", "Loué", "Retiré"],
       required: true,
     },
+
+    pipelineStatus: {
+      type: String,
+      enum: [
+        "DRAFT",
+        "PENDING_VALIDATION",
+        "PHOTO_VISIT_PENDING",
+        "ACTIVE",
+        "UNDER_NEGOTIATION",
+        "CLOSING",
+        "SOLD",
+        "ARCHIVED",
+      ],
+      default: "DRAFT",
+    },
+
+    keyAvailable: { type: Boolean, default: true },
+
+    blockedUntil: { type: Date },
+    blockedForClient: { type: Schema.Types.ObjectId, ref: "Client" },
+
+    photoVisitScheduledAt: { type: Date },
+    photoVisitCompletedAt: { type: Date },
+    photoVisitNotes: { type: String },
+    sellerMotivation: { type: String, enum: ["LOW", "MEDIUM", "HIGH"] },
+    listingAgentEvalPrice: { type: Number },
 
     propertyType: {
       type: String,
@@ -231,6 +289,8 @@ listingSchema.index({ isFeatured: 1 });
 listingSchema.index({ isValidated: 1 });
 listingSchema.index({ archived: 1 });
 listingSchema.index({ "evaluation.finalScore": -1 });
+listingSchema.index({ pipelineStatus: 1 });
+listingSchema.index({ blockedUntil: 1 });
 
 /* ---------------------------------
    Model

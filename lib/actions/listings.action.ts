@@ -4,7 +4,16 @@ import { Listing, Client } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import action from "../handlers/action";
 import handleError from "../handlers/error";
-import { ListingInput, listingSchema } from "../validators/listing";
+import {
+  ListingInput,
+  listingSchema,
+  photoVisitScheduleSchema,
+  photoVisitCompleteSchema,
+  keyAvailabilitySchema,
+  PhotoVisitScheduleInput,
+  PhotoVisitCompleteInput,
+  KeyAvailabilityInput,
+} from "../validators/listing";
 import dbConnect from "../mongoose";
 import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
@@ -620,6 +629,7 @@ export async function toggleListingValidation(
         validatedAt: new Date(),
         validatedBy: user.data._id,
         description: updatedDescription || listing.description,
+        pipelineStatus: "PHOTO_VISIT_PENDING",
       });
 
       revalidatePath(ROUTES.LISTINGS_DASHBOARD);
@@ -636,6 +646,7 @@ export async function toggleListingValidation(
         isValidated: false,
         archived: true,
         archivedAt: new Date(),
+        pipelineStatus: "ARCHIVED",
         $unset: { validatedAt: 1, validatedBy: 1 },
       });
 
@@ -847,6 +858,221 @@ export async function toggleListingPublished(
       data: { isPublished: newStatus },
       status: 200,
     };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* ─────────────────────── Photo Visit ─────────────────────── */
+
+export async function schedulePhotoVisit(
+  params: PhotoVisitScheduleInput
+): Promise<ActionResponse> {
+  const validationResult = await action({
+    params,
+    schema: photoVisitScheduleSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  const { listingId, scheduledAt } = validationResult.params;
+
+  if (!Types.ObjectId.isValid(listingId)) {
+    return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
+  }
+
+  try {
+    await dbConnect();
+
+    const listing = await Listing.findByIdAndUpdate(
+      listingId,
+      { photoVisitScheduledAt: scheduledAt },
+      { new: true }
+    );
+
+    if (!listing) {
+      return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function completePhotoVisit(
+  params: PhotoVisitCompleteInput
+): Promise<ActionResponse> {
+  const validationResult = await action({
+    params,
+    schema: photoVisitCompleteSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  const { listingId, sellerMotivation, listingAgentEvalPrice, photoVisitNotes } =
+    validationResult.params;
+
+  if (!Types.ObjectId.isValid(listingId)) {
+    return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
+  }
+
+  try {
+    await dbConnect();
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+    }
+
+    // Only the listing agent or a manager can complete the photo visit
+    const isManager =
+      user.data.role === "MANAGER" ||
+      user.data.role === "ADMIN" ||
+      user.data.role === "DEVELOPER";
+    const isListingAgent = listing.agent?.toString() === user.data._id?.toString();
+
+    if (!isManager && !isListingAgent) {
+      return {
+        success: false,
+        error: { message: "Seul l'agent listing peut compléter la visite photo" },
+        status: 403,
+      };
+    }
+
+    await Listing.findByIdAndUpdate(listingId, {
+      pipelineStatus: "ACTIVE",
+      photoVisitCompletedAt: new Date(),
+      sellerMotivation,
+      listingAgentEvalPrice,
+      photoVisitNotes,
+    });
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* ─────────────────────── Key Availability ─────────────────────── */
+
+export async function updateKeyAvailability(
+  params: KeyAvailabilityInput
+): Promise<ActionResponse> {
+  const validationResult = await action({
+    params,
+    schema: keyAvailabilitySchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  const { listingId, keyAvailable } = validationResult.params;
+
+  if (!Types.ObjectId.isValid(listingId)) {
+    return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
+  }
+
+  try {
+    await dbConnect();
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+    }
+
+    const isManager =
+      user.data.role === "MANAGER" ||
+      user.data.role === "ADMIN" ||
+      user.data.role === "DEVELOPER";
+    const isListingAgent = listing.agent?.toString() === user.data._id?.toString();
+
+    if (!isManager && !isListingAgent) {
+      return {
+        success: false,
+        error: { message: "Seul l'agent listing peut modifier la disponibilité des clés" },
+        status: 403,
+      };
+    }
+
+    await Listing.findByIdAndUpdate(listingId, { keyAvailable });
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* ─────────────────────── Submit for Validation ─────────────────────── */
+
+export async function submitListingForValidation(
+  listingId: string
+): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!Types.ObjectId.isValid(listingId)) {
+    return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
+  }
+
+  try {
+    await dbConnect();
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+    }
+
+    if (listing.pipelineStatus !== "DRAFT") {
+      return {
+        success: false,
+        error: { message: "Seules les annonces en brouillon peuvent être soumises à validation" },
+        status: 409,
+      };
+    }
+
+    await Listing.findByIdAndUpdate(listingId, {
+      pipelineStatus: "PENDING_VALIDATION",
+    });
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

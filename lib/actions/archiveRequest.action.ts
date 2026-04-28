@@ -1,6 +1,6 @@
 "use server";
 
-import { ArchiveRequest, Client } from "@/models";
+import { ArchiveRequest, Client, Listing } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
 import action from "../handlers/action";
@@ -143,8 +143,14 @@ export async function approveArchiveRequest(
       });
       revalidatePath(ROUTES.CLIENTS_DASHBOARD);
       revalidatePath(ROUTES.CLIENT_DETAIL(archiveRequest.entityId.toString()));
+    } else if (archiveRequest.entityType === "LISTING") {
+      await Listing.findByIdAndUpdate(archiveRequest.entityId, {
+        archived: true,
+        archivedAt: new Date(),
+        pipelineStatus: "ARCHIVED",
+      });
+      revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     }
-    // Listing archival will be handled when the listing pipeline is implemented
 
     return { success: true, status: 200 };
   } catch (error) {

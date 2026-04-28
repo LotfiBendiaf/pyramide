@@ -128,6 +128,51 @@ export const listingSchema = z
   });
 
 /* ---------------------------------
+   Photo Visit
+----------------------------------*/
+export const photoVisitScheduleSchema = z.object({
+  listingId: z.string().min(1),
+  scheduledAt: z.coerce.date({ required_error: "Date de visite requise" }),
+});
+
+export const photoVisitCompleteSchema = z.object({
+  listingId: z.string().min(1),
+  sellerMotivation: z.enum(["LOW", "MEDIUM", "HIGH"], {
+    required_error: "La motivation vendeur est requise",
+  }),
+  listingAgentEvalPrice: z.number().positive().optional(),
+  photoVisitNotes: z.string().optional(),
+});
+
+/* ---------------------------------
+   Key Availability
+----------------------------------*/
+export const keyAvailabilitySchema = z.object({
+  listingId: z.string().min(1),
+  keyAvailable: z.boolean(),
+});
+
+/* ---------------------------------
+   Pipeline Status
+----------------------------------*/
+export const listingPipelineStatusSchema = z.object({
+  listingId: z.string().min(1),
+  pipelineStatus: z.enum([
+    "DRAFT",
+    "PENDING_VALIDATION",
+    "PHOTO_VISIT_PENDING",
+    "ACTIVE",
+    "UNDER_NEGOTIATION",
+    "CLOSING",
+    "SOLD",
+    "ARCHIVED",
+  ]),
+});
+
+/* ---------------------------------
    Types
 ----------------------------------*/
 export type ListingInput = z.infer<typeof listingSchema>;
+export type PhotoVisitScheduleInput = z.infer<typeof photoVisitScheduleSchema>;
+export type PhotoVisitCompleteInput = z.infer<typeof photoVisitCompleteSchema>;
+export type KeyAvailabilityInput = z.infer<typeof keyAvailabilitySchema>;
