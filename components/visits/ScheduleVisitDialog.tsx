@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,51 +24,95 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { scheduleVisitSchema } from "@/lib/validators/visit";
 import { scheduleVisit } from "@/lib/actions/visit.action";
+import { fetchClients } from "@/lib/actions/client.action";
+import { fetchListings } from "@/lib/actions/listings.action";
 import { useRouter } from "next/navigation";
 
 type FormValues = z.infer<typeof scheduleVisitSchema>;
 
-interface Listing {
-  _id: string;
-  referenceCode?: string;
-  title?: string;
-}
-
-interface Client {
-  _id: string;
-  referenceCode: string;
-  firstName?: string;
-  lastName?: string;
-  phone: string;
-}
-
 interface Props {
-  listings: Listing[];
-  clients: Client[];
   prefilledClientId?: string;
   prefilledListingId?: string;
   trigger?: React.ReactNode;
 }
 
 export function ScheduleVisitDialog({
-  listings,
-  clients,
   prefilledClientId,
   prefilledListingId,
   trigger,
 }: Props) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+
+  const [clientOptions, setClientOptions] = useState<ComboboxOption[]>([]);
+  const [listingOptions, setListingOptions] = useState<ComboboxOption[]>([]);
+  const [clientLoading, setClientLoading] = useState(false);
+  const [listingLoading, setListingLoading] = useState(false);
+
+  const clientTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchClients = useCallback(async (query: string) => {
+    setClientLoading(true);
+    try {
+      const result = await fetchClients({ search: query || undefined, limit: 20 });
+      const clients = result.data?.clients ?? [];
+      setClientOptions(
+        clients.map((c) => ({
+          value: String(c._id),
+          label:
+            [c.firstName, c.lastName].filter(Boolean).join(" ") || c.phone,
+          searchableText: `${c.referenceCode} ${c.firstName ?? ""} ${c.lastName ?? ""} ${c.phone}`,
+          metadata: c.referenceCode,
+        }))
+      );
+    } finally {
+      setClientLoading(false);
+    }
+  }, []);
+
+  const searchListings = useCallback(async (query: string) => {
+    setListingLoading(true);
+    try {
+      const result = await fetchListings({
+        referenceCodeSearch: query || undefined,
+        isValidated: true,
+        limit: 20,
+      });
+      const listings = result.data ?? [];
+      setListingOptions(
+        listings.map((l) => ({
+          value: String(l._id),
+          label: l.title ?? "Sans titre",
+          searchableText: `${l.referenceCode ?? ""} ${l.title ?? ""}`,
+          metadata: l.referenceCode,
+        }))
+      );
+    } finally {
+      setListingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      searchClients("");
+      searchListings("");
+    }
+  }, [open, searchClients, searchListings]);
+
+  function handleClientSearch(query: string) {
+    if (clientTimer.current) clearTimeout(clientTimer.current);
+    clientTimer.current = setTimeout(() => searchClients(query), 300);
+  }
+
+  function handleListingSearch(query: string) {
+    if (listingTimer.current) clearTimeout(listingTimer.current);
+    listingTimer.current = setTimeout(() => searchListings(query), 300);
+  }
 
   const form = useForm<FormValues>({
     resolver: zodResolver(scheduleVisitSchema),
@@ -156,29 +200,19 @@ export function ScheduleVisitDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bien immobilier</FormLabel>
-                    <Select
-                      value={field.value ?? ""}
-                      onValueChange={field.onChange}
-                      disabled={!!prefilledListingId}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un bien…" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {listings.map((l) => (
-                          <SelectItem key={l._id} value={l._id}>
-                            {l.referenceCode && (
-                              <span className="font-mono text-xs mr-2">
-                                {l.referenceCode}
-                              </span>
-                            )}
-                            {l.title ?? "Sans titre"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Combobox
+                        options={listingOptions}
+                        value={field.value ?? ""}
+                        onSelect={field.onChange}
+                        placeholder="Rechercher un bien…"
+                        searchPlaceholder="Réf ou titre…"
+                        emptyText="Aucun bien trouvé."
+                        disabled={!!prefilledListingId}
+                        onSearchChange={handleListingSearch}
+                        loading={listingLoading}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -192,28 +226,19 @@ export function ScheduleVisitDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Client</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={!!prefilledClientId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un client…" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clients.map((c) => (
-                        <SelectItem key={c._id} value={c._id}>
-                          <span className="font-mono text-xs mr-2">
-                            {c.referenceCode}
-                          </span>
-                          {[c.firstName, c.lastName].filter(Boolean).join(" ") ||
-                            c.phone}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={clientOptions}
+                      value={field.value}
+                      onSelect={field.onChange}
+                      placeholder="Rechercher un client…"
+                      searchPlaceholder="Réf, nom ou téléphone…"
+                      emptyText="Aucun client trouvé."
+                      disabled={!!prefilledClientId}
+                      onSearchChange={handleClientSearch}
+                      loading={clientLoading}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

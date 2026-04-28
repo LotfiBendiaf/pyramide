@@ -224,6 +224,7 @@ interface FetchListingsParams {
   isPremium?: boolean;
   minScore?: number;
   search?: string;
+  referenceCodeSearch?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
@@ -247,6 +248,7 @@ export async function fetchListings(
       isPremium,
       minScore,
       search,
+      referenceCodeSearch,
       sortBy,
       sortOrder,
     } = params;
@@ -315,6 +317,11 @@ export async function fetchListings(
           ? [{ sellerClient: { $in: matchingClientIds } }]
           : []),
       ];
+    }
+
+    if (referenceCodeSearch) {
+      const escaped = referenceCodeSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.referenceCode = { $regex: escaped, $options: "i" };
     }
 
     await dbConnect();

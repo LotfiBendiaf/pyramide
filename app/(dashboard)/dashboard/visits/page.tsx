@@ -1,7 +1,5 @@
 import { Suspense } from "react";
 import { fetchVisits } from "@/lib/actions/visit.action";
-import { fetchClients } from "@/lib/actions/client.action";
-import { fetchListings } from "@/lib/actions/listings.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { isElevatedRole } from "@/constants/values";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -29,33 +27,16 @@ async function VisitsContent({ searchParams }: { searchParams: SearchParams }) {
     ...(searchParams.status ? { status: searchParams.status as VisitFilters["status"] } : {}),
   };
 
-  const [visitsResult, clientsResult, listingsResult] = await Promise.all([
-    fetchVisits(filters),
-    fetchClients({ limit: 200 }),
-    fetchListings({ isValidated: true, limit: 200 }),
-  ]);
+  const visitsResult = await fetchVisits(filters);
 
   const visits = visitsResult.data?.visits ?? [];
   const total = visitsResult.data?.total ?? 0;
-  const clients = (clientsResult.data?.clients ?? []).map((c: { _id: string; referenceCode: string; firstName?: string; lastName?: string; phone: string }) => ({
-    _id: String(c._id),
-    referenceCode: c.referenceCode,
-    firstName: c.firstName,
-    lastName: c.lastName,
-    phone: c.phone,
-  }));
-  const listings = (listingsResult.data ?? []).map((l: { _id: string; referenceCode?: string; title?: string }) => ({
-    _id: String(l._id),
-    referenceCode: l.referenceCode,
-    title: l.title,
-  }));
-
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
     <>
       <div className="flex justify-end mb-4">
-        <ScheduleVisitDialog listings={listings} clients={clients} />
+        <ScheduleVisitDialog />
       </div>
       <VisitsList visits={visits as unknown as Visit[]} showAgent={isManager} />
       <PaginationControls currentPage={page} totalPages={totalPages} />

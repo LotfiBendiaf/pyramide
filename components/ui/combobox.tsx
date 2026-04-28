@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface ComboboxOption {
   value: string;
@@ -28,6 +27,8 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   className?: string;
   disabled?: boolean;
+  onSearchChange?: (query: string) => void;
+  loading?: boolean;
 }
 
 export function Combobox({
@@ -39,6 +40,8 @@ export function Combobox({
   searchPlaceholder = "Rechercher...",
   className,
   disabled = false,
+  onSearchChange,
+  loading = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -46,14 +49,19 @@ export function Combobox({
   const selectedOption = options.find((option) => option.value === value);
 
   const filteredOptions = React.useMemo(() => {
+    if (onSearchChange) return options;
     if (!searchQuery) return options;
-
     const query = searchQuery.toLowerCase();
     return options.filter((option) => {
       const searchText = (option.searchableText || option.label).toLowerCase();
       return searchText.includes(query);
     });
-  }, [options, searchQuery]);
+  }, [options, searchQuery, onSearchChange]);
+
+  function handleSearchChange(q: string) {
+    setSearchQuery(q);
+    onSearchChange?.(q);
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -65,59 +73,69 @@ export function Combobox({
           className={cn("w-full justify-between", className)}
           disabled={disabled}
         >
-          <span className="truncate">
-            {selectedOption ? selectedOption.label : placeholder}
+          <span className="truncate text-left">
+            {selectedOption
+              ? selectedOption.metadata
+                ? `${selectedOption.metadata} – ${selectedOption.label}`
+                : selectedOption.label
+              : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[500px] p-0" align="start">
+      <PopoverContent
+        className="p-0"
+        align="start"
+        style={{ width: "var(--radix-popover-trigger-width)" }}
+      >
         <div className="flex flex-col">
           <div className="p-2 border-b">
             <Input
               placeholder={searchPlaceholder}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="h-9"
             />
           </div>
-          <ScrollArea className="h-[300px]">
-            <div className="p-1">
-              {filteredOptions.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  {emptyText}
-                </div>
-              ) : (
-                filteredOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    variant="ghost"
-                    className="w-full justify-start font-normal h-auto py-2 px-2"
-                    onClick={() => {
-                      onSelect(option.value);
-                      setOpen(false);
-                      setSearchQuery("");
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4 shrink-0",
-                        value === option.value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <div className="flex flex-col items-start flex-1 min-w-0">
-                      <span className="truncate w-full">{option.label}</span>
-                      {option.metadata && (
-                        <span className="text-xs text-muted-foreground truncate w-full">
-                          {option.metadata}
-                        </span>
-                      )}
-                    </div>
-                  </Button>
-                ))
-              )}
-            </div>
-          </ScrollArea>
+          <div className="overflow-y-auto max-h-[250px] p-1">
+            {loading ? (
+              <div className="py-6 flex justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredOptions.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {emptyText}
+              </div>
+            ) : (
+              filteredOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant="ghost"
+                  className="w-full justify-start font-normal h-auto py-2 px-2"
+                  onClick={() => {
+                    onSelect(option.value);
+                    setOpen(false);
+                    setSearchQuery("");
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4 shrink-0",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <div className="flex flex-col items-start flex-1 min-w-0 text-left">
+                    <span className="truncate w-full">{option.label}</span>
+                    {option.metadata && (
+                      <span className="text-xs text-muted-foreground truncate w-full">
+                        {option.metadata}
+                      </span>
+                    )}
+                  </div>
+                </Button>
+              ))
+            )}
+          </div>
         </div>
       </PopoverContent>
     </Popover>
