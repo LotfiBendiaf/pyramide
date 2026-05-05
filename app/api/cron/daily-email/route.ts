@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
           tasks: items.filter((i) => i.type === "task").length,
         };
 
-        // Add to queue
+        // Add to queue script
         queueItems.push({
           type: "daily-schedule" as const,
           to: agent.email,
