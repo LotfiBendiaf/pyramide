@@ -20,36 +20,10 @@ import ROUTES from "@/constants/routes";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Building2, User } from "lucide-react";
-
-export interface Visit {
-  _id: string;
-  scheduledAt: string | Date;
-  status: string;
-  outcome?: string;
-  isExternalListing: boolean;
-  externalListingRef?: string;
-  notes?: string;
-  listing?: {
-    _id: string;
-    referenceCode?: string;
-    title?: string;
-  };
-  client?: {
-    _id: string;
-    referenceCode: string;
-    firstName?: string;
-    lastName?: string;
-    phone: string;
-  };
-  agent?: {
-    _id: string;
-    firstname: string;
-    lastname: string;
-  };
-}
+import type { PopulatedVisit } from "@/types/visit";
 
 interface Props {
-  visits: Visit[];
+  visits: PopulatedVisit[];
   showAgent?: boolean;
   showClient?: boolean;
 }

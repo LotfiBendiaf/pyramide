@@ -67,7 +67,7 @@ export default async function ClientDetailRoute({
           }
           action={<ScheduleVisitDialog prefilledClientId={client._id} />}
         />
-        <VisitsList visits={visits as any[]} showAgent={isManager} showClient={false} />
+        <VisitsList visits={visits} showAgent={isManager} showClient={false} />
       </div>
 
       {(client.type === "BUYER" || client.type === "RENTER") && (

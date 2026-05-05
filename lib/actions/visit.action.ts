@@ -15,7 +15,7 @@ import {
   CompleteVisitInput,
   CancelVisitInput,
 } from "../validators/visit";
-import { VisitFilters } from "@/types/visit";
+import { VisitFilters, PopulatedVisit } from "@/types/visit";
 import { isElevatedRole } from "@/constants/values";
 import { Types } from "mongoose";
 import dbConnect from "../mongoose";
@@ -338,7 +338,7 @@ export async function fetchVisitsByClient(
   clientId: string,
   page = 1,
   limit = 20
-): Promise<ActionResponse<{ visits: IVisit[]; total: number }>> {
+): Promise<ActionResponse<{ visits: PopulatedVisit[]; total: number }>> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
@@ -379,7 +379,7 @@ export async function fetchVisitsByListing(
   listingId: string,
   page = 1,
   limit = 20
-): Promise<ActionResponse<{ visits: IVisit[]; total: number }>> {
+): Promise<ActionResponse<{ visits: PopulatedVisit[]; total: number }>> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
@@ -418,7 +418,7 @@ export async function fetchVisitsByListing(
 
 export async function fetchVisits(
   params: VisitFilters = {}
-): Promise<ActionResponse<{ visits: IVisit[]; total: number }>> {
+): Promise<ActionResponse<{ visits: PopulatedVisit[]; total: number }>> {
   const validationResult = await action({
     params,
     schema: visitFiltersSchema,

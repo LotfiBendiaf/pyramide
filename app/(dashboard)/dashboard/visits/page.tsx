@@ -4,7 +4,7 @@ import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { isElevatedRole } from "@/constants/values";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
-import { VisitsList, Visit } from "@/components/visits/VisitsList";
+import { VisitsList } from "@/components/visits/VisitsList";
 import { ScheduleVisitDialog } from "@/components/visits/ScheduleVisitDialog";
 import { PaginationControls } from "@/components/PaginationControls";
 import { VisitFilters } from "@/types/visit";
@@ -38,7 +38,7 @@ async function VisitsContent({ searchParams }: { searchParams: SearchParams }) {
       <div className="flex justify-end mb-4">
         <ScheduleVisitDialog />
       </div>
-      <VisitsList visits={visits as unknown as Visit[]} showAgent={isManager} />
+      <VisitsList visits={visits} showAgent={isManager} />
       <PaginationControls currentPage={page} totalPages={totalPages} />
     </>
   );
