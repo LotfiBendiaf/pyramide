@@ -957,6 +957,54 @@ export async function submitToPhase1(clientId: string): Promise<ActionResponse> 
   }
 }
 
+export async function setClientPipelineStage(
+  clientId: string,
+  stage: "LEAD" | "FOLLOW_UP" | "ACTIVE_SEARCH"
+): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!Types.ObjectId.isValid(clientId)) {
+    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+  }
+
+  try {
+    await dbConnect();
+
+    const isAdmin = isElevatedRole(user.data.role);
+    const filter: FilterQuery<IClient> = { _id: clientId };
+    if (!isAdmin) {
+      filter.$or = [
+        { assignedAgent: user.data._id },
+        { createdBy: user.data._id },
+      ];
+    }
+
+    const client = await Client.findOneAndUpdate(
+      filter,
+      { pipelineStage: stage },
+      { new: true }
+    );
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable ou accès refusé" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function fetchClientPipelineCounts(): Promise<
   ActionResponse<{ stage: string; count: number }[]>
 > {

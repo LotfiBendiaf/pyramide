@@ -2,7 +2,6 @@ import { fetchClientById } from "@/lib/actions/client.action";
 import { fetchFollowUpsByClient } from "@/lib/actions/followUp.action";
 import { fetchListingsBySellerClient } from "@/lib/actions/listings.action";
 import { fetchVisitsByClient } from "@/lib/actions/visit.action";
-import { fetchAgents } from "@/lib/actions/users.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { isElevatedRole } from "@/constants/values";
 import { notFound } from "next/navigation";
@@ -10,7 +9,8 @@ import ClientDetailPage from "@/components/clients/ClientDetailPage";
 import ClientMatchingPanel from "@/components/clients/ClientMatchingPanel";
 import { ClientPipelineSection } from "@/components/clients/ClientPipelineSection";
 import { ListingTable } from "@/components/listing/ListingTable";
-import { VisitsList, Visit } from "@/components/visits/VisitsList";
+import { VisitsList } from "@/components/visits/VisitsList";
+import { ScheduleVisitDialog } from "@/components/visits/ScheduleVisitDialog";
 import { SectionHeader } from "@/components/SectionHeader";
 
 export default async function ClientDetailRoute({
@@ -20,14 +20,12 @@ export default async function ClientDetailRoute({
 }) {
   const { id } = await params;
 
-  const [clientResult, followUpsResult, visitsResult, agentsResult, user] =
-    await Promise.all([
-      fetchClientById(id),
-      fetchFollowUpsByClient(id),
-      fetchVisitsByClient(id, 1, 50),
-      fetchAgents(),
-      getUserBySessionEmail(),
-    ]);
+  const [clientResult, followUpsResult, visitsResult, user] = await Promise.all([
+    fetchClientById(id),
+    fetchFollowUpsByClient(id),
+    fetchVisitsByClient(id, 1, 50),
+    getUserBySessionEmail(),
+  ]);
 
   if (!clientResult.success || !clientResult.data) {
     notFound();
@@ -35,50 +33,42 @@ export default async function ClientDetailRoute({
 
   const client = clientResult.data;
   const isManager = isElevatedRole(user.data?.role ?? "");
-  const currentUserId = user.data?._id?.toString() ?? "";
-
-  const agents = (agentsResult.data ?? []).map((a) => ({
-    _id: String(a._id),
-    firstname: a.firstname,
-    lastname: a.lastname,
-  }));
-
-  const visits = (visitsResult.data?.visits ?? []) as unknown as Visit[];
+  const visits = visitsResult.data?.visits ?? [];
 
   const sellerListingsResult =
     client.type === "SELLER" ? await fetchListingsBySellerClient(id) : null;
 
   return (
     <>
-      {/* Pipeline section — shown for buyers, renters, investors */}
+      {/* Pipeline section — buyers, renters, investors only */}
       {client.type !== "SELLER" && (
         <div className="container pb-6">
           <ClientPipelineSection
             clientId={client._id}
             pipelineStage={client.pipelineStage}
             clientTemperature={client.clientTemperature}
-            phase2AgentId={client.phase2Agent}
-            isManager={isManager}
-            currentUserId={currentUserId}
-            agents={agents}
           />
         </div>
       )}
+
       <ClientDetailPage
         client={client}
         followUps={followUpsResult.data ?? []}
       />
 
       {/* Visit history */}
-      {visits.length > 0 && (
-        <div className="container pb-6 space-y-3">
-          <SectionHeader
-            title="Visites"
-            subtitle={`${visits.length} visite${visits.length > 1 ? "s" : ""} enregistrée${visits.length > 1 ? "s" : ""}`}
-          />
-          <VisitsList visits={visits} showAgent={isManager} />
-        </div>
-      )}
+      <div className="container pb-6 space-y-3">
+        <SectionHeader
+          title="Visites"
+          subtitle={
+            visits.length > 0
+              ? `${visits.length} visite${visits.length > 1 ? "s" : ""} enregistrée${visits.length > 1 ? "s" : ""}`
+              : "Aucune visite enregistrée"
+          }
+          action={<ScheduleVisitDialog prefilledClientId={client._id} />}
+        />
+        <VisitsList visits={visits as any[]} showAgent={isManager} showClient={false} />
+      </div>
 
       {(client.type === "BUYER" || client.type === "RENTER") && (
         <div className="container pb-10">

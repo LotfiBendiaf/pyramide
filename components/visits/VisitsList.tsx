@@ -51,9 +51,10 @@ export interface Visit {
 interface Props {
   visits: Visit[];
   showAgent?: boolean;
+  showClient?: boolean;
 }
 
-export function VisitsList({ visits, showAgent = false }: Props) {
+export function VisitsList({ visits, showAgent = false, showClient = true }: Props) {
   if (visits.length === 0) {
     return (
       <div className="rounded-lg border bg-muted/30 py-16 text-center text-sm text-muted-foreground">
@@ -69,7 +70,7 @@ export function VisitsList({ visits, showAgent = false }: Props) {
           <TableRow>
             <TableHead>Date</TableHead>
             <TableHead>Bien</TableHead>
-            <TableHead>Client</TableHead>
+            {showClient && <TableHead>Client</TableHead>}
             {showAgent && <TableHead>Agent</TableHead>}
             <TableHead>Statut</TableHead>
             <TableHead>Résultat</TableHead>
@@ -113,26 +114,28 @@ export function VisitsList({ visits, showAgent = false }: Props) {
                   <span className="text-muted-foreground text-sm">—</span>
                 )}
               </TableCell>
-              <TableCell>
-                {visit.client ? (
-                  <Link
-                    href={ROUTES.CLIENT_DETAIL(visit.client._id)}
-                    className="flex items-center gap-1.5 text-sm hover:underline"
-                  >
-                    <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    <div>
-                      <Badge variant="outline" className="font-mono text-[10px] mr-1">
-                        {visit.client.referenceCode}
-                      </Badge>
-                      {[visit.client.firstName, visit.client.lastName]
-                        .filter(Boolean)
-                        .join(" ") || visit.client.phone}
-                    </div>
-                  </Link>
-                ) : (
-                  <span className="text-muted-foreground text-sm">—</span>
-                )}
-              </TableCell>
+              {showClient && (
+                <TableCell>
+                  {visit.client ? (
+                    <Link
+                      href={ROUTES.CLIENT_DETAIL(visit.client._id)}
+                      className="flex items-center gap-1.5 text-sm hover:underline"
+                    >
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <div>
+                        <Badge variant="outline" className="font-mono text-[10px] mr-1">
+                          {visit.client.referenceCode}
+                        </Badge>
+                        {[visit.client.firstName, visit.client.lastName]
+                          .filter(Boolean)
+                          .join(" ") || visit.client.phone}
+                      </div>
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )}
+                </TableCell>
+              )}
               {showAgent && (
                 <TableCell className="text-sm text-muted-foreground">
                   {visit.agent

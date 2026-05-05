@@ -2,13 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { PIPELINE_STAGES } from "@/constants/values";
+import { PIPELINE_STAGE_UI } from "@/constants/pipeline-ui";
 import ROUTES from "@/constants/routes";
 import { cn } from "@/lib/utils";
-
-const DISPLAYED_STAGES = PIPELINE_STAGES.filter(
-  (s) => s.value !== "ARCHIVED"
-);
+import { Users } from "lucide-react";
 
 interface Props {
   counts: { stage: string; count: number }[];
@@ -19,9 +16,8 @@ export function PipelineBar({ counts }: Props) {
   const activeStage = searchParams.get("stage");
 
   const countMap = Object.fromEntries(counts.map((c) => [c.stage, c.count]));
-  const total = counts
-    .filter((c) => c.stage !== "CLOSED")
-    .reduce((sum, c) => sum + c.count, 0);
+  const total = PIPELINE_STAGE_UI.filter((s) => s.value !== "ARCHIVED")
+    .reduce((sum, s) => sum + (countMap[s.value] ?? 0), 0);
 
   function stageHref(value: string | undefined) {
     const params = new URLSearchParams(searchParams.toString());
@@ -35,50 +31,80 @@ export function PipelineBar({ counts }: Props) {
   }
 
   return (
-    <div className="space-y-2">
-      {/* Stage pills */}
-      <div className="flex items-stretch gap-0 rounded-lg border overflow-hidden">
-        {/* "Tous" pill */}
-        <Link
-          href={stageHref(undefined)}
+    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+      {/* "Tous" card */}
+      <Link
+        href={stageHref(undefined)}
+        className={cn(
+          "flex flex-col items-center gap-1.5 rounded-xl border-2 border-t-4 p-3 text-center transition-all hover:shadow-sm",
+          !activeStage
+            ? "border-primary border-t-primary bg-primary/5"
+            : "border-border border-t-border bg-muted/30 hover:bg-muted/60"
+        )}
+      >
+        <Users
           className={cn(
-            "flex flex-col items-center justify-center px-3 py-2 text-xs font-medium transition-colors min-w-[64px] border-r",
-            !activeStage
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+            "h-5 w-5",
+            !activeStage ? "text-primary" : "text-muted-foreground"
+          )}
+        />
+        <span
+          className={cn(
+            "text-2xl font-bold leading-none",
+            !activeStage ? "text-primary" : "text-foreground"
           )}
         >
-          <span className="text-base font-bold leading-none">{total}</span>
-          <span className="mt-0.5 whitespace-nowrap">Tous</span>
-        </Link>
+          {total}
+        </span>
+        <span className="text-[11px] font-medium text-muted-foreground leading-tight">
+          Tous
+        </span>
+      </Link>
 
-        {DISPLAYED_STAGES.map((stage, i) => {
-          const count = countMap[stage.value] ?? 0;
-          const isActive = activeStage === stage.value;
-          const isLast = i === DISPLAYED_STAGES.length - 1;
+      {/* Stage cards */}
+      {PIPELINE_STAGE_UI.map((stage) => {
+        const count = countMap[stage.value] ?? 0;
+        const isActive = activeStage === stage.value;
+        const Icon = stage.icon;
 
-          return (
-            <Link
-              key={stage.value}
-              href={stageHref(stage.value)}
+        return (
+          <Link
+            key={stage.value}
+            href={stageHref(stage.value)}
+            className={cn(
+              "flex flex-col items-center gap-1.5 rounded-xl border-2 border-t-4 p-3 text-center transition-all hover:shadow-sm",
+              isActive
+                ? `${stage.topBorder} bg-muted/40 border-border`
+                : count === 0
+                ? `${stage.topBorder} border-border bg-muted/10 opacity-50 hover:opacity-70`
+                : `${stage.topBorder} border-border bg-card hover:bg-muted/30`
+            )}
+          >
+            <Icon
               className={cn(
-                "flex flex-col items-center justify-center px-3 py-2 text-xs font-medium transition-colors flex-1 min-w-0",
-                !isLast && "border-r",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : count === 0
-                  ? "bg-muted/20 text-muted-foreground/50 hover:bg-muted/40"
-                  : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+                "h-5 w-5",
+                isActive ? stage.iconColor : count === 0 ? "text-muted-foreground/50" : stage.iconColor
+              )}
+            />
+            <span
+              className={cn(
+                "text-2xl font-bold leading-none",
+                isActive ? stage.countColor : count === 0 ? "text-muted-foreground/40" : stage.countColor
               )}
             >
-              <span className="text-base font-bold leading-none">{count}</span>
-              <span className="mt-0.5 truncate w-full text-center leading-tight">
-                {stage.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
+              {count}
+            </span>
+            <span
+              className={cn(
+                "text-[11px] font-medium leading-tight",
+                isActive ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              {stage.shortLabel}
+            </span>
+          </Link>
+        );
+      })}
     </div>
   );
 }
