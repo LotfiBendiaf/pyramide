@@ -956,3 +956,41 @@ export async function submitToPhase1(clientId: string): Promise<ActionResponse> 
     return handleError(error) as ErrorResponse;
   }
 }
+
+export async function fetchClientPipelineCounts(): Promise<
+  ActionResponse<{ stage: string; count: number }[]>
+> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  try {
+    await dbConnect();
+
+    const baseFilter: FilterQuery<IClient> = {
+      archived: { $ne: true },
+      type: { $ne: "SELLER" },
+    };
+
+    if (!isElevatedRole(user.data.role)) {
+      baseFilter.$or = [
+        { assignedAgent: user.data._id },
+        { createdBy: user.data._id },
+      ];
+    }
+
+    const counts = await Client.aggregate([
+      { $match: baseFilter },
+      { $group: { _id: "$pipelineStage", count: { $sum: 1 } } },
+    ]);
+
+    return {
+      success: true,
+      data: counts.map((c) => ({ stage: c._id as string, count: c.count as number })),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}

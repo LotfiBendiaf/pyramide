@@ -49,6 +49,7 @@ import {
   Shuffle,
   CalendarCheck,
   Handshake,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -144,6 +145,12 @@ const sidebarConfig: SidebarGroup[] = [
   {
     label: "Pipeline",
     items: [
+      {
+        title: "Mes biens",
+        url: ROUTES.MES_BIENS,
+        icon: BriefcaseBusiness,
+        roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
       {
         title: "Visites",
         url: ROUTES.VISITS,

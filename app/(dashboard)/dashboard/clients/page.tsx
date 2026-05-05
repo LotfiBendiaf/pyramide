@@ -1,13 +1,14 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { SectionHeader } from "@/components/SectionHeader";
-import { fetchClients } from "@/lib/actions/client.action";
+import { fetchClients, fetchClientPipelineCounts } from "@/lib/actions/client.action";
 import { fetchTeamMembers } from "@/lib/actions/users.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import ClientsTable from "@/components/ClientsTable";
 import ClientsFilter from "@/components/ClientsFilter";
 import { PaginationControls } from "@/components/PaginationControls";
+import { PipelineBar } from "@/components/pipeline/PipelineBar";
 import { ClientFilters } from "@/types/client";
 import ROUTES from "@/constants/routes";
 
@@ -21,6 +22,7 @@ type SearchParams = {
   search?: string;
   page?: string;
   view?: string;
+  stage?: string;
 };
 
 async function ClientsContent({
@@ -35,7 +37,6 @@ async function ClientsContent({
   const isArchiveView = searchParams.view === "archives";
   const page = searchParams.page ? Math.max(1, Number(searchParams.page)) : 1;
 
-  // Build filter params, excluding "__all__" values
   const filterParams: ClientFilters = {
     page,
     limit: CLIENTS_PER_PAGE,
@@ -58,6 +59,10 @@ async function ClientsContent({
     }
     if (searchParams.search) {
       filterParams.search = searchParams.search;
+    }
+    if (searchParams.stage) {
+      filterParams.pipelineStage =
+        searchParams.stage as ClientFilters["pipelineStage"];
     }
   }
 
@@ -109,9 +114,10 @@ export default async function ClientPage({
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
   const isArchiveView = params?.view === "archives";
 
-  const agentsResult = isAdmin
-    ? await fetchTeamMembers()
-    : { success: true, data: [] };
+  const [agentsResult, countsResult] = await Promise.all([
+    isAdmin ? fetchTeamMembers() : Promise.resolve({ success: true, data: [] }),
+    !isArchiveView ? fetchClientPipelineCounts() : Promise.resolve({ success: true, data: [] }),
+  ]);
 
   return (
     <section className="container py-6 space-y-6">
@@ -143,6 +149,10 @@ export default async function ClientPage({
             Archives
           </Link>
         </div>
+      )}
+
+      {!isArchiveView && (
+        <PipelineBar counts={countsResult.data ?? []} />
       )}
 
       {!isArchiveView && (

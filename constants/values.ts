@@ -124,6 +124,9 @@ export const routeTitles: Record<string, string> = {
   "/dashboard/reports": "Signalements",
   "/dashboard/validation": "Validation des Annonces",
 
+  // Mes biens
+  "/dashboard/mes-biens": "Mes Biens",
+
   // Visits
   "/dashboard/visits": "Visites",
   "/dashboard/visits/[id]": "Détail de la visite",

@@ -30,7 +30,7 @@ class EmailQueueManager {
   readonly initialRetryDelay: number; // milliseconds
 
   constructor(
-    delayBetweenEmails: number = 60000, // 1 minute default
+    delayBetweenEmails: number = 1000, // 1 second — stays within Resend free tier (1 req/s)
     maxRetries: number = 3,
     initialRetryDelay: number = 5000 // 5 seconds
   ) {

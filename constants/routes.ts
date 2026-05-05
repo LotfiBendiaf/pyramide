@@ -42,6 +42,8 @@ const ROUTES = {
   // Negotiations
   NEGOTIATIONS: "/dashboard/negotiations",
   NEGOTIATION_DETAIL: (id: string) => `/dashboard/negotiations/${id}`,
+  // Mes biens
+  MES_BIENS: "/dashboard/mes-biens",
 };
 
 export default ROUTES;

@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+
 import { NextRequest, NextResponse } from "next/server";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -37,6 +39,8 @@ export async function GET(request: NextRequest) {
     const queueItems = [];
 
     for (const agent of agents) {
+      if (!agent.calendarSettings?.dailyEmailEnabled) continue;
+
       try {
         // Get calendar events
         const calendarEvents = await CalendarEvent.find({

@@ -1,6 +1,6 @@
 "use server";
 
-import { Listing, Client } from "@/models";
+import { Listing, Client, Visit } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import action from "../handlers/action";
 import handleError from "../handlers/error";
@@ -1068,6 +1068,90 @@ export async function submitListingForValidation(
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
 
     return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export interface ActiveListingWithVisits {
+  _id: string;
+  referenceCode?: string;
+  title?: string;
+  pipelineStatus?: string;
+  location?: { city?: string; address?: string };
+  propertyType?: string;
+  price?: number;
+  visits: Array<{
+    _id: string;
+    scheduledAt: string | Date;
+    status: string;
+    client?: {
+      _id: string;
+      referenceCode: string;
+      firstName?: string;
+      lastName?: string;
+      phone: string;
+    };
+  }>;
+}
+
+export async function fetchMyActiveListings(): Promise<
+  ActionResponse<ActiveListingWithVisits[]>
+> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  try {
+    await dbConnect();
+
+    const listings = await Listing.find({
+      agent: user.data._id,
+      pipelineStatus: { $in: ["ACTIVE", "UNDER_NEGOTIATION", "CLOSING"] },
+      archived: { $ne: true },
+    })
+      .select("referenceCode title pipelineStatus location propertyType price")
+      .lean();
+
+    if (!listings.length) {
+      return { success: true, data: [], status: 200 };
+    }
+
+    const listingIds = listings.map((l) => l._id);
+
+    const visits = await Visit.find({
+      listing: { $in: listingIds },
+      status: "SCHEDULED",
+    })
+      .populate("client", "referenceCode firstName lastName phone")
+      .select("listing scheduledAt status client")
+      .sort({ scheduledAt: 1 })
+      .lean();
+
+    const visitsByListing: Record<string, typeof visits> = {};
+    for (const v of visits) {
+      const lid = v.listing.toString();
+      if (!visitsByListing[lid]) visitsByListing[lid] = [];
+      visitsByListing[lid].push(v);
+    }
+
+    const data = listings.map((l) => ({
+      ...l,
+      _id: String(l._id),
+      visits: (visitsByListing[String(l._id)] ?? []).map((v) => ({
+        _id: String(v._id),
+        scheduledAt: v.scheduledAt,
+        status: v.status,
+        client: v.client as ActiveListingWithVisits["visits"][number]["client"],
+      })),
+    }));
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(data)),
+      status: 200,
+    };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }
