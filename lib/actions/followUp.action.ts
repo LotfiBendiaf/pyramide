@@ -8,6 +8,7 @@ import handleError from "../handlers/error";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import { FollowUpInput, FollowUpFilters } from "@/types/followUp";
 import { FilterQuery } from "mongoose";
+import { createCalendarEventFromFollowUp } from "@/lib/googleCalendar/syncService";
 
 export async function createFollowUp(
   params: FollowUpInput
@@ -61,6 +62,13 @@ export async function createFollowUp(
       status: followUp.status,
       agent: followUp.agent,
     });
+
+    // Sync to Google Calendar if the follow-up has a scheduled time
+    if (followUp.reminderAt || followUp.startTime) {
+      createCalendarEventFromFollowUp(followUp._id.toString()).catch((err) =>
+        console.error("Failed to sync follow-up to Google Calendar:", err)
+      );
+    }
 
     return {
       success: true,
