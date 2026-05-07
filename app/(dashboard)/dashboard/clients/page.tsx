@@ -33,6 +33,7 @@ async function ClientsContent({
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+  const canUsePipeline = currentUser.data?.role === "AGENT";
 
   const isArchiveView = searchParams.view === "archives";
   const page = searchParams.page ? Math.max(1, Number(searchParams.page)) : 1;
@@ -60,7 +61,7 @@ async function ClientsContent({
     if (searchParams.search) {
       filterParams.search = searchParams.search;
     }
-    if (searchParams.stage) {
+    if (canUsePipeline && searchParams.stage) {
       filterParams.pipelineStage =
         searchParams.stage as ClientFilters["pipelineStage"];
     }
@@ -112,11 +113,14 @@ export default async function ClientPage({
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+  const canUsePipeline = currentUser.data?.role === "AGENT";
   const isArchiveView = params?.view === "archives";
 
   const [agentsResult, countsResult] = await Promise.all([
     isAdmin ? fetchTeamMembers() : Promise.resolve({ success: true, data: [] }),
-    !isArchiveView ? fetchClientPipelineCounts() : Promise.resolve({ success: true, data: [] }),
+    canUsePipeline && !isArchiveView
+      ? fetchClientPipelineCounts()
+      : Promise.resolve({ success: true, data: [] }),
   ]);
 
   return (
@@ -151,7 +155,7 @@ export default async function ClientPage({
         </div>
       )}
 
-      {!isArchiveView && (
+      {canUsePipeline && !isArchiveView && (
         <PipelineBar counts={countsResult.data ?? []} />
       )}
 

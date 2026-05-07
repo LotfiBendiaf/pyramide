@@ -33,6 +33,7 @@ export default async function ClientDetailRoute({
 
   const client = clientResult.data;
   const isManager = isElevatedRole(user.data?.role ?? "");
+  const canUsePipeline = user.data?.role === "AGENT";
   const visits = visitsResult.data?.visits ?? [];
 
   const sellerListingsResult =
@@ -40,8 +41,8 @@ export default async function ClientDetailRoute({
 
   return (
     <>
-      {/* Pipeline section — buyers, renters, investors only */}
-      {client.type !== "SELLER" && (
+      {/* Pipeline section — agents only, buyers/renters/investors only */}
+      {canUsePipeline && client.type !== "SELLER" && (
         <div className="container pb-6">
           <ClientPipelineSection
             clientId={client._id}
