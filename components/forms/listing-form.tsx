@@ -41,7 +41,7 @@ import { listingSchema } from "@/lib/validators/listing";
 import ImageUpload from "../listing/ImageUpload";
 import { createListing, updateListing } from "@/lib/actions/listings.action";
 import { useRouter } from "next/navigation";
-import { WILAYAS } from "@/constants/values";
+import { PROPERTY_TYPES, WILAYAS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { COUNTRY_CODES, type CountryId } from "@/lib/country-codes";
 import { Textarea } from "../ui/textarea";
@@ -54,19 +54,6 @@ interface ListingFormProps {
   listingId?: string;
   client?: Client;
 }
-
-const PROPERTY_TYPES = [
-  "Appartement",
-  "Maison",
-  "Villa",
-  "Studio",
-  "Terrain",
-  "Duplex",
-  "Hangar",
-  "Penthouse",
-  "Local Commercial",
-  "Autre",
-] as const;
 
 const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
 

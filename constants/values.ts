@@ -141,6 +141,22 @@ export const routeTitles: Record<string, string> = {
 
 export const WILAYAS = ["Oran"];
 
+export const PROPERTY_TYPES = [
+  "Appartement",
+  "Maison",
+  "Villa",
+  "Studio",
+  "Terrain",
+  "Commercial",
+  "Duplex",
+  "Hangar",
+  "Penthouse",
+  "Local Commercial",
+  "Autre",
+] as const;
+
+export type PropertyTypeValue = (typeof PROPERTY_TYPES)[number];
+
 // ─── Visits ────────────────────────────────────────────────────────────────
 
 export const VISIT_STATUSES = [

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PROPERTY_TYPES } from "@/constants/values";
 
 /* ---------------------------------
    Reusable Enums
@@ -11,18 +12,7 @@ export const ListingStatusEnum = z.enum([
   "Retiré",
 ]);
 
-export const PropertyTypeEnum = z.enum([
-  "Appartement",
-  "Maison",
-  "Villa",
-  "Studio",
-  "Terrain",
-  "Duplex",
-  "Hangar",
-  "Penthouse",
-  "Local Commercial",
-  "Autre",
-]);
+export const PropertyTypeEnum = z.enum(PROPERTY_TYPES);
 
 /* ---------------------------------
    Listing Schema

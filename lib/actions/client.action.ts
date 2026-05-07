@@ -185,7 +185,23 @@ export async function fetchClients(
 
     if (type) filter.type = type;
     if (qualificationStatus) filter.qualificationStatus = qualificationStatus;
-    if (pipelineStage) filter.pipelineStage = pipelineStage;
+    if (pipelineStage) {
+      if (pipelineStage === "LEAD") {
+        const stageConditions = [
+          { pipelineStage: "LEAD" },
+          { pipelineStage: { $exists: false } },
+          { pipelineStage: null },
+        ];
+        if (filter.$or) {
+          filter.$and = [{ $or: filter.$or }, { $or: stageConditions }];
+          delete filter.$or;
+        } else {
+          filter.$or = stageConditions;
+        }
+      } else {
+        filter.pipelineStage = pipelineStage;
+      }
+    }
     if (clientTemperature) filter.clientTemperature = clientTemperature;
     if (wantedPropertyType) filter.wantedPropertyType = wantedPropertyType;
 
@@ -207,10 +223,12 @@ export async function fetchClients(
             { email: { $regex: escapedSearch, $options: "i" } },
             { referenceCode: { $regex: escapedSearch, $options: "i" } },
           ];
-      // Combine role filter with search filter
+      // Combine role/stage filters with search filter
       if (filter.$or) {
         filter.$and = [{ $or: filter.$or }, { $or: searchConditions }];
         delete filter.$or;
+      } else if (filter.$and) {
+        filter.$and = [...filter.$and, { $or: searchConditions }];
       } else {
         filter.$or = searchConditions;
       }
@@ -1028,14 +1046,30 @@ export async function fetchClientPipelineCounts(): Promise<
       ];
     }
 
-    const counts = await Client.aggregate([
-      { $match: baseFilter },
-      { $group: { _id: "$pipelineStage", count: { $sum: 1 } } },
+    const [total, qualified, counts] = await Promise.all([
+      Client.countDocuments(baseFilter),
+      Client.countDocuments({
+        ...baseFilter,
+        qualificationStatus: "QUALIFIED",
+      }),
+      Client.aggregate([
+        { $match: baseFilter },
+        {
+          $group: {
+            _id: { $ifNull: ["$pipelineStage", "LEAD"] },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
 
     return {
       success: true,
-      data: counts.map((c) => ({ stage: c._id as string, count: c.count as number })),
+      data: [
+        { stage: "TOTAL", count: total },
+        { stage: "QUALIFIED", count: qualified },
+        ...counts.map((c) => ({ stage: c._id as string, count: c.count as number })),
+      ],
       status: 200,
     };
   } catch (error) {

@@ -13,6 +13,7 @@ import {
   SelectItem,
 } from "./ui/select";
 import { Search } from "lucide-react";
+import { PROPERTY_TYPES } from "@/constants/values";
 
 export default function ListingFilterDashboard() {
   const router = useRouter();
@@ -116,11 +117,11 @@ export default function ListingFilterDashboard() {
             <SelectValue placeholder="Type de propriété" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Appartement">Appartement</SelectItem>
-            <SelectItem value="Maison">Maison</SelectItem>
-            <SelectItem value="Villa">Villa</SelectItem>
-            <SelectItem value="Local Commercial">Local Commercial</SelectItem>
-            <SelectItem value="Autre">Autre</SelectItem>
+            {PROPERTY_TYPES.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Input

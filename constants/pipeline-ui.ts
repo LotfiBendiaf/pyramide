@@ -4,6 +4,7 @@ import {
   Flame,
   Handshake,
   Trophy,
+  BadgeCheck,
   Archive,
   type LucideIcon,
 } from "lucide-react";
@@ -80,6 +81,17 @@ export const PIPELINE_STAGE_UI: PipelineStageUI[] = [
     topBorder: "border-t-green-500",
     iconColor: "text-green-500",
     countColor: "text-green-700",
+  },
+  {
+    value: "QUALIFIED",
+    label: "Clients qualifiés",
+    shortLabel: "Qualifiés",
+    icon: BadgeCheck,
+    pill: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+    pillActive: "bg-emerald-600 text-white border-emerald-600",
+    topBorder: "border-t-emerald-500",
+    iconColor: "text-emerald-500",
+    countColor: "text-emerald-700",
   },
   {
     value: "ARCHIVED",

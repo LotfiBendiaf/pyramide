@@ -14,16 +14,27 @@ interface Props {
 export function PipelineBar({ counts }: Props) {
   const searchParams = useSearchParams();
   const activeStage = searchParams.get("stage");
+  const activeQualification = searchParams.get("qualification");
+  const isAllActive = !activeStage && !activeQualification;
 
   const countMap = Object.fromEntries(counts.map((c) => [c.stage, c.count]));
-  const total = PIPELINE_STAGE_UI.filter((s) => s.value !== "ARCHIVED")
-    .reduce((sum, s) => sum + (countMap[s.value] ?? 0), 0);
+  const total =
+    countMap.TOTAL ??
+    PIPELINE_STAGE_UI.filter(
+      (s) => s.value !== "ARCHIVED" && s.value !== "QUALIFIED"
+    ).reduce((sum, s) => sum + (countMap[s.value] ?? 0), 0);
 
   function stageHref(value: string | undefined) {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    params.delete("qualification");
     if (value) {
-      params.set("stage", value);
+      if (value === "QUALIFIED") {
+        params.delete("stage");
+        params.set("qualification", "QUALIFIED");
+      } else {
+        params.set("stage", value);
+      }
     } else {
       params.delete("stage");
     }
@@ -31,13 +42,13 @@ export function PipelineBar({ counts }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
       {/* "Tous" card */}
       <Link
         href={stageHref(undefined)}
         className={cn(
           "flex flex-col items-center gap-1.5 rounded-xl border-2 border-t-4 p-3 text-center transition-all hover:shadow-sm",
-          !activeStage
+          isAllActive
             ? "border-primary border-t-primary bg-primary/5"
             : "border-border border-t-border bg-muted/30 hover:bg-muted/60"
         )}
@@ -45,13 +56,13 @@ export function PipelineBar({ counts }: Props) {
         <Users
           className={cn(
             "h-5 w-5",
-            !activeStage ? "text-primary" : "text-muted-foreground"
+            isAllActive ? "text-primary" : "text-muted-foreground"
           )}
         />
         <span
           className={cn(
             "text-2xl font-bold leading-none",
-            !activeStage ? "text-primary" : "text-foreground"
+            isAllActive ? "text-primary" : "text-foreground"
           )}
         >
           {total}
@@ -64,7 +75,10 @@ export function PipelineBar({ counts }: Props) {
       {/* Stage cards */}
       {PIPELINE_STAGE_UI.map((stage) => {
         const count = countMap[stage.value] ?? 0;
-        const isActive = activeStage === stage.value;
+        const isActive =
+          stage.value === "QUALIFIED"
+            ? activeQualification === "QUALIFIED"
+            : activeStage === stage.value;
         const Icon = stage.icon;
 
         return (
