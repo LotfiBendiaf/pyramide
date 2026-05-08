@@ -50,14 +50,26 @@ export type ClientUpdateInput = {
   floorMax?: number;
   preferredLocation?: string;
   extraNotes?: string;
-  qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
+  qualificationStatus:
+    | "NEW"
+    | "QUALIFIED"
+    | "HOT"
+    | "COLD"
+    | "NOT_RELEVANT"
+    | "ARCHIVED";
   qualificationNotes?: string;
   assignedAgent?: string;
 };
 
 export type ClientFilters = {
   type?: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
-  qualificationStatus?: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
+  qualificationStatus?:
+    | "NEW"
+    | "QUALIFIED"
+    | "HOT"
+    | "COLD"
+    | "NOT_RELEVANT"
+    | "ARCHIVED";
   pipelineStage?: PipelineStage;
   clientTemperature?: ClientTemperature;
   wantedPropertyType?: string;

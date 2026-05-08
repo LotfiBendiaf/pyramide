@@ -42,6 +42,8 @@ export const STATUS_COLORS: Record<PropertyStatus, string> = {
 export const CLIENT_QUALIFICATIONS = [
   { value: "NEW", label: "Nouveau", color: "secondary" },
   { value: "QUALIFIED", label: "Qualifié", color: "success" },
+  { value: "HOT", label: "Chaud", color: "destructive" },
+  { value: "COLD", label: "Froid", color: "secondary" },
   { value: "NOT_RELEVANT", label: "Non pertinent", color: "warning" },
   { value: "ARCHIVED", label: "Archivé", color: "outline" },
 ] as const;

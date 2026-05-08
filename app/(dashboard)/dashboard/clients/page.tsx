@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { SectionHeader } from "@/components/SectionHeader";
 import { fetchClients, fetchClientPipelineCounts } from "@/lib/actions/client.action";
+import { fetchNegotiationListingOptions } from "@/lib/actions/negotiation.action";
 import { fetchTeamMembers } from "@/lib/actions/users.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
@@ -67,9 +68,10 @@ async function ClientsContent({
     }
   }
 
-  const [result, agentsResult] = await Promise.all([
+  const [result, agentsResult, listingsResult] = await Promise.all([
     fetchClients(filterParams),
     isAdmin ? fetchTeamMembers() : Promise.resolve({ success: true, data: [] }),
+    fetchNegotiationListingOptions(),
   ]);
 
   if (!result.success) {
@@ -98,6 +100,7 @@ async function ClientsContent({
         clients={clients}
         agents={isAdmin ? agentsResult.data || [] : []}
         userRole={currentUser.data?.role}
+        negotiationListings={listingsResult.data || []}
       />
       <PaginationControls currentPage={page} totalPages={totalPages} />
     </>

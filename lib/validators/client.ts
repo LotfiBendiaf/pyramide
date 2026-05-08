@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+const qualificationStatusSchema = z.enum([
+  "NEW",
+  "QUALIFIED",
+  "HOT",
+  "COLD",
+  "NOT_RELEVANT",
+  "ARCHIVED",
+]);
+
 export const clientSchema = z.object({
   type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]),
 
@@ -27,9 +36,7 @@ export const clientSchema = z.object({
 
 export const fetchClientsSchema = z.object({
   type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]).optional(),
-  qualificationStatus: z
-    .enum(["NEW", "QUALIFIED", "NOT_RELEVANT", "ARCHIVED"])
-    .optional(),
+  qualificationStatus: qualificationStatusSchema.optional(),
   wantedPropertyType: z.string().optional(),
   agentId: z.string().optional(),
   search: z.string().min(1).optional(),
@@ -57,7 +64,7 @@ export const updateClientSchema = z.object({
   floorMax: z.number().min(0).optional(),
   preferredLocation: z.string().optional(),
   extraNotes: z.string().optional(),
-  qualificationStatus: z.enum(["NEW", "QUALIFIED", "NOT_RELEVANT", "ARCHIVED"]),
+  qualificationStatus: qualificationStatusSchema,
   qualificationNotes: z.string().optional(),
   assignedAgent: z.string().optional(),
 });

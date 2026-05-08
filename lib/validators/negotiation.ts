@@ -4,6 +4,7 @@ export const openNegotiationSchema = z.object({
   listingId: z.string().min(1, "Annonce requise"),
   clientId: z.string().min(1, "Client requis"),
   visitId: z.string().optional(),
+  blockHours: z.union([z.literal(24), z.literal(48)]).optional(),
   notes: z.string().trim().optional(),
 });
 

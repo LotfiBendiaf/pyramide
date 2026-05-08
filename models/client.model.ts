@@ -4,6 +4,8 @@ export type ClientType = "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
 export type QualificationStatus =
   | "NEW"
   | "QUALIFIED"
+  | "HOT"
+  | "COLD"
   | "NOT_RELEVANT"
   | "ARCHIVED";
 
@@ -100,7 +102,7 @@ const clientSchema = new Schema<IClient>(
 
     qualificationStatus: {
       type: String,
-      enum: ["NEW", "QUALIFIED", "NOT_RELEVANT", "ARCHIVED"],
+      enum: ["NEW", "QUALIFIED", "HOT", "COLD", "NOT_RELEVANT", "ARCHIVED"],
       default: "NEW",
     },
     qualificationNotes: String,

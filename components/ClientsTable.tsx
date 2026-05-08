@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ListPlus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,17 +11,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "./ui/card";
 import ClientQualificationSelect from "./ClientQualificationButton";
 import ClientAgentSelect from "./ClientAgentSelect";
+import ClientNegotiationStageSelect from "./ClientNegotiationStageButton";
 import ClientNotesDialog from "./clients/ClientNotesDialog";
 import ROUTES from "@/constants/routes";
-import { formatDate } from "@/lib/utils";
+import type { NegotiationListingOption } from "@/lib/actions/negotiation.action";
 
 type ClientsTableProps = {
   clients: Client[];
   agents?: User[];
   userRole?: string;
+  negotiationListings?: NegotiationListingOption[];
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -40,25 +45,28 @@ export default function ClientsTable({
   clients,
   agents = [],
   userRole,
+  negotiationListings = [],
 }: ClientsTableProps) {
   const canAssignAgent =
     userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
 
   return (
     <Card>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Code</TableHead>
-              <TableHead>Client</TableHead>
+              {/* <TableHead>Client</TableHead> */}
               <TableHead>Type</TableHead>
-              <TableHead>Ville</TableHead>
+              {/* <TableHead>Ville</TableHead> */}
               <TableHead>Contact</TableHead>
-              <TableHead>Créé le</TableHead>
+              {/* <TableHead>Créé le</TableHead> */}
               {canAssignAgent && <TableHead>Agent</TableHead>}
               <TableHead>Qualification</TableHead>
+              <TableHead>Négociation</TableHead>
               <TableHead>C.R.</TableHead>
+              <TableHead>Suivi</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -67,8 +75,13 @@ export default function ClientsTable({
               <TableRow
                 key={client._id}
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")}
-                onAuxClick={(e) => e.button === 1 && window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")}
+                onClick={() =>
+                  window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")
+                }
+                onAuxClick={(e) =>
+                  e.button === 1 &&
+                  window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")
+                }
               >
                 {/* Reference code */}
                 <TableCell>
@@ -76,9 +89,9 @@ export default function ClientsTable({
                 </TableCell>
 
                 {/* Client name */}
-                <TableCell className="font-medium">
+                {/* <TableCell className="font-medium">
                   {client.firstName} {client.lastName}
-                </TableCell>
+                </TableCell> */}
 
                 {/* Type */}
                 <TableCell>
@@ -88,7 +101,7 @@ export default function ClientsTable({
                 </TableCell>
 
                 {/* City */}
-                <TableCell>{client.city || "—"}</TableCell>
+                {/* <TableCell>{client.city || "—"}</TableCell> */}
 
                 {/* Contact */}
                 <TableCell>
@@ -101,9 +114,9 @@ export default function ClientsTable({
                 </TableCell>
 
                 {/* Created at */}
-                <TableCell className="text-muted-foreground text-sm">
+                {/* <TableCell className="text-muted-foreground text-sm">
                   {formatDate(client.createdAt)}
-                </TableCell>
+                </TableCell> */}
 
                 {/* Agent */}
                 {canAssignAgent && (
@@ -124,6 +137,15 @@ export default function ClientsTable({
                   />
                 </TableCell>
 
+                {/* Negotiation */}
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <ClientNegotiationStageSelect
+                    clientId={client._id}
+                    pipelineStage={client.pipelineStage}
+                    listings={negotiationListings}
+                  />
+                </TableCell>
+
                 {/* Compte rendu */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <ClientNotesDialog
@@ -141,6 +163,24 @@ export default function ClientsTable({
                     wantedPropertyType={client.wantedPropertyType}
                     rooms={client.rooms}
                   />
+                </TableCell>
+
+                {/* Suivi */}
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5 whitespace-nowrap"
+                    title="Ajouter un suivi"
+                  >
+                    <Link
+                      href={`${ROUTES.NEW_FOLLOWUP}?clientId=${client._id}`}
+                    >
+                      <ListPlus className="h-4 w-4" />
+                      Ajouter suivi
+                    </Link>
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

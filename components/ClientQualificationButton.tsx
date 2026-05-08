@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectTrigger,
@@ -21,9 +22,16 @@ const DOT_COLORS: Record<ClientQualification, string> = {
   QUALIFIED: "bg-green-500",
   NOT_RELEVANT: "bg-yellow-500",
   ARCHIVED: "bg-gray-400",
+  HOT: "bg-orange-500",
+  COLD: "bg-blue-400",
 };
 
-export default function ClientQualificationSelect({ clientId, value }: Props) {
+export default function ClientQualificationSelect({
+  clientId,
+  value,
+}: Props) {
+  const router = useRouter();
+
   const handleChange = async (newValue: ClientQualification) => {
     const result = await updateClientQualification(clientId, newValue);
 
@@ -35,6 +43,7 @@ export default function ClientQualificationSelect({ clientId, value }: Props) {
     }
 
     toast.success("Statut mis à jour");
+    router.refresh();
   };
 
   const currentLabel = CLIENT_QUALIFICATIONS.find(

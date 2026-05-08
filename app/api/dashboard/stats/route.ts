@@ -3,7 +3,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import { Listing, Client, FollowUp, User } from "@/models";
-import { ClientType } from "@/models/client.model";
 
 export async function GET(request: NextRequest) {
   try {
@@ -94,7 +93,7 @@ export async function GET(request: NextRequest) {
       }),
       Client.countDocuments({
         ...clientFilter,
-        qualificationStatus: "QUALIFIED",
+        qualificationStatus: { $in: ["QUALIFIED", "HOT", "COLD"] },
         type: { $in: ["BUYER", "RENTER"] },
       }),
       Client.countDocuments({
@@ -103,7 +102,7 @@ export async function GET(request: NextRequest) {
       }),
       Client.countDocuments({
         ...clientFilter,
-        qualificationStatus: "QUALIFIED",
+        qualificationStatus: { $in: ["QUALIFIED", "HOT", "COLD"] },
         type: { $in: ["BUYER", "RENTER"] },
         createdAt: { $gte: startOfMonth },
       }),
@@ -403,7 +402,13 @@ export async function GET(request: NextRequest) {
     );
 
     // Clients by status
-    type ClientStatusSafe = ClientType | "NEW";
+    type ClientStatusSafe =
+      | "NEW"
+      | "QUALIFIED"
+      | "HOT"
+      | "COLD"
+      | "NOT_RELEVANT"
+      | "ARCHIVED";
 
     const clientsByStatus = allClients.reduce<
       Partial<Record<ClientStatusSafe, number>>

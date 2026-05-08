@@ -1,7 +1,11 @@
 "use server";
 
 import { Client } from "@/models";
-import { IClient, QualificationStatus } from "@/models/client.model";
+import {
+  IClient,
+  PipelineStage,
+  QualificationStatus,
+} from "@/models/client.model";
 
 import {
   clientSchema,
@@ -32,6 +36,86 @@ import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
 import { notify, notifyManagers } from "../notifications/notify";
+
+const AUTO_PIPELINE_STAGES = [
+  "PHASE_1_REVIEW",
+  "PHASE_2_REVIEW",
+  "IN_NEGOTIATION",
+  "CLOSED",
+  "ARCHIVED",
+] as const;
+
+function stageFilterForQualificationStage(stage: PipelineStage) {
+  if (stage === "LEAD") {
+    return {
+      $and: [
+        {
+          $or: [
+            { pipelineStage: "LEAD" },
+            { pipelineStage: { $exists: false } },
+            { pipelineStage: null },
+          ],
+        },
+        { qualificationStatus: { $nin: ["QUALIFIED", "HOT", "COLD"] } },
+        { clientTemperature: { $nin: ["HOT", "COLD"] } },
+      ],
+    };
+  }
+
+  if (stage === "ACTIVE_SEARCH") {
+    return {
+      $and: [
+        { pipelineStage: { $nin: AUTO_PIPELINE_STAGES } },
+        {
+          $or: [
+            { qualificationStatus: "HOT" },
+            {
+              $and: [
+                { clientTemperature: "HOT" },
+                { qualificationStatus: { $ne: "COLD" } },
+              ],
+            },
+            {
+              $and: [
+                { pipelineStage: "ACTIVE_SEARCH" },
+                { qualificationStatus: { $ne: "COLD" } },
+                { clientTemperature: { $ne: "COLD" } },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (stage === "FOLLOW_UP") {
+    return {
+      $and: [
+        { pipelineStage: { $nin: AUTO_PIPELINE_STAGES } },
+        {
+          $or: [
+            { qualificationStatus: "COLD" },
+            {
+              $and: [
+                { clientTemperature: "COLD" },
+                { qualificationStatus: { $ne: "HOT" } },
+              ],
+            },
+            {
+              $and: [
+                { pipelineStage: "FOLLOW_UP" },
+                { qualificationStatus: { $ne: "HOT" } },
+                { clientTemperature: { $ne: "HOT" } },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  return { pipelineStage: stage };
+}
 
 export async function createClient(
   params: ClientInput
@@ -184,23 +268,30 @@ export async function fetchClients(
     }
 
     if (type) filter.type = type;
-    if (qualificationStatus) filter.qualificationStatus = qualificationStatus;
-    if (pipelineStage) {
-      if (pipelineStage === "LEAD") {
-        const stageConditions = [
-          { pipelineStage: "LEAD" },
-          { pipelineStage: { $exists: false } },
-          { pipelineStage: null },
+    if (qualificationStatus) {
+      if (qualificationStatus === "HOT" || qualificationStatus === "COLD") {
+        filter.$and = [
+          ...(filter.$and ?? []),
+          {
+            $or: [
+              { qualificationStatus },
+              { clientTemperature: qualificationStatus },
+            ],
+          },
         ];
-        if (filter.$or) {
-          filter.$and = [{ $or: filter.$or }, { $or: stageConditions }];
-          delete filter.$or;
-        } else {
-          filter.$or = stageConditions;
-        }
+      } else if (qualificationStatus === "QUALIFIED") {
+        filter.qualificationStatus = qualificationStatus;
+        filter.clientTemperature = { $nin: ["HOT", "COLD"] };
+        filter.pipelineStage = { $nin: AUTO_PIPELINE_STAGES };
       } else {
-        filter.pipelineStage = pipelineStage;
+        filter.qualificationStatus = qualificationStatus;
       }
+    }
+    if (pipelineStage) {
+      filter.$and = [
+        ...(filter.$and ?? []),
+        stageFilterForQualificationStage(pipelineStage),
+      ];
     }
     if (clientTemperature) filter.clientTemperature = clientTemperature;
     if (wantedPropertyType) filter.wantedPropertyType = wantedPropertyType;
@@ -276,25 +367,97 @@ export async function qualifyClient(
 export async function updateClientQualification(
   clientId: string,
   qualificationStatus: ClientQualification
-) {
+): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!Types.ObjectId.isValid(clientId)) {
+    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+  }
+
+  if (
+    !["NEW", "QUALIFIED", "HOT", "COLD", "NOT_RELEVANT", "ARCHIVED"].includes(
+      qualificationStatus
+    )
+  ) {
+    return { success: false, error: { message: "Statut invalide" }, status: 400 };
+  }
+
   try {
     await dbConnect();
 
-    await Client.findByIdAndUpdate(clientId, {
-      qualificationStatus,
-      archived:
-        qualificationStatus === "ARCHIVED" ||
-        qualificationStatus === "NOT_RELEVANT",
-    });
+    const isAdmin = isElevatedRole(user.data.role);
+    const filter: FilterQuery<IClient> = { _id: clientId };
+    if (!isAdmin) {
+      filter.$or = [
+        { assignedAgent: user.data._id },
+        { createdBy: user.data._id },
+      ];
+    }
+
+    const update =
+      qualificationStatus === "HOT"
+        ? {
+            $set: {
+              qualificationStatus,
+              clientTemperature: "HOT",
+              pipelineStage: "ACTIVE_SEARCH",
+              archived: false,
+            },
+          }
+        : qualificationStatus === "COLD"
+        ? {
+            $set: {
+              qualificationStatus,
+              clientTemperature: "COLD",
+              pipelineStage: "FOLLOW_UP",
+              archived: false,
+            },
+          }
+        : qualificationStatus === "NEW"
+        ? {
+            $set: {
+              qualificationStatus,
+              pipelineStage: "LEAD",
+              archived: false,
+            },
+            $unset: { clientTemperature: "" },
+          }
+        : qualificationStatus === "ARCHIVED" ||
+          qualificationStatus === "NOT_RELEVANT"
+        ? {
+            $set: {
+              qualificationStatus,
+              pipelineStage: "ARCHIVED",
+              archived: true,
+            },
+          }
+        : {
+            $set: {
+              qualificationStatus,
+              archived: false,
+            },
+            $unset: { clientTemperature: "" },
+          };
+
+    const client = await Client.findOneAndUpdate(filter, update, { new: true });
+
+    if (!client) {
+      return {
+        success: false,
+        error: { message: "Client introuvable ou accès refusé" },
+        status: 404,
+      };
+    }
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
 
-    return { success: true };
+    return { success: true, status: 200 };
   } catch (error) {
-    return {
-      success: false,
-      error: { message: error || "Échec de mise à jour du statut" },
-    };
+    return handleError(error) as ErrorResponse;
   }
 }
 
@@ -448,13 +611,32 @@ export async function updateClient(
       };
     }
 
+    const qualificationStatus = validationResult.params?.qualificationStatus;
+    const pipelineUpdate =
+      qualificationStatus === "HOT"
+        ? { pipelineStage: "ACTIVE_SEARCH", clientTemperature: "HOT" }
+        : qualificationStatus === "COLD"
+        ? { pipelineStage: "FOLLOW_UP", clientTemperature: "COLD" }
+        : qualificationStatus === "NEW"
+        ? { pipelineStage: "LEAD" }
+        : qualificationStatus === "ARCHIVED" ||
+          qualificationStatus === "NOT_RELEVANT"
+        ? { pipelineStage: "ARCHIVED" }
+        : {};
+    const shouldUnsetTemperature =
+      qualificationStatus === "NEW" || qualificationStatus === "QUALIFIED";
+
     const client = await Client.findByIdAndUpdate(
       clientId,
       {
-        ...validationResult.params,
-        archived:
-          validationResult.params?.qualificationStatus === "ARCHIVED" ||
-          validationResult.params?.qualificationStatus === "NOT_RELEVANT",
+        $set: {
+          ...validationResult.params,
+          ...pipelineUpdate,
+          archived:
+            qualificationStatus === "ARCHIVED" ||
+            qualificationStatus === "NOT_RELEVANT",
+        },
+        ...(shouldUnsetTemperature ? { $unset: { clientTemperature: "" } } : {}),
       },
       { new: true }
     )
@@ -818,13 +1000,15 @@ export async function approvePhase2(
 
     // HOT → ACTIVE_SEARCH, WARM/COLD → FOLLOW_UP
     const nextStage = temperature === "HOT" ? "ACTIVE_SEARCH" : "FOLLOW_UP";
+    const nextQualification =
+      temperature === "HOT" ? "HOT" : temperature === "COLD" ? "COLD" : "QUALIFIED";
 
     const client = await Client.findByIdAndUpdate(
       clientId,
       {
         pipelineStage: nextStage,
         clientTemperature: temperature,
-        qualificationStatus: "QUALIFIED",
+        qualificationStatus: nextQualification,
         phase2ApprovedBy: user.data._id,
         phase2ApprovedAt: new Date(),
         phase2Notes: notes,
@@ -977,7 +1161,7 @@ export async function submitToPhase1(clientId: string): Promise<ActionResponse> 
 
 export async function setClientPipelineStage(
   clientId: string,
-  stage: "LEAD" | "FOLLOW_UP" | "ACTIVE_SEARCH"
+  stage: Extract<PipelineStage, "LEAD" | "FOLLOW_UP" | "ACTIVE_SEARCH">
 ): Promise<ActionResponse> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
@@ -986,6 +1170,10 @@ export async function setClientPipelineStage(
 
   if (!Types.ObjectId.isValid(clientId)) {
     return { success: false, error: { message: "ID client invalide" }, status: 400 };
+  }
+
+  if (!["LEAD", "FOLLOW_UP", "ACTIVE_SEARCH"].includes(stage)) {
+    return { success: false, error: { message: "Phase invalide" }, status: 400 };
   }
 
   try {
@@ -1023,6 +1211,68 @@ export async function setClientPipelineStage(
   }
 }
 
+export async function setClientNegotiationStage(
+  clientId: string,
+  stage: "NEUTRAL" | "IN_NEGOTIATION" | "CLOSED"
+): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!Types.ObjectId.isValid(clientId)) {
+    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+  }
+
+  if (!["NEUTRAL", "IN_NEGOTIATION", "CLOSED"].includes(stage)) {
+    return { success: false, error: { message: "Phase invalide" }, status: 400 };
+  }
+
+  try {
+    await dbConnect();
+
+    const isAdmin = isElevatedRole(user.data.role);
+    const filter: FilterQuery<IClient> = { _id: clientId };
+    if (!isAdmin) {
+      filter.$or = [
+        { assignedAgent: user.data._id },
+        { createdBy: user.data._id },
+      ];
+    }
+
+    const existing = await Client.findOne(filter).lean<IClient>();
+    if (!existing) {
+      return {
+        success: false,
+        error: { message: "Client introuvable ou accès refusé" },
+        status: 404,
+      };
+    }
+
+    const neutralStage =
+      existing.qualificationStatus === "HOT" || existing.clientTemperature === "HOT"
+        ? "ACTIVE_SEARCH"
+        : existing.qualificationStatus === "COLD" ||
+          existing.clientTemperature === "COLD"
+        ? "FOLLOW_UP"
+        : "LEAD";
+
+    const nextStage = stage === "NEUTRAL" ? neutralStage : stage;
+
+    await Client.findByIdAndUpdate(clientId, {
+      pipelineStage: nextStage,
+      ...(stage !== "NEUTRAL" ? { lastContactedAt: new Date() } : {}),
+    });
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function fetchClientPipelineCounts(): Promise<
   ActionResponse<{ stage: string; count: number }[]>
 > {
@@ -1046,29 +1296,60 @@ export async function fetchClientPipelineCounts(): Promise<
       ];
     }
 
-    const [total, qualified, counts] = await Promise.all([
+    const [
+      total,
+      lead,
+      followUp,
+      activeSearch,
+      inNegotiation,
+      closed,
+      qualified,
+      archived,
+    ] = await Promise.all([
       Client.countDocuments(baseFilter),
       Client.countDocuments({
         ...baseFilter,
-        qualificationStatus: "QUALIFIED",
+        ...stageFilterForQualificationStage("LEAD"),
       }),
-      Client.aggregate([
-        { $match: baseFilter },
-        {
-          $group: {
-            _id: { $ifNull: ["$pipelineStage", "LEAD"] },
-            count: { $sum: 1 },
-          },
-        },
-      ]),
+      Client.countDocuments({
+        ...baseFilter,
+        ...stageFilterForQualificationStage("FOLLOW_UP"),
+      }),
+      Client.countDocuments({
+        ...baseFilter,
+        ...stageFilterForQualificationStage("ACTIVE_SEARCH"),
+      }),
+      Client.countDocuments({
+        ...baseFilter,
+        ...stageFilterForQualificationStage("IN_NEGOTIATION"),
+      }),
+      Client.countDocuments({
+        ...baseFilter,
+        ...stageFilterForQualificationStage("CLOSED"),
+      }),
+      Client.countDocuments({
+        ...baseFilter,
+        qualificationStatus: "QUALIFIED",
+        clientTemperature: { $nin: ["HOT", "COLD"] },
+        pipelineStage: { $nin: AUTO_PIPELINE_STAGES },
+      }),
+      Client.countDocuments({
+        ...baseFilter,
+        ...stageFilterForQualificationStage("ARCHIVED"),
+      }),
     ]);
 
     return {
       success: true,
       data: [
         { stage: "TOTAL", count: total },
+        { stage: "LEAD", count: lead },
+        { stage: "FOLLOW_UP", count: followUp },
+        { stage: "ACTIVE_SEARCH", count: activeSearch },
+        { stage: "IN_NEGOTIATION", count: inNegotiation },
+        { stage: "CLOSED", count: closed },
         { stage: "QUALIFIED", count: qualified },
-        ...counts.map((c) => ({ stage: c._id as string, count: c.count as number })),
+        { stage: "ARCHIVED", count: archived },
       ],
       status: 200,
     };

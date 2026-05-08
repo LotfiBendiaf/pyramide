@@ -49,6 +49,8 @@ const PIE_COLORS = [
 const STATUS_COLORS: Record<string, string> = {
   NEW: COLORS.info,
   QUALIFIED: COLORS.success,
+  HOT: COLORS.warning,
+  COLD: COLORS.secondary,
   NOT_RELEVANT: COLORS.danger,
   ARCHIVED: "#6b7280",
 };
@@ -56,6 +58,8 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   NEW: "Nouveau",
   QUALIFIED: "Qualifié",
+  HOT: "Chaud",
+  COLD: "Froid",
   NOT_RELEVANT: "Non pertinent",
   ARCHIVED: "Archivé",
 };

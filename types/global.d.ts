@@ -169,7 +169,13 @@ interface Client {
 
   extraNotes?: string;
 
-  qualificationStatus: "NEW" | "QUALIFIED" | "NOT_RELEVANT" | "ARCHIVED";
+  qualificationStatus:
+    | "NEW"
+    | "QUALIFIED"
+    | "HOT"
+    | "COLD"
+    | "NOT_RELEVANT"
+    | "ARCHIVED";
   qualificationNotes?: string;
 
   pipelineStage: string;

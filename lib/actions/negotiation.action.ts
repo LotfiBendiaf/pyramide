@@ -28,6 +28,61 @@ import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
 import { notify, notifyManagers } from "../notifications/notify";
 
+export type NegotiationListingOption = {
+  value: string;
+  label: string;
+  referenceCode?: string;
+  price?: number;
+  propertyType?: string;
+  address?: string;
+};
+
+export async function fetchNegotiationListingOptions(): Promise<
+  ActionResponse<NegotiationListingOption[]>
+> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  try {
+    await dbConnect();
+
+    const isAdmin = isElevatedRole(user.data.role);
+    const filter = {
+      pipelineStatus: "ACTIVE",
+      archived: { $ne: true },
+      ...(isAdmin ? {} : { agent: user.data._id }),
+    };
+
+    const listings = await Listing.find(filter)
+      .select("referenceCode title propertyType price location")
+      .sort({ referenceCode: 1 })
+      .lean();
+
+    return {
+      success: true,
+      data: listings.map((listing) => ({
+        value: (listing._id as Types.ObjectId).toString(),
+        label:
+          [listing.referenceCode, listing.title].filter(Boolean).join(" - ") ||
+          (listing._id as Types.ObjectId).toString(),
+        referenceCode: listing.referenceCode,
+        price: listing.price,
+        propertyType: listing.propertyType,
+        address:
+          listing.location?.address ||
+          [listing.location?.district, listing.location?.city]
+            .filter(Boolean)
+            .join(", "),
+      })),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 /* ─────────────────────── Open Negotiation ─────────────────────── */
 
 export async function openNegotiation(
@@ -48,7 +103,8 @@ export async function openNegotiation(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { listingId, clientId, visitId, notes } = validationResult.params;
+  const { listingId, clientId, visitId, blockHours = 24, notes } =
+    validationResult.params;
 
   if (!Types.ObjectId.isValid(listingId)) {
     return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
@@ -99,6 +155,8 @@ export async function openNegotiation(
       };
     }
 
+    const blockedUntil = new Date(Date.now() + blockHours * 60 * 60 * 1000);
+
     const [negotiation] = await Promise.all([
       Negotiation.create({
         listing: listingId,
@@ -106,12 +164,24 @@ export async function openNegotiation(
         agent: user.data._id,
         visit: visitId ?? undefined,
         status: "ACTIVE",
-        blockingRequests: [],
+        blockingRequests: [
+          {
+            requestedBy: user.data._id,
+            requestedAt: new Date(),
+            durationDays: blockHours / 24,
+            reason: notes,
+            status: "APPROVED",
+            reviewedBy: user.data._id,
+            reviewedAt: new Date(),
+            blockedUntil,
+          },
+        ],
         ...(notes ? { "closingDetails.notes": notes } : {}),
       }),
       Listing.findByIdAndUpdate(listingId, {
         pipelineStatus: "UNDER_NEGOTIATION",
         blockedForClient: clientId,
+        blockedUntil,
       }),
       Client.findByIdAndUpdate(clientId, {
         pipelineStage: "IN_NEGOTIATION",
@@ -122,6 +192,7 @@ export async function openNegotiation(
     revalidatePath(ROUTES.NEGOTIATIONS);
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
 
     await notifyManagers({
       type: "NEGOTIATION_OPENED",
