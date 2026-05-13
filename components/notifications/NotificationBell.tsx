@@ -90,7 +90,7 @@ export function NotificationBell() {
           )}
         </div>
 
-        <ScrollArea className="max-h-[360px]">
+        <ScrollArea className="max-h-[360px] overflow-hidden">
           {loading && notifications.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
               Chargement…

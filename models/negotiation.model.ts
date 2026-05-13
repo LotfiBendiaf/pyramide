@@ -1,6 +1,10 @@
 import { Schema, model, models } from "mongoose";
 
-export type NegotiationStatus = "ACTIVE" | "CLOSING" | "DEAL_DONE" | "CANCELLED";
+export type NegotiationStatus =
+  | "ACTIVE"
+  | "CLOSING"
+  | "DEAL_DONE"
+  | "CANCELLED";
 export type BlockRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface IBlockingRequest {
@@ -16,15 +20,31 @@ export interface IBlockingRequest {
   blockedUntil?: Date;
 }
 
+export interface INegotiationDocument {
+  _id?: Schema.Types.ObjectId;
+  publicId: string;
+  url: string;
+  secureUrl?: string;
+  originalFilename?: string;
+  format?: string;
+  resourceType?: string;
+  bytes?: number;
+  uploadedBy: Schema.Types.ObjectId;
+  uploadedAt: Date;
+}
+
 export interface INegotiation {
   _id?: Schema.Types.ObjectId;
-  listing: Schema.Types.ObjectId | { _id: Schema.Types.ObjectId; referenceCode?: string; title?: string };
+  listing:
+    | Schema.Types.ObjectId
+    | { _id: Schema.Types.ObjectId; referenceCode?: string; title?: string };
   client: Schema.Types.ObjectId;
   agent: Schema.Types.ObjectId;
   visit?: Schema.Types.ObjectId;
   status: NegotiationStatus;
 
   blockingRequests: IBlockingRequest[];
+  documents?: INegotiationDocument[];
 
   closingDetails?: {
     depositAmount?: number;
@@ -60,6 +80,21 @@ const blockingRequestSchema = new Schema<IBlockingRequest>(
   { _id: true }
 );
 
+const negotiationDocumentSchema = new Schema<INegotiationDocument>(
+  {
+    publicId: { type: String, required: true, trim: true },
+    url: { type: String, required: true, trim: true },
+    secureUrl: { type: String, trim: true },
+    originalFilename: { type: String, trim: true },
+    format: { type: String, trim: true },
+    resourceType: { type: String, trim: true },
+    bytes: Number,
+    uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    uploadedAt: { type: Date, required: true },
+  },
+  { _id: true }
+);
+
 const negotiationSchema = new Schema<INegotiation>(
   {
     listing: { type: Schema.Types.ObjectId, ref: "Listing", required: true },
@@ -74,6 +109,7 @@ const negotiationSchema = new Schema<INegotiation>(
     },
 
     blockingRequests: [blockingRequestSchema],
+    documents: { type: [negotiationDocumentSchema], default: [] },
 
     closingDetails: {
       depositAmount: Number,

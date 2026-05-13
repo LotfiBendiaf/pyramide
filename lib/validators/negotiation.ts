@@ -6,6 +6,17 @@ export const openNegotiationSchema = z.object({
   visitId: z.string().optional(),
   blockHours: z.union([z.literal(24), z.literal(48)]).optional(),
   notes: z.string().trim().optional(),
+  document: z
+    .object({
+      publicId: z.string().min(1),
+      url: z.string().url(),
+      secureUrl: z.string().url().optional(),
+      originalFilename: z.string().trim().optional(),
+      format: z.string().trim().optional(),
+      resourceType: z.string().trim().optional(),
+      bytes: z.number().int().positive().optional(),
+    })
+    .optional(),
 });
 
 export const requestBlockSchema = z.object({
@@ -26,7 +37,9 @@ export const reviewBlockSchema = z.object({
 
 export const confirmDepositSchema = z.object({
   negotiationId: z.string().min(1),
-  depositAmount: z.number({ required_error: "Montant du dépôt requis" }).positive(),
+  depositAmount: z
+    .number({ required_error: "Montant du dépôt requis" })
+    .positive(),
   finalPrice: z.number({ required_error: "Prix final requis" }).positive(),
   notes: z.string().trim().optional(),
 });

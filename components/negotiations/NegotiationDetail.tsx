@@ -52,9 +52,23 @@ import {
   Loader2,
   Banknote,
   Trophy,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import ROUTES from "@/constants/routes";
+
+interface NegotiationDocument {
+  _id?: string;
+  publicId: string;
+  url: string;
+  secureUrl?: string;
+  originalFilename?: string;
+  format?: string;
+  resourceType?: string;
+  bytes?: number;
+  uploadedBy?: string;
+  uploadedAt?: string | Date;
+}
 
 interface BlockingRequest {
   _id: string;
@@ -77,6 +91,7 @@ export interface NegotiationDetailProps {
     cancelledAt?: string | Date;
     cancelReason?: string;
     blockingRequests: BlockingRequest[];
+    documents?: NegotiationDocument[];
     closingDetails?: {
       depositAmount?: number;
       depositAt?: string | Date;
@@ -223,6 +238,60 @@ export function NegotiationDetail({
         </Card>
       )}
 
+      {negotiation.documents && negotiation.documents.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Documents téléchargés
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {negotiation.documents.map((document) => (
+              <div
+                key={document._id ?? document.publicId}
+                className="rounded-lg border p-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">
+                      {document.originalFilename ?? document.publicId}
+                    </p>
+                    {document.format && (
+                      <p className="text-xs text-muted-foreground">
+                        Type : {document.format.toUpperCase()}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      window.open(document.secureUrl ?? document.url, "_blank")
+                    }
+                    disabled={!document.secureUrl && !document.url}
+                  >
+                    Ouvrir
+                  </Button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  {document.uploadedAt && (
+                    <span>
+                      Ajouté le{" "}
+                      {format(new Date(document.uploadedAt), "dd MMM yyyy", {
+                        locale: fr,
+                      })}
+                    </span>
+                  )}
+                  {document.bytes != null && (
+                    <span>{(document.bytes / 1024).toFixed(1)} KB</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Cancellation info */}
       {negotiation.status === "CANCELLED" && negotiation.cancelReason && (
         <Card className="border-destructive/30 bg-destructive/5">
@@ -359,6 +428,9 @@ export function NegotiationDetail({
             {negotiation.status === "CLOSING" && (
               <CloseDealDialog negotiationId={negotiation._id} />
             )}
+            <Button size="sm" variant="outline" asChild>
+              <Link href={ROUTES.DOCUMENTS}>Ajouter un document</Link>
+            </Button>
             <CancelNegotiationDialog negotiationId={negotiation._id} />
           </CardContent>
         </Card>

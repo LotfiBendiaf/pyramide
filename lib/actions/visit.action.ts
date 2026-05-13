@@ -43,15 +43,29 @@ export async function scheduleVisit(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { listingId, clientId, isExternalListing, externalListingRef, scheduledAt, notes } =
-    validationResult.params;
+  const {
+    listingId,
+    clientId,
+    isExternalListing,
+    externalListingRef,
+    scheduledAt,
+    notes,
+  } = validationResult.params;
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   if (!isExternalListing && listingId && !Types.ObjectId.isValid(listingId)) {
-    return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID annonce invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -59,16 +73,27 @@ export async function scheduleVisit(
     if (!isExternalListing && listingId) {
       const listing = await Listing.findById(listingId)
         .select("pipelineStatus blockedUntil keyAvailable")
-        .lean<{ pipelineStatus: string; blockedUntil?: Date; keyAvailable: boolean }>();
+        .lean<{
+          pipelineStatus: string;
+          blockedUntil?: Date;
+          keyAvailable: boolean;
+        }>();
 
       if (!listing) {
-        return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+        return {
+          success: false,
+          error: { message: "Annonce introuvable" },
+          status: 404,
+        };
       }
 
       if (listing.pipelineStatus === "UNDER_NEGOTIATION") {
         return {
           success: false,
-          error: { message: "Ce bien est en cours de négociation et ne peut pas être visité" },
+          error: {
+            message:
+              "Ce bien est en cours de négociation et ne peut pas être visité",
+          },
           status: 409,
         };
       }
@@ -81,7 +106,10 @@ export async function scheduleVisit(
         };
       }
 
-      if (listing.pipelineStatus !== "ACTIVE") {
+      if (
+        listing.pipelineStatus !== "ACTIVE" &&
+        listing.pipelineStatus !== "PHOTO_VISIT_PENDING"
+      ) {
         return {
           success: false,
           error: { message: "Ce bien n'est pas disponible pour les visites" },
@@ -139,19 +167,29 @@ export async function completeVisit(
   const { visitId, outcome, notes } = validationResult.params;
 
   if (!Types.ObjectId.isValid(visitId)) {
-    return { success: false, error: { message: "ID visite invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID visite invalide" },
+      status: 400,
+    };
   }
 
   try {
     const visit = await Visit.findById(visitId).lean<IVisit>();
     if (!visit) {
-      return { success: false, error: { message: "Visite introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Visite introuvable" },
+        status: 404,
+      };
     }
 
     if (visit.status !== "SCHEDULED") {
       return {
         success: false,
-        error: { message: "Seules les visites planifiées peuvent être complétées" },
+        error: {
+          message: "Seules les visites planifiées peuvent être complétées",
+        },
         status: 409,
       };
     }
@@ -162,7 +200,9 @@ export async function completeVisit(
     if (!isManager && !isVisitAgent) {
       return {
         success: false,
-        error: { message: "Seul l'agent ayant planifié la visite peut la compléter" },
+        error: {
+          message: "Seul l'agent ayant planifié la visite peut la compléter",
+        },
         status: 403,
       };
     }
@@ -177,7 +217,9 @@ export async function completeVisit(
     const nextClientStage = (() => {
       if (outcome === "INTERESTED") return "IN_NEGOTIATION";
       if (outcome === "NOT_INTERESTED") {
-        return client?.clientTemperature === "HOT" ? "ACTIVE_SEARCH" : "FOLLOW_UP";
+        return client?.clientTemperature === "HOT"
+          ? "ACTIVE_SEARCH"
+          : "FOLLOW_UP";
       }
       return client?.pipelineStage; // UNDECIDED — no change
     })();
@@ -227,19 +269,29 @@ export async function cancelVisit(
   const { visitId, notes } = validationResult.params;
 
   if (!Types.ObjectId.isValid(visitId)) {
-    return { success: false, error: { message: "ID visite invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID visite invalide" },
+      status: 400,
+    };
   }
 
   try {
     const visit = await Visit.findById(visitId).lean<IVisit>();
     if (!visit) {
-      return { success: false, error: { message: "Visite introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Visite introuvable" },
+        status: 404,
+      };
     }
 
     if (visit.status !== "SCHEDULED") {
       return {
         success: false,
-        error: { message: "Seules les visites planifiées peuvent être annulées" },
+        error: {
+          message: "Seules les visites planifiées peuvent être annulées",
+        },
         status: 409,
       };
     }
@@ -250,7 +302,9 @@ export async function cancelVisit(
     if (!isManager && !isVisitAgent) {
       return {
         success: false,
-        error: { message: "Seul l'agent ayant planifié la visite peut l'annuler" },
+        error: {
+          message: "Seul l'agent ayant planifié la visite peut l'annuler",
+        },
         status: 403,
       };
     }
@@ -284,14 +338,20 @@ export async function cancelVisit(
 
 /* ─────────────────────── Mark No-Show ─────────────────────── */
 
-export async function markVisitNoShow(visitId: string): Promise<ActionResponse> {
+export async function markVisitNoShow(
+  visitId: string
+): Promise<ActionResponse> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
   if (!Types.ObjectId.isValid(visitId)) {
-    return { success: false, error: { message: "ID visite invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID visite invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -299,13 +359,19 @@ export async function markVisitNoShow(visitId: string): Promise<ActionResponse> 
 
     const visit = await Visit.findById(visitId).lean<IVisit>();
     if (!visit) {
-      return { success: false, error: { message: "Visite introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Visite introuvable" },
+        status: 404,
+      };
     }
 
     if (visit.status !== "SCHEDULED") {
       return {
         success: false,
-        error: { message: "Seules les visites planifiées peuvent être marquées absent" },
+        error: {
+          message: "Seules les visites planifiées peuvent être marquées absent",
+        },
         status: 409,
       };
     }
@@ -345,7 +411,11 @@ export async function fetchVisitsByClient(
   }
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -356,7 +426,10 @@ export async function fetchVisitsByClient(
 
     const [visits, total] = await Promise.all([
       Visit.find(filter)
-        .populate("listing", "referenceCode title location status pipelineStatus")
+        .populate(
+          "listing",
+          "referenceCode title location status pipelineStatus"
+        )
         .populate("agent", "firstname lastname role")
         .sort({ scheduledAt: -1 })
         .skip(skip)
@@ -386,7 +459,11 @@ export async function fetchVisitsByListing(
   }
 
   if (!Types.ObjectId.isValid(listingId)) {
-    return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID annonce invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -397,7 +474,10 @@ export async function fetchVisitsByListing(
 
     const [visits, total] = await Promise.all([
       Visit.find(filter)
-        .populate("client", "referenceCode firstName lastName phone pipelineStage clientTemperature")
+        .populate(
+          "client",
+          "referenceCode firstName lastName phone pipelineStage clientTemperature"
+        )
         .populate("agent", "firstname lastname role")
         .sort({ scheduledAt: -1 })
         .skip(skip)
@@ -434,8 +514,14 @@ export async function fetchVisits(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { clientId, listingId, agentId, status, page = 1, limit = 20 } =
-    validationResult.params as VisitFilters;
+  const {
+    clientId,
+    listingId,
+    agentId,
+    status,
+    page = 1,
+    limit = 20,
+  } = validationResult.params as VisitFilters;
 
   try {
     const filter: Record<string, unknown> = {};
@@ -455,7 +541,10 @@ export async function fetchVisits(
 
     const [visits, total] = await Promise.all([
       Visit.find(filter)
-        .populate("listing", "referenceCode title location status pipelineStatus")
+        .populate(
+          "listing",
+          "referenceCode title location status pipelineStatus"
+        )
         .populate("client", "referenceCode firstName lastName phone")
         .populate("agent", "firstname lastname role")
         .sort({ scheduledAt: -1 })

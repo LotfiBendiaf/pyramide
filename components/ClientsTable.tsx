@@ -41,6 +41,21 @@ const TYPE_COLORS: Record<string, "default" | "secondary" | "outline"> = {
   INVESTOR: "secondary",
 };
 
+const NEGOTIATION_LABELS: Record<string, string> = {
+  NEUTRAL: "Neutre",
+  IN_NEGOTIATION: "En négociation",
+  CLOSED: "Closing",
+};
+
+const NEGOTIATION_VARIANTS: Record<
+  string,
+  "default" | "secondary" | "outline"
+> = {
+  NEUTRAL: "outline",
+  IN_NEGOTIATION: "secondary",
+  CLOSED: "default",
+};
+
 export default function ClientsTable({
   clients,
   agents = [],
@@ -49,6 +64,7 @@ export default function ClientsTable({
 }: ClientsTableProps) {
   const canAssignAgent =
     userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
+  const canUseNegotiationStage = userRole !== "ADMIN" && userRole !== "MANAGER";
 
   return (
     <Card>
@@ -139,11 +155,24 @@ export default function ClientsTable({
 
                 {/* Negotiation */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <ClientNegotiationStageSelect
-                    clientId={client._id}
-                    pipelineStage={client.pipelineStage}
-                    listings={negotiationListings}
-                  />
+                  {canUseNegotiationStage ? (
+                    <ClientNegotiationStageSelect
+                      clientId={client._id}
+                      pipelineStage={client.pipelineStage}
+                      listings={negotiationListings}
+                    />
+                  ) : (
+                    <Badge
+                      variant={
+                        NEGOTIATION_VARIANTS[
+                          client.pipelineStage ?? "NEUTRAL"
+                        ] || "outline"
+                      }
+                    >
+                      {NEGOTIATION_LABELS[client.pipelineStage ?? "NEUTRAL"] ||
+                        "Neutre"}
+                    </Badge>
+                  )}
                 </TableCell>
 
                 {/* Compte rendu */}

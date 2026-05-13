@@ -50,7 +50,7 @@ export async function fetchNegotiationListingOptions(): Promise<
 
     const isAdmin = isElevatedRole(user.data.role);
     const filter = {
-      pipelineStatus: "ACTIVE",
+      pipelineStatus: { $in: ["ACTIVE", "PHOTO_VISIT_PENDING"] },
       archived: { $ne: true },
       ...(isAdmin ? {} : { agent: user.data._id }),
     };
@@ -103,17 +103,35 @@ export async function openNegotiation(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { listingId, clientId, visitId, blockHours = 24, notes } =
-    validationResult.params;
+  const {
+    listingId,
+    clientId,
+    visitId,
+    blockHours = 24,
+    notes,
+    document,
+  } = validationResult.params;
 
   if (!Types.ObjectId.isValid(listingId)) {
-    return { success: false, error: { message: "ID annonce invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID annonce invalide" },
+      status: 400,
+    };
   }
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
   if (visitId && !Types.ObjectId.isValid(visitId)) {
-    return { success: false, error: { message: "ID visite invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID visite invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -122,7 +140,11 @@ export async function openNegotiation(
       .lean<{ pipelineStatus: string }>();
 
     if (!listing) {
-      return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
     }
 
     if (listing.pipelineStatus === "UNDER_NEGOTIATION") {
@@ -133,7 +155,10 @@ export async function openNegotiation(
       };
     }
 
-    if (listing.pipelineStatus !== "ACTIVE") {
+    if (
+      listing.pipelineStatus !== "ACTIVE" &&
+      listing.pipelineStatus !== "PHOTO_VISIT_PENDING"
+    ) {
       return {
         success: false,
         error: { message: "Ce bien n'est pas disponible pour la négociation" },
@@ -176,6 +201,21 @@ export async function openNegotiation(
             blockedUntil,
           },
         ],
+        documents: document
+          ? [
+              {
+                publicId: document.publicId,
+                url: document.url,
+                secureUrl: document.secureUrl,
+                originalFilename: document.originalFilename,
+                format: document.format,
+                resourceType: document.resourceType,
+                bytes: document.bytes,
+                uploadedBy: user.data._id,
+                uploadedAt: new Date(),
+              },
+            ]
+          : undefined,
         ...(notes ? { "closingDetails.notes": notes } : {}),
       }),
       Listing.findByIdAndUpdate(listingId, {
@@ -235,28 +275,44 @@ export async function requestBlock(
   const { negotiationId, durationDays, reason } = validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
-    return { success: false, error: { message: "ID négociation invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
   }
 
   try {
-    const negotiation = await Negotiation.findById(negotiationId).lean<INegotiation>();
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
     if (!negotiation) {
-      return { success: false, error: { message: "Négociation introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
     }
 
     if (negotiation.status !== "ACTIVE") {
       return {
         success: false,
-        error: { message: "Impossible d'ajouter un blocage à cette négociation" },
+        error: {
+          message: "Impossible d'ajouter un blocage à cette négociation",
+        },
         status: 409,
       };
     }
 
     const isManager = isElevatedRole(user.data.role);
-    const isNegotiationAgent = negotiation.agent?.toString() === user.data._id?.toString();
+    const isNegotiationAgent =
+      negotiation.agent?.toString() === user.data._id?.toString();
 
     if (!isManager && !isNegotiationAgent) {
-      return { success: false, error: { message: "Accès refusé" }, status: 403 };
+      return {
+        success: false,
+        error: { message: "Accès refusé" },
+        status: 403,
+      };
     }
 
     // Prevent duplicate pending block requests
@@ -327,7 +383,8 @@ export async function approveBlock(
     };
   }
 
-  const { negotiationId, blockingRequestId, managerNote } = validationResult.params;
+  const { negotiationId, blockingRequestId, managerNote } =
+    validationResult.params;
 
   if (
     !Types.ObjectId.isValid(negotiationId) ||
@@ -337,9 +394,14 @@ export async function approveBlock(
   }
 
   try {
-    const negotiation = await Negotiation.findById(negotiationId).lean<INegotiation>();
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
     if (!negotiation) {
-      return { success: false, error: { message: "Négociation introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
     }
 
     const blockReq = negotiation.blockingRequests?.find(
@@ -347,7 +409,11 @@ export async function approveBlock(
     );
 
     if (!blockReq) {
-      return { success: false, error: { message: "Demande de blocage introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Demande de blocage introuvable" },
+        status: 404,
+      };
     }
 
     if (blockReq.status !== "PENDING") {
@@ -381,7 +447,9 @@ export async function approveBlock(
     ]);
 
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
-    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
+    revalidatePath(
+      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+    );
 
     await notify({
       recipientId: negotiation.agent.toString(),
@@ -426,7 +494,8 @@ export async function rejectBlock(
     };
   }
 
-  const { negotiationId, blockingRequestId, managerNote } = validationResult.params;
+  const { negotiationId, blockingRequestId, managerNote } =
+    validationResult.params;
 
   if (
     !Types.ObjectId.isValid(negotiationId) ||
@@ -436,9 +505,14 @@ export async function rejectBlock(
   }
 
   try {
-    const negotiation = await Negotiation.findById(negotiationId).lean<INegotiation>();
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
     if (!negotiation) {
-      return { success: false, error: { message: "Négociation introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
     }
 
     const blockReq = negotiation.blockingRequests?.find(
@@ -446,7 +520,11 @@ export async function rejectBlock(
     );
 
     if (!blockReq) {
-      return { success: false, error: { message: "Demande de blocage introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Demande de blocage introuvable" },
+        status: 404,
+      };
     }
 
     if (blockReq.status !== "PENDING") {
@@ -506,31 +584,48 @@ export async function confirmDeposit(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { negotiationId, depositAmount, finalPrice, notes } = validationResult.params;
+  const { negotiationId, depositAmount, finalPrice, notes } =
+    validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
-    return { success: false, error: { message: "ID négociation invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
   }
 
   try {
-    const negotiation = await Negotiation.findById(negotiationId).lean<INegotiation>();
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
     if (!negotiation) {
-      return { success: false, error: { message: "Négociation introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
     }
 
     if (negotiation.status !== "ACTIVE") {
       return {
         success: false,
-        error: { message: "Seules les négociations actives peuvent passer en closing" },
+        error: {
+          message: "Seules les négociations actives peuvent passer en closing",
+        },
         status: 409,
       };
     }
 
     const isManager = isElevatedRole(user.data.role);
-    const isNegotiationAgent = negotiation.agent?.toString() === user.data._id?.toString();
+    const isNegotiationAgent =
+      negotiation.agent?.toString() === user.data._id?.toString();
 
     if (!isManager && !isNegotiationAgent) {
-      return { success: false, error: { message: "Accès refusé" }, status: 403 };
+      return {
+        success: false,
+        error: { message: "Accès refusé" },
+        status: 403,
+      };
     }
 
     await Promise.all([
@@ -550,7 +645,9 @@ export async function confirmDeposit(
     ]);
 
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
-    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
+    revalidatePath(
+      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+    );
 
     await notifyManagers({
       type: "DEPOSIT_CONFIRMED",
@@ -589,28 +686,44 @@ export async function closeDeal(
   const { negotiationId, finalPrice, notes } = validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
-    return { success: false, error: { message: "ID négociation invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
   }
 
   try {
-    const negotiation = await Negotiation.findById(negotiationId).lean<INegotiation>();
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
     if (!negotiation) {
-      return { success: false, error: { message: "Négociation introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
     }
 
     if (negotiation.status !== "CLOSING") {
       return {
         success: false,
-        error: { message: "Seules les négociations en closing peuvent être conclues" },
+        error: {
+          message: "Seules les négociations en closing peuvent être conclues",
+        },
         status: 409,
       };
     }
 
     const isManager = isElevatedRole(user.data.role);
-    const isNegotiationAgent = negotiation.agent?.toString() === user.data._id?.toString();
+    const isNegotiationAgent =
+      negotiation.agent?.toString() === user.data._id?.toString();
 
     if (!isManager && !isNegotiationAgent) {
-      return { success: false, error: { message: "Accès refusé" }, status: 403 };
+      return {
+        success: false,
+        error: { message: "Accès refusé" },
+        status: 403,
+      };
     }
 
     const now = new Date();
@@ -639,7 +752,9 @@ export async function closeDeal(
 
     revalidatePath(ROUTES.NEGOTIATIONS);
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
-    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
+    revalidatePath(
+      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+    );
     revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
 
     const dealPayloads = [
@@ -692,13 +807,22 @@ export async function cancelNegotiation(
   const { negotiationId, cancelReason } = validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
-    return { success: false, error: { message: "ID négociation invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
   }
 
   try {
-    const negotiation = await Negotiation.findById(negotiationId).lean<INegotiation>();
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
     if (!negotiation) {
-      return { success: false, error: { message: "Négociation introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
     }
 
     if (!["ACTIVE", "CLOSING"].includes(negotiation.status)) {
@@ -710,10 +834,15 @@ export async function cancelNegotiation(
     }
 
     const isManager = isElevatedRole(user.data.role);
-    const isNegotiationAgent = negotiation.agent?.toString() === user.data._id?.toString();
+    const isNegotiationAgent =
+      negotiation.agent?.toString() === user.data._id?.toString();
 
     if (!isManager && !isNegotiationAgent) {
-      return { success: false, error: { message: "Accès refusé" }, status: 403 };
+      return {
+        success: false,
+        error: { message: "Accès refusé" },
+        status: 403,
+      };
     }
 
     const now = new Date();
@@ -736,7 +865,9 @@ export async function cancelNegotiation(
 
     revalidatePath(ROUTES.NEGOTIATIONS);
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
-    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString()));
+    revalidatePath(
+      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+    );
     revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
 
     if (isManager) {
@@ -784,8 +915,14 @@ export async function fetchNegotiations(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { status, agentId, listingId, clientId, page = 1, limit = 20 } =
-    validationResult.params as NegotiationFilters;
+  const {
+    status,
+    agentId,
+    listingId,
+    clientId,
+    page = 1,
+    limit = 20,
+  } = validationResult.params as NegotiationFilters;
 
   try {
     const filter: Record<string, unknown> = {};
@@ -804,8 +941,14 @@ export async function fetchNegotiations(
 
     const [negotiations, total] = await Promise.all([
       Negotiation.find(filter)
-        .populate("listing", "referenceCode title location pipelineStatus status")
-        .populate("client", "referenceCode firstName lastName phone pipelineStage")
+        .populate(
+          "listing",
+          "referenceCode title location pipelineStatus status"
+        )
+        .populate(
+          "client",
+          "referenceCode firstName lastName phone pipelineStage"
+        )
         .populate("agent", "firstname lastname role")
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -833,15 +976,25 @@ export async function fetchNegotiationById(
   }
 
   if (!Types.ObjectId.isValid(negotiationId)) {
-    return { success: false, error: { message: "ID négociation invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
   }
 
   try {
     await dbConnect();
 
     const negotiation = await Negotiation.findById(negotiationId)
-      .populate("listing", "referenceCode title location pipelineStatus status offeredPrice price")
-      .populate("client", "referenceCode firstName lastName phone pipelineStage clientTemperature")
+      .populate(
+        "listing",
+        "referenceCode title location pipelineStatus status offeredPrice price"
+      )
+      .populate(
+        "client",
+        "referenceCode firstName lastName phone pipelineStage clientTemperature"
+      )
       .populate("agent", "firstname lastname role")
       .populate("visit", "scheduledAt outcome notes")
       .populate("blockingRequests.requestedBy", "firstname lastname role")
@@ -849,7 +1002,11 @@ export async function fetchNegotiationById(
       .lean<INegotiation>();
 
     if (!negotiation) {
-      return { success: false, error: { message: "Négociation introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
     }
 
     const isManager = isElevatedRole(user.data.role);
@@ -858,7 +1015,11 @@ export async function fetchNegotiationById(
       user.data._id?.toString();
 
     if (!isManager && !isNegotiationAgent) {
-      return { success: false, error: { message: "Accès refusé" }, status: 403 };
+      return {
+        success: false,
+        error: { message: "Accès refusé" },
+        status: 403,
+      };
     }
 
     return {

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Circle, Handshake, Loader2, Trophy } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,6 +30,16 @@ import {
 import { cn } from "@/lib/utils";
 
 type NegotiationStageChoice = "NEUTRAL" | "IN_NEGOTIATION" | "CLOSED";
+
+type NegotiationDocument = {
+  publicId: string;
+  url: string;
+  secureUrl?: string;
+  originalFilename?: string;
+  format?: string;
+  resourceType?: string;
+  bytes?: number;
+};
 
 type Props = {
   clientId: string;
@@ -79,6 +89,10 @@ export default function ClientNegotiationStageSelect({
   const [listingId, setListingId] = useState("");
   const [blockHours, setBlockHours] = useState<"24" | "48">("24");
   const [notes, setNotes] = useState("");
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [uploadedDocument, setUploadedDocument] =
+    useState<NegotiationDocument | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const currentValue = valueFromPipelineStage(pipelineStage);
   const current = OPTIONS.find((option) => option.value === currentValue);
   const CurrentIcon = current?.icon ?? Circle;
@@ -116,6 +130,7 @@ export default function ClientNegotiationStageSelect({
       listingId,
       blockHours: Number(blockHours) as 24 | 48,
       notes,
+      document: uploadedDocument ?? undefined,
     });
     setLoading(false);
 
@@ -131,7 +146,74 @@ export default function ClientNegotiationStageSelect({
     setListingId("");
     setBlockHours("24");
     setNotes("");
+    setUploadedDocument(null);
     router.refresh();
+  };
+
+  const handleDocumentSelect = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
+      toast.error("Configuration Cloudinary manquante");
+      return;
+    }
+
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+      toast.error("Configuration Cloudinary manquante");
+      return;
+    }
+
+    setUploadingDocument(true);
+    setUploadedDocument(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      );
+      formData.append("folder", "pyramide/negotiations");
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error?.message ||
+            "Erreur lors du téléchargement du document"
+        );
+      }
+
+      const result = await response.json();
+      setUploadedDocument({
+        publicId: result.public_id,
+        url: result.url,
+        secureUrl: result.secure_url,
+        originalFilename: result.original_filename ?? file.name,
+        format: result.format,
+        resourceType: result.resource_type,
+        bytes: result.bytes,
+      });
+      toast.success("Document téléchargé");
+    } catch (error) {
+      toast.error("Échec du téléchargement", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Impossible d'envoyer le document",
+      });
+    } finally {
+      setUploadingDocument(false);
+      event.target.value = "";
+    }
   };
 
   return (
@@ -163,7 +245,13 @@ export default function ClientNegotiationStageSelect({
         </SelectContent>
       </Select>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setUploadedDocument(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ouvrir une négociation</DialogTitle>
@@ -180,20 +268,26 @@ export default function ClientNegotiationStageSelect({
                   <SelectValue placeholder="Sélectionner un bien" />
                 </SelectTrigger>
                 <SelectContent>
-                  {listings.map((listing) => (
-                    <SelectItem key={listing.value} value={listing.value}>
-                      <span className="flex flex-col items-start gap-0.5">
-                        <span>{listing.label}</span>
-                        {(listing.propertyType || listing.address) && (
-                          <span className="text-xs text-muted-foreground">
-                            {[listing.propertyType, listing.address]
-                              .filter(Boolean)
-                              .join(" - ")}
-                          </span>
-                        )}
-                      </span>
+                  {listings.length === 0 ? (
+                    <SelectItem value="" disabled>
+                      Aucun bien actif disponible
                     </SelectItem>
-                  ))}
+                  ) : (
+                    listings.map((listing) => (
+                      <SelectItem key={listing.value} value={listing.value}>
+                        <span className="flex flex-col items-start gap-0.5">
+                          <span>{listing.label}</span>
+                          {(listing.propertyType || listing.address) && (
+                            <span className="text-xs text-muted-foreground">
+                              {[listing.propertyType, listing.address]
+                                .filter(Boolean)
+                                .join(" - ")}
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {listings.length === 0 && (
@@ -201,11 +295,40 @@ export default function ClientNegotiationStageSelect({
                   Aucun bien actif disponible pour une négociation.
                 </p>
               )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,.doc,.docx,image/png,image/jpeg"
+                className="hidden"
+                onChange={handleDocumentSelect}
+              />
+              <div className="flex flex-col gap-2 mt-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingDocument}
+                >
+                  {uploadingDocument
+                    ? "Téléchargement..."
+                    : "Ajouter un document"}
+                </Button>
+                {uploadedDocument ? (
+                  <p className="text-sm text-muted-foreground">
+                    Document prêt : {uploadedDocument.originalFilename}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label>Blocage des visites</Label>
-              <Select value={blockHours} onValueChange={(value) => setBlockHours(value as "24" | "48")}>
+              <Select
+                value={blockHours}
+                onValueChange={(value) => setBlockHours(value as "24" | "48")}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
