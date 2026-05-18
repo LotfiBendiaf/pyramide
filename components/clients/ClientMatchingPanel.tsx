@@ -3,7 +3,10 @@ import { BedDouble, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ROUTES from "@/constants/routes";
-import { matchClientToListings, MatchedListing } from "@/lib/actions/matching.action";
+import {
+  matchClientToListings,
+  MatchedListing,
+} from "@/lib/actions/matching.action";
 import { formatPriceAlgeria } from "@/lib/utils";
 
 interface Props {
@@ -29,7 +32,8 @@ export default async function ClientMatchingPanel({ client }: Props) {
       <CardContent>
         {listings.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            Aucune annonce ne correspond aux critères de ce client pour l&apos;instant.
+            Aucune annonce ne correspond aux critères de ce client pour
+            l&apos;instant.
           </p>
         ) : (
           <div className="space-y-2">
@@ -70,7 +74,7 @@ export default async function ClientMatchingPanel({ client }: Props) {
                   </span>
                   {listing.overBudget && (
                     <span className="text-xs text-amber-600 font-medium">
-                      +10% budget
+                      +35% budget
                     </span>
                   )}
                 </div>

@@ -96,7 +96,7 @@ const OPTIONS: {
     value: "NO_RESPONSE",
     label: "N'a pas répondu",
     icon: Circle,
-    className: "text-yellow-500",
+    className: "text-red-500",
     category: "qualification",
   },
   {
@@ -110,7 +110,7 @@ const OPTIONS: {
     value: "ARCHIVED",
     label: "Archivé",
     icon: Circle,
-    className: "text-gray-400",
+    className: "text-gray-300",
     category: "qualification",
   },
   {

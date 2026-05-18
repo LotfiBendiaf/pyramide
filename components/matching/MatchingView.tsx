@@ -34,11 +34,11 @@ const TYPE_LABELS: Record<string, string> = {
 
 function ScoreBadge({ score }: { score: number }) {
   const color =
-    score >= 9
-      ? "bg-green-100 text-green-800"
-      : score >= 6
-        ? "bg-amber-100 text-amber-800"
-        : "bg-gray-100 text-gray-700";
+    score >= 10
+      ? "bg-green-200 text-green-800 border border-green-300"
+      : score >= 7
+        ? "bg-yellow-200 text-yellow-800"
+        : "bg-gray-200 text-gray-700";
   return (
     <span
       className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold ${color}`}
@@ -287,9 +287,16 @@ export default function MatchingView({ clients, listings }: Props) {
                             )}
                           </div>
                         </div>
-                        <span className="text-sm font-medium shrink-0">
-                          {formatPriceAlgeria(listing.price)} DA
-                        </span>
+                        <div>
+                          <p className="text-sm font-medium shrink-0">
+                            {formatPriceAlgeria(listing.price)} DA
+                          </p>
+                          {listing.overBudget && (
+                            <span className="text-xs text-yellow-600 font-medium">
+                              Budget ++
+                            </span>
+                          )}
+                        </div>
                       </Link>
                     </li>
                   ))}

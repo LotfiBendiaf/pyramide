@@ -6,6 +6,78 @@ import handleError from "@/lib/handlers/error";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+type BudgetWindow = {
+  targetBudget: number;
+  min: number;
+  max: number;
+  exactMin: number;
+  exactMax: number;
+};
+
+function getBudgetWindow(client: Client): BudgetWindow | null {
+  const budgetReference =
+    client.budgetMax !== undefined
+      ? Number(client.budgetMax)
+      : client.budgetMin !== undefined
+        ? Number(client.budgetMin)
+        : undefined;
+
+  if (budgetReference === undefined || isNaN(budgetReference)) {
+    return null;
+  }
+
+  return {
+    targetBudget: budgetReference,
+    min: Math.max(0, budgetReference * 0.85),
+    max: budgetReference * 1.35,
+    exactMin: client.budgetMin !== undefined ? Number(client.budgetMin) : 0,
+    exactMax:
+      client.budgetMax !== undefined
+        ? Number(client.budgetMax)
+        : Number.POSITIVE_INFINITY,
+  };
+}
+
+function getPriceScore(price: number, window: BudgetWindow): number {
+  if (price >= window.exactMin && price <= window.exactMax) {
+    return 3;
+  }
+
+  if (price < window.min) {
+    return 0;
+  } else {
+    return 2;
+  }
+}
+
+function getAreaScore(listing: Listing, client: Client): number {
+  if (client.wantedArea === undefined) {
+    return 0;
+  }
+
+  const area = Number(listing.features.area);
+  const targetArea = Number(client.wantedArea);
+
+  if (isNaN(area) || isNaN(targetArea) || targetArea <= 0) {
+    return 0;
+  }
+
+  const exactLower = targetArea * 0.85;
+  const exactUpper = targetArea * 1.15;
+  const toleranceLower = targetArea * 0.65;
+  const toleranceUpper = targetArea * 1.35;
+
+  if (area >= exactLower && area <= exactUpper) {
+    return 2;
+  }
+
+  if (area >= toleranceLower && area <= toleranceUpper) {
+    return 1;
+  }
+
+  return 0;
+}
+
 function scoreListing(listing: Listing, client: Client): number {
   let score = 0;
 
@@ -21,30 +93,22 @@ function scoreListing(listing: Listing, client: Client): number {
     listing.propertyType.toLowerCase() ===
       client.wantedPropertyType.toLowerCase()
   ) {
-    score += 3;
+    score += 5;
   }
 
   const price = Number(listing.price);
-  if (
-    !isNaN(price) &&
-    (client.budgetMin !== undefined || client.budgetMax !== undefined)
-  ) {
-    const budgetMin =
-      client.budgetMin !== undefined ? Number(client.budgetMin) : undefined;
-    const budgetMax =
-      client.budgetMax !== undefined ? Number(client.budgetMax) : undefined;
-    const aboveMin = budgetMin === undefined || price >= budgetMin;
-    const withinMax = budgetMax === undefined || price <= budgetMax;
-    const withinTolerance = budgetMax !== undefined && price <= budgetMax * 1.1;
-    if (aboveMin && withinMax) score += 3;
-    else if (aboveMin && withinTolerance) score += 1;
+  const budgetWindow = getBudgetWindow(client);
+  if (!isNaN(price) && budgetWindow) {
+    score += getPriceScore(price, budgetWindow);
   }
+
+  score += getAreaScore(listing, client);
 
   if (
     client.rooms !== undefined &&
     listing.features.bedrooms === client.rooms
   ) {
-    score += 2;
+    score += 4;
   }
 
   return score;
@@ -74,23 +138,22 @@ function scoreClient(
     listing.propertyType.toLowerCase() ===
       client.wantedPropertyType.toLowerCase()
   ) {
-    score += 3;
+    score += 5;
   }
 
-  const price = listing.price;
-  if (client.budgetMin !== undefined || client.budgetMax !== undefined) {
-    const aboveMin =
-      client.budgetMin === undefined || price >= client.budgetMin;
-    const belowMax =
-      client.budgetMax === undefined || price <= client.budgetMax;
-    if (aboveMin && belowMax) score += 3;
+  const price = Number(listing.price);
+  const budgetWindow = getBudgetWindow(client);
+  if (!isNaN(price) && budgetWindow) {
+    score += getPriceScore(price, budgetWindow);
   }
+
+  score += getAreaScore(listing, client);
 
   if (
     client.rooms !== undefined &&
     listing.features.bedrooms === client.rooms
   ) {
-    score += 2;
+    score += 4;
   }
 
   return score;
@@ -126,10 +189,11 @@ export async function matchClientToListings(
 
     const listings = await Listing.find({ status: statusFilter })
       .select(
-        "referenceCode title propertyType location price features.bedrooms evaluation.finalScore isPublished"
+        "referenceCode title propertyType location price features.bedrooms features.area evaluation.finalScore isPublished"
       )
       .lean<Listing[]>();
 
+    const budgetWindow = getBudgetWindow(client);
     const scored: MatchedListing[] = listings
       .map((l) => {
         const price = Number(l.price);
@@ -139,10 +203,18 @@ export async function matchClientToListings(
           budgetMax !== undefined &&
           !isNaN(price) &&
           price > budgetMax &&
-          price <= budgetMax * 1.1;
+          price <= budgetMax * 1.35;
         return { ...l, matchScore: scoreListing(l, client), overBudget };
       })
-      .filter((l) => l.matchScore >= 1)
+      .filter((l) => {
+        const price = Number(l.price);
+        const withinBudgetWindow =
+          budgetWindow === null ||
+          (!isNaN(price) &&
+            price >= budgetWindow.min &&
+            price <= budgetWindow.max);
+        return l.matchScore >= 1 && withinBudgetWindow;
+      })
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 20);
 
@@ -182,9 +254,28 @@ export async function matchListingToClients(
       )
       .lean<Client[]>();
 
+    const budgetWindowCache = clients.reduce<
+      Record<string, ReturnType<typeof getBudgetWindow>>
+    >(
+      (acc, client) => {
+        acc[client._id] = getBudgetWindow(client);
+        return acc;
+      },
+      {} as Record<string, ReturnType<typeof getBudgetWindow>>
+    );
+
     const scored: MatchedClient[] = clients
       .map((c) => ({ ...c, matchScore: scoreClient(c, listing) }))
-      .filter((c) => c.matchScore >= 1)
+      .filter((c) => {
+        const budgetWindow = budgetWindowCache[c._id];
+        const price = Number(listing.price);
+        const withinBudgetWindow =
+          budgetWindow === null ||
+          (!isNaN(price) &&
+            price >= budgetWindow.min &&
+            price <= budgetWindow.max);
+        return c.matchScore >= 1 && withinBudgetWindow;
+      })
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 8);
 
