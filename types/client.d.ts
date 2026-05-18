@@ -51,10 +51,12 @@ export type ClientUpdateInput = {
   preferredLocation?: string;
   extraNotes?: string;
   qualificationStatus:
+    | "NEUTRAL"
     | "NEW"
     | "QUALIFIED"
     | "HOT"
     | "COLD"
+    | "NO_RESPONSE"
     | "NOT_RELEVANT"
     | "ARCHIVED";
   qualificationNotes?: string;
@@ -64,10 +66,12 @@ export type ClientUpdateInput = {
 export type ClientFilters = {
   type?: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
   qualificationStatus?:
+    | "NEUTRAL"
     | "NEW"
     | "QUALIFIED"
     | "HOT"
     | "COLD"
+    | "NO_RESPONSE"
     | "NOT_RELEVANT"
     | "ARCHIVED";
   pipelineStage?: PipelineStage;

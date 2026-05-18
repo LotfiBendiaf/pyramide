@@ -40,10 +40,12 @@ export const STATUS_COLORS: Record<PropertyStatus, string> = {
 };
 
 export const CLIENT_QUALIFICATIONS = [
+  { value: "NEUTRAL", label: "Neutre", color: "secondary" },
   { value: "NEW", label: "Nouveau", color: "secondary" },
   { value: "QUALIFIED", label: "Qualifié", color: "success" },
   { value: "HOT", label: "Chaud", color: "destructive" },
   { value: "COLD", label: "Froid", color: "secondary" },
+  { value: "NO_RESPONSE", label: "N'a pas répondu", color: "warning" },
   { value: "NOT_RELEVANT", label: "Non pertinent", color: "warning" },
   { value: "ARCHIVED", label: "Archivé", color: "outline" },
 ] as const;
@@ -178,8 +180,16 @@ export const VISIT_OUTCOMES = [
 
 export const LISTING_PIPELINE_STAGES = [
   { value: "DRAFT", label: "Brouillon", color: "secondary" },
-  { value: "PENDING_VALIDATION", label: "En attente de validation", color: "warning" },
-  { value: "PHOTO_VISIT_PENDING", label: "Visite photo à planifier", color: "warning" },
+  {
+    value: "PENDING_VALIDATION",
+    label: "En attente de validation",
+    color: "warning",
+  },
+  {
+    value: "PHOTO_VISIT_PENDING",
+    label: "Visite photo à planifier",
+    color: "warning",
+  },
   { value: "ACTIVE", label: "Actif", color: "success" },
   { value: "UNDER_NEGOTIATION", label: "En négociation", color: "destructive" },
   { value: "CLOSING", label: "Closing", color: "info" },

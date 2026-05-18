@@ -2,10 +2,12 @@ import { Schema, model, models } from "mongoose";
 
 export type ClientType = "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
 export type QualificationStatus =
+  | "NEUTRAL"
   | "NEW"
   | "QUALIFIED"
   | "HOT"
   | "COLD"
+  | "NO_RESPONSE"
   | "NOT_RELEVANT"
   | "ARCHIVED";
 
@@ -90,7 +92,11 @@ const clientSchema = new Schema<IClient>(
 
     budgetMin: Number,
     budgetMax: Number,
-    priceCurrency: { type: String, enum: ["DZD", "EUR", "USD"], default: "DZD" },
+    priceCurrency: {
+      type: String,
+      enum: ["DZD", "EUR", "USD"],
+      default: "DZD",
+    },
     wantedArea: Number,
     city: String,
     wantedPropertyType: String,
@@ -102,8 +108,17 @@ const clientSchema = new Schema<IClient>(
 
     qualificationStatus: {
       type: String,
-      enum: ["NEW", "QUALIFIED", "HOT", "COLD", "NOT_RELEVANT", "ARCHIVED"],
-      default: "NEW",
+      enum: [
+        "NEUTRAL",
+        "NEW",
+        "QUALIFIED",
+        "HOT",
+        "COLD",
+        "NO_RESPONSE",
+        "NOT_RELEVANT",
+        "ARCHIVED",
+      ],
+      default: "NEUTRAL",
     },
     qualificationNotes: String,
 

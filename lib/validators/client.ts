@@ -1,10 +1,12 @@
 import { z } from "zod";
 
 const qualificationStatusSchema = z.enum([
+  "NEUTRAL",
   "NEW",
   "QUALIFIED",
   "HOT",
   "COLD",
+  "NO_RESPONSE",
   "NOT_RELEVANT",
   "ARCHIVED",
 ]);
@@ -14,8 +16,17 @@ export const clientSchema = z.object({
 
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  phone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
-  phone2: z.union([z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"), z.literal("")]).optional(),
+  phone: z
+    .string()
+    .regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
+  phone2: z
+    .union([
+      z
+        .string()
+        .regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
+      z.literal(""),
+    ])
+    .optional(),
   email: z.union([z.string().email(), z.literal("")]).optional(),
 
   city: z.string().optional(),
@@ -49,8 +60,17 @@ export const updateClientSchema = z.object({
   type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  phone: z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
-  phone2: z.union([z.string().regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"), z.literal("")]).optional(),
+  phone: z
+    .string()
+    .regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
+  phone2: z
+    .union([
+      z
+        .string()
+        .regex(/^\+\d{1,3}\d{7,12}$/, "Numéro invalide (ex: +213XXXXXXXXX)"),
+      z.literal(""),
+    ])
+    .optional(),
   email: z.union([z.string().email(), z.literal("")]).optional(),
   city: z.string().optional(),
   budgetMin: z.number().optional(),

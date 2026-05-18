@@ -13,12 +13,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "./ui/card";
-import ClientQualificationSelect from "./ClientQualificationButton";
 import ClientAgentSelect from "./ClientAgentSelect";
-import ClientNegotiationStageSelect from "./ClientNegotiationStageButton";
+import ClientQualificationAndNegotiationSelect from "./ClientQualificationAndNegotiationSelect";
 import ClientNotesDialog from "./clients/ClientNotesDialog";
 import ROUTES from "@/constants/routes";
 import type { NegotiationListingOption } from "@/lib/actions/negotiation.action";
+import { formatDate } from "@/lib/utils";
 
 type ClientsTableProps = {
   clients: Client[];
@@ -41,20 +41,44 @@ const TYPE_COLORS: Record<string, "default" | "secondary" | "outline"> = {
   INVESTOR: "secondary",
 };
 
-const NEGOTIATION_LABELS: Record<string, string> = {
+const PIPELINE_STATUS_LABELS: Record<string, string> = {
   NEUTRAL: "Neutre",
+  NEW: "Nouveau",
+  QUALIFIED: "Nouveau",
+  HOT: "Chaud",
+  COLD: "Froid",
+  NO_RESPONSE: "N'a pas répondu",
+  NOT_RELEVANT: "Non pertinent",
+  ARCHIVED: "Archivé",
   IN_NEGOTIATION: "En négociation",
   CLOSED: "Closing",
 };
 
-const NEGOTIATION_VARIANTS: Record<
+const PIPELINE_STATUS_VARIANTS: Record<
   string,
   "default" | "secondary" | "outline"
 > = {
   NEUTRAL: "outline",
+  NEW: "default",
+  QUALIFIED: "default",
+  HOT: "secondary",
+  COLD: "outline",
+  NO_RESPONSE: "secondary",
+  NOT_RELEVANT: "secondary",
+  ARCHIVED: "outline",
   IN_NEGOTIATION: "secondary",
   CLOSED: "default",
 };
+
+function getPipelineStatusKey(client: Client) {
+  if (client.pipelineStage === "IN_NEGOTIATION") {
+    return "IN_NEGOTIATION";
+  }
+  if (client.pipelineStage === "CLOSED") {
+    return "CLOSED";
+  }
+  return client.qualificationStatus ?? "NEUTRAL";
+}
 
 export default function ClientsTable({
   clients,
@@ -64,7 +88,12 @@ export default function ClientsTable({
 }: ClientsTableProps) {
   const canAssignAgent =
     userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
-  const canUseNegotiationStage = userRole !== "ADMIN" && userRole !== "MANAGER";
+
+  const canQualifyClient =
+    userRole === "ADMIN" ||
+    userRole === "MANAGER" ||
+    userRole === "DEVELOPER" ||
+    userRole === "AGENT";
 
   return (
     <Card>
@@ -77,10 +106,9 @@ export default function ClientsTable({
               <TableHead>Type</TableHead>
               {/* <TableHead>Ville</TableHead> */}
               <TableHead>Contact</TableHead>
-              {/* <TableHead>Créé le</TableHead> */}
+              <TableHead>Créé le</TableHead>
               {canAssignAgent && <TableHead>Agent</TableHead>}
-              <TableHead>Qualification</TableHead>
-              <TableHead>Négociation</TableHead>
+              <TableHead>Pipeline status</TableHead>
               <TableHead>C.R.</TableHead>
               <TableHead>Suivi</TableHead>
             </TableRow>
@@ -130,9 +158,9 @@ export default function ClientsTable({
                 </TableCell>
 
                 {/* Created at */}
-                {/* <TableCell className="text-muted-foreground text-sm">
+                <TableCell className="text-muted-foreground text-sm">
                   {formatDate(client.createdAt)}
-                </TableCell> */}
+                </TableCell>
 
                 {/* Agent */}
                 {canAssignAgent && (
@@ -145,31 +173,24 @@ export default function ClientsTable({
                   </TableCell>
                 )}
 
-                {/* Qualification */}
+                {/* Pipeline status */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <ClientQualificationSelect
-                    clientId={client._id}
-                    value={client.qualificationStatus}
-                  />
-                </TableCell>
-
-                {/* Negotiation */}
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  {canUseNegotiationStage ? (
-                    <ClientNegotiationStageSelect
+                  {canQualifyClient ? (
+                    <ClientQualificationAndNegotiationSelect
                       clientId={client._id}
+                      qualificationStatus={client.qualificationStatus}
                       pipelineStage={client.pipelineStage}
                       listings={negotiationListings}
                     />
                   ) : (
                     <Badge
                       variant={
-                        NEGOTIATION_VARIANTS[
-                          client.pipelineStage ?? "NEUTRAL"
+                        PIPELINE_STATUS_VARIANTS[
+                          getPipelineStatusKey(client)
                         ] || "outline"
                       }
                     >
-                      {NEGOTIATION_LABELS[client.pipelineStage ?? "NEUTRAL"] ||
+                      {PIPELINE_STATUS_LABELS[getPipelineStatusKey(client)] ||
                         "Neutre"}
                     </Badge>
                   )}

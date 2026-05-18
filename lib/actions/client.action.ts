@@ -164,7 +164,9 @@ export async function createClient(
         {
           $addFields: {
             codeNum: {
-              $toInt: { $arrayElemAt: [{ $split: ["$referenceCode", "-"] }, 1] },
+              $toInt: {
+                $arrayElemAt: [{ $split: ["$referenceCode", "-"] }, 1],
+              },
             },
           },
         },
@@ -179,7 +181,7 @@ export async function createClient(
         client = await Client.create({
           ...validationResult.params,
           referenceCode,
-          qualificationStatus: "NEW",
+          qualificationStatus: "NEUTRAL",
           archived: false,
           createdBy: user.data._id,
           ...(assignedAgent ? { assignedAgent } : { assignedAgent: null }),
@@ -187,8 +189,15 @@ export async function createClient(
         break; // success — exit retry loop
       } catch (err: unknown) {
         // E11000: duplicate referenceCode — retry with fresh aggregate
-        const mongoErr = err as { code?: number; keyPattern?: Record<string, unknown> };
-        if (mongoErr?.code === 11000 && mongoErr?.keyPattern?.referenceCode && attempt < MAX_RETRIES - 1) {
+        const mongoErr = err as {
+          code?: number;
+          keyPattern?: Record<string, unknown>;
+        };
+        if (
+          mongoErr?.code === 11000 &&
+          mongoErr?.keyPattern?.referenceCode &&
+          attempt < MAX_RETRIES - 1
+        ) {
           continue;
         }
         throw err;
@@ -374,15 +383,30 @@ export async function updateClientQualification(
   }
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   if (
-    !["NEW", "QUALIFIED", "HOT", "COLD", "NOT_RELEVANT", "ARCHIVED"].includes(
-      qualificationStatus
-    )
+    ![
+      "NEW",
+      "QUALIFIED",
+      "HOT",
+      "COLD",
+      "NO_RESPONSE",
+      "NOT_RELEVANT",
+      "ARCHIVED",
+      "NEUTRAL",
+    ].includes(qualificationStatus)
   ) {
-    return { success: false, error: { message: "Statut invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "Statut invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -408,39 +432,41 @@ export async function updateClientQualification(
             },
           }
         : qualificationStatus === "COLD"
-        ? {
-            $set: {
-              qualificationStatus,
-              clientTemperature: "COLD",
-              pipelineStage: "FOLLOW_UP",
-              archived: false,
-            },
-          }
-        : qualificationStatus === "NEW"
-        ? {
-            $set: {
-              qualificationStatus,
-              pipelineStage: "LEAD",
-              archived: false,
-            },
-            $unset: { clientTemperature: "" },
-          }
-        : qualificationStatus === "ARCHIVED" ||
-          qualificationStatus === "NOT_RELEVANT"
-        ? {
-            $set: {
-              qualificationStatus,
-              pipelineStage: "ARCHIVED",
-              archived: true,
-            },
-          }
-        : {
-            $set: {
-              qualificationStatus,
-              archived: false,
-            },
-            $unset: { clientTemperature: "" },
-          };
+          ? {
+              $set: {
+                qualificationStatus,
+                clientTemperature: "COLD",
+                pipelineStage: "FOLLOW_UP",
+                archived: false,
+              },
+            }
+          : qualificationStatus === "NEW" ||
+              qualificationStatus === "NEUTRAL" ||
+              qualificationStatus === "NO_RESPONSE"
+            ? {
+                $set: {
+                  qualificationStatus,
+                  pipelineStage: "LEAD",
+                  archived: false,
+                },
+                $unset: { clientTemperature: "" },
+              }
+            : qualificationStatus === "ARCHIVED" ||
+                qualificationStatus === "NOT_RELEVANT"
+              ? {
+                  $set: {
+                    qualificationStatus,
+                    pipelineStage: "ARCHIVED",
+                    archived: true,
+                  },
+                }
+              : {
+                  $set: {
+                    qualificationStatus,
+                    archived: false,
+                  },
+                  $unset: { clientTemperature: "" },
+                };
 
     const client = await Client.findOneAndUpdate(filter, update, { new: true });
 
@@ -616,13 +642,13 @@ export async function updateClient(
       qualificationStatus === "HOT"
         ? { pipelineStage: "ACTIVE_SEARCH", clientTemperature: "HOT" }
         : qualificationStatus === "COLD"
-        ? { pipelineStage: "FOLLOW_UP", clientTemperature: "COLD" }
-        : qualificationStatus === "NEW"
-        ? { pipelineStage: "LEAD" }
-        : qualificationStatus === "ARCHIVED" ||
-          qualificationStatus === "NOT_RELEVANT"
-        ? { pipelineStage: "ARCHIVED" }
-        : {};
+          ? { pipelineStage: "FOLLOW_UP", clientTemperature: "COLD" }
+          : qualificationStatus === "NEW"
+            ? { pipelineStage: "LEAD" }
+            : qualificationStatus === "ARCHIVED" ||
+                qualificationStatus === "NOT_RELEVANT"
+              ? { pipelineStage: "ARCHIVED" }
+              : {};
     const shouldUnsetTemperature =
       qualificationStatus === "NEW" || qualificationStatus === "QUALIFIED";
 
@@ -636,7 +662,9 @@ export async function updateClient(
             qualificationStatus === "ARCHIVED" ||
             qualificationStatus === "NOT_RELEVANT",
         },
-        ...(shouldUnsetTemperature ? { $unset: { clientTemperature: "" } } : {}),
+        ...(shouldUnsetTemperature
+          ? { $unset: { clientTemperature: "" } }
+          : {}),
       },
       { new: true }
     )
@@ -832,7 +860,10 @@ export async function approvePhase1(
 
   const { clientId, phase2AgentId, notes } = validationResult.params;
 
-  if (!Types.ObjectId.isValid(clientId) || !Types.ObjectId.isValid(phase2AgentId)) {
+  if (
+    !Types.ObjectId.isValid(clientId) ||
+    !Types.ObjectId.isValid(phase2AgentId)
+  ) {
     return { success: false, error: { message: "ID invalide" }, status: 400 };
   }
 
@@ -852,7 +883,11 @@ export async function approvePhase1(
     );
 
     if (!client) {
-      return { success: false, error: { message: "Client introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
     }
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -911,7 +946,11 @@ export async function rejectPhase1(
   const { clientId, notes } = validationResult.params;
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -929,7 +968,11 @@ export async function rejectPhase1(
     );
 
     if (!client) {
-      return { success: false, error: { message: "Client introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
     }
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -973,14 +1016,22 @@ export async function approvePhase2(
   const { clientId, temperature, notes } = validationResult.params;
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   try {
     // Verify the caller is the assigned Phase 2 agent (or a manager)
     const existing = await Client.findById(clientId).lean<IClient>();
     if (!existing) {
-      return { success: false, error: { message: "Client introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
     }
 
     const isManager =
@@ -1001,7 +1052,11 @@ export async function approvePhase2(
     // HOT → ACTIVE_SEARCH, WARM/COLD → FOLLOW_UP
     const nextStage = temperature === "HOT" ? "ACTIVE_SEARCH" : "FOLLOW_UP";
     const nextQualification =
-      temperature === "HOT" ? "HOT" : temperature === "COLD" ? "COLD" : "QUALIFIED";
+      temperature === "HOT"
+        ? "HOT"
+        : temperature === "COLD"
+          ? "COLD"
+          : "QUALIFIED";
 
     const client = await Client.findByIdAndUpdate(
       clientId,
@@ -1018,7 +1073,11 @@ export async function approvePhase2(
     );
 
     if (!client) {
-      return { success: false, error: { message: "Client introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
     }
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -1059,13 +1118,21 @@ export async function rejectPhase2(
   const { clientId, notes } = validationResult.params;
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   try {
     const existing = await Client.findById(clientId).lean<IClient>();
     if (!existing) {
-      return { success: false, error: { message: "Client introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
     }
 
     const isManager =
@@ -1097,7 +1164,11 @@ export async function rejectPhase2(
     );
 
     if (!client) {
-      return { success: false, error: { message: "Client introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
     }
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -1119,14 +1190,20 @@ export async function rejectPhase2(
 
 /* ──────────── Pipeline: Submit to Phase 1 Review ──────────── */
 
-export async function submitToPhase1(clientId: string): Promise<ActionResponse> {
+export async function submitToPhase1(
+  clientId: string
+): Promise<ActionResponse> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -1139,7 +1216,11 @@ export async function submitToPhase1(clientId: string): Promise<ActionResponse> 
     );
 
     if (!client) {
-      return { success: false, error: { message: "Client introuvable" }, status: 404 };
+      return {
+        success: false,
+        error: { message: "Client introuvable" },
+        status: 404,
+      };
     }
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -1169,11 +1250,19 @@ export async function setClientPipelineStage(
   }
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   if (!["LEAD", "FOLLOW_UP", "ACTIVE_SEARCH"].includes(stage)) {
-    return { success: false, error: { message: "Phase invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "Phase invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -1221,11 +1310,19 @@ export async function setClientNegotiationStage(
   }
 
   if (!Types.ObjectId.isValid(clientId)) {
-    return { success: false, error: { message: "ID client invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
   }
 
   if (!["NEUTRAL", "IN_NEGOTIATION", "CLOSED"].includes(stage)) {
-    return { success: false, error: { message: "Phase invalide" }, status: 400 };
+    return {
+      success: false,
+      error: { message: "Phase invalide" },
+      status: 400,
+    };
   }
 
   try {
@@ -1250,12 +1347,13 @@ export async function setClientNegotiationStage(
     }
 
     const neutralStage =
-      existing.qualificationStatus === "HOT" || existing.clientTemperature === "HOT"
+      existing.qualificationStatus === "HOT" ||
+      existing.clientTemperature === "HOT"
         ? "ACTIVE_SEARCH"
         : existing.qualificationStatus === "COLD" ||
-          existing.clientTemperature === "COLD"
-        ? "FOLLOW_UP"
-        : "LEAD";
+            existing.clientTemperature === "COLD"
+          ? "FOLLOW_UP"
+          : "LEAD";
 
     const nextStage = stage === "NEUTRAL" ? neutralStage : stage;
 

@@ -170,10 +170,12 @@ interface Client {
   extraNotes?: string;
 
   qualificationStatus:
+    | "NEUTRAL"
     | "NEW"
     | "QUALIFIED"
     | "HOT"
     | "COLD"
+    | "NO_RESPONSE"
     | "NOT_RELEVANT"
     | "ARCHIVED";
   qualificationNotes?: string;

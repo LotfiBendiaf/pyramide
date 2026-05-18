@@ -269,7 +269,7 @@ export default function ClientNegotiationStageSelect({
                 </SelectTrigger>
                 <SelectContent>
                   {listings.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no-listing" disabled>
                       Aucun bien actif disponible
                     </SelectItem>
                   ) : (

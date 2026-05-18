@@ -18,18 +18,17 @@ type Props = {
 };
 
 const DOT_COLORS: Record<ClientQualification, string> = {
+  NEUTRAL: "bg-slate-400",
   NEW: "bg-blue-500",
   QUALIFIED: "bg-green-500",
+  NO_RESPONSE: "bg-yellow-500",
   NOT_RELEVANT: "bg-yellow-500",
   ARCHIVED: "bg-gray-400",
   HOT: "bg-orange-500",
   COLD: "bg-blue-400",
 };
 
-export default function ClientQualificationSelect({
-  clientId,
-  value,
-}: Props) {
+export default function ClientQualificationSelect({ clientId, value }: Props) {
   const router = useRouter();
 
   const handleChange = async (newValue: ClientQualification) => {
