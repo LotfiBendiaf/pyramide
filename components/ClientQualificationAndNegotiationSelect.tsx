@@ -203,7 +203,9 @@ export default function ClientQualificationAndNegotiationSelect({
 
   const handleOpenNegotiation = async () => {
     if (!listingId) {
-      toast.error("Sélectionnez un bien");
+      toast.error("Erreur", {
+        description: "Sélectionnez un bien pour ouvrir la négociation",
+      });
       return;
     }
 
@@ -224,7 +226,11 @@ export default function ClientQualificationAndNegotiationSelect({
       return;
     }
 
-    toast.success("Négociation ouverte");
+    toast.success("Négociation ouverte", {
+      description: `Bien sélectionné: ${
+        listings.find((l) => l.value === listingId)?.label || listingId
+      }`,
+    });
     setDialogOpen(false);
     setListingId("");
     setBlockHours("24");
@@ -324,13 +330,35 @@ export default function ClientQualificationAndNegotiationSelect({
                   <SelectValue placeholder="Sélectionner un bien" />
                 </SelectTrigger>
                 <SelectContent>
-                  {listings.map((listing) => (
-                    <SelectItem key={listing.value} value={listing.value}>
-                      {listing.label}
-                    </SelectItem>
-                  ))}
+                  {listings && listings.length > 0 ? (
+                    listings.map((listing) => (
+                      <SelectItem key={listing.value} value={listing.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{listing.label}</span>
+                          {listing.price && (
+                            <span className="text-xs text-muted-foreground">
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                              }).format(listing.price)}
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      Aucun bien disponible
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
+              {(!listings || listings.length === 0) && (
+                <p className="text-xs text-amber-600">
+                  ⚠️ Aucun bien disponible pour cette négociation. Vérifiez que
+                  vous avez des biens qui ne sont pas archivés ou vendus.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -402,7 +430,12 @@ export default function ClientQualificationAndNegotiationSelect({
             >
               Annuler
             </Button>
-            <Button onClick={handleOpenNegotiation} disabled={loading}>
+            <Button
+              onClick={handleOpenNegotiation}
+              disabled={
+                loading || !listingId || !listings || listings.length === 0
+              }
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

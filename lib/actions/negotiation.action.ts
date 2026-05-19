@@ -37,9 +37,9 @@ export type NegotiationListingOption = {
   address?: string;
 };
 
-export async function fetchNegotiationListingOptions(): Promise<
-  ActionResponse<NegotiationListingOption[]>
-> {
+export async function fetchNegotiationListingOptions(options?: {
+  includeAllStatuses?: boolean;
+}): Promise<ActionResponse<NegotiationListingOption[]>> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
@@ -50,13 +50,24 @@ export async function fetchNegotiationListingOptions(): Promise<
 
     const isAdmin = isElevatedRole(user.data.role);
     const filter = {
-      pipelineStatus: { $in: ["ACTIVE", "PHOTO_VISIT_PENDING"] },
+      pipelineStatus: options?.includeAllStatuses
+        ? { $nin: ["SOLD", "ARCHIVED"] } // Exclude only SOLD and ARCHIVED
+        : {
+            $in: [
+              "DRAFT",
+              "PENDING_VALIDATION",
+              "PHOTO_VISIT_PENDING",
+              "ACTIVE",
+              "UNDER_NEGOTIATION",
+              "CLOSING",
+            ],
+          }, // Default: all negotiable statuses
       archived: { $ne: true },
       ...(isAdmin ? {} : { agent: user.data._id }),
     };
 
     const listings = await Listing.find(filter)
-      .select("referenceCode title propertyType price location")
+      .select("referenceCode title propertyType price location pipelineStatus")
       .sort({ referenceCode: 1 })
       .lean();
 
