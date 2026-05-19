@@ -34,11 +34,13 @@ const TYPE_LABELS: Record<string, string> = {
 
 function ScoreBadge({ score }: { score: number }) {
   const color =
-    score >= 10
+    score >= 8
       ? "bg-green-200 text-green-800 border border-green-300"
-      : score >= 7
+      : score >= 5
         ? "bg-yellow-200 text-yellow-800"
-        : "bg-gray-200 text-gray-700";
+        : score >= 2
+          ? "bg-red-200 text-red-800"
+          : "bg-gray-200 text-gray-700";
   return (
     <span
       className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold ${color}`}
@@ -261,7 +263,9 @@ export default function MatchingView({ clients, listings }: Props) {
                   {matchedListings.map((listing) => (
                     <li key={listing._id}>
                       <Link
-                        href={ROUTES.LISTING_DETAIL_DASHBOARD(listing._id)}
+                        href={ROUTES.LISTING_DETAIL(listing._id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
                       >
                         <ScoreBadge score={listing.matchScore} />

@@ -39,14 +39,15 @@ function getBudgetWindow(client: Client): BudgetWindow | null {
 }
 
 function getPriceScore(price: number, window: BudgetWindow): number {
+  if (window.exactMin == 0) window.exactMin = window.targetBudget * 0.8;
   if (price >= window.exactMin && price <= window.exactMax) {
-    return 3;
+    return 2;
   }
 
   if (price < window.min) {
     return 0;
   } else {
-    return 2;
+    return 1;
   }
 }
 
@@ -85,7 +86,7 @@ function scoreListing(listing: Listing, client: Client): number {
     client.city &&
     listing.location.city.toLowerCase() === client.city.toLowerCase()
   ) {
-    score += 3;
+    score += 2;
   }
 
   if (
@@ -93,7 +94,7 @@ function scoreListing(listing: Listing, client: Client): number {
     listing.propertyType.toLowerCase() ===
       client.wantedPropertyType.toLowerCase()
   ) {
-    score += 5;
+    score += 2;
   }
 
   const price = Number(listing.price);
@@ -108,7 +109,7 @@ function scoreListing(listing: Listing, client: Client): number {
     client.rooms !== undefined &&
     listing.features.bedrooms === client.rooms
   ) {
-    score += 4;
+    score += 3;
   }
 
   return score;
@@ -130,7 +131,7 @@ function scoreClient(
     client.city &&
     listing.location.city.toLowerCase() === client.city.toLowerCase()
   ) {
-    score += 3;
+    score += 2;
   }
 
   if (
@@ -138,7 +139,7 @@ function scoreClient(
     listing.propertyType.toLowerCase() ===
       client.wantedPropertyType.toLowerCase()
   ) {
-    score += 5;
+    score += 2;
   }
 
   const price = Number(listing.price);
@@ -153,7 +154,7 @@ function scoreClient(
     client.rooms !== undefined &&
     listing.features.bedrooms === client.rooms
   ) {
-    score += 4;
+    score += 3;
   }
 
   return score;
