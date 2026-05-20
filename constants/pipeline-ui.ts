@@ -5,7 +5,6 @@ import {
   Handshake,
   Trophy,
   BadgeCheck,
-  Archive,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +26,17 @@ export interface PipelineStageUI {
 }
 
 export const PIPELINE_STAGE_UI: PipelineStageUI[] = [
+  {
+    value: "QUALIFIED",
+    label: "Clients qualifiés",
+    shortLabel: "Qualifiés",
+    icon: BadgeCheck,
+    pill: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+    pillActive: "bg-emerald-600 text-white border-emerald-600",
+    topBorder: "border-t-emerald-500",
+    iconColor: "text-emerald-500",
+    countColor: "text-emerald-700",
+  },
   {
     value: "LEAD",
     label: "Nouveau client",
@@ -82,31 +92,24 @@ export const PIPELINE_STAGE_UI: PipelineStageUI[] = [
     iconColor: "text-green-500",
     countColor: "text-green-700",
   },
-  {
-    value: "QUALIFIED",
-    label: "Clients qualifiés",
-    shortLabel: "Qualifiés",
-    icon: BadgeCheck,
-    pill: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
-    pillActive: "bg-emerald-600 text-white border-emerald-600",
-    topBorder: "border-t-emerald-500",
-    iconColor: "text-emerald-500",
-    countColor: "text-emerald-700",
-  },
-  {
-    value: "ARCHIVED",
-    label: "Archivé",
-    shortLabel: "Archivé",
-    icon: Archive,
-    pill: "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200",
-    pillActive: "bg-gray-500 text-white border-gray-500",
-    topBorder: "border-t-gray-400",
-    iconColor: "text-gray-400",
-    countColor: "text-gray-500",
-  },
+  // {
+  //   value: "ARCHIVED",
+  //   label: "Archivé",
+  //   shortLabel: "Archivé",
+  //   icon: Archive,
+  //   pill: "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200",
+  //   pillActive: "bg-gray-500 text-white border-gray-500",
+  //   topBorder: "border-t-gray-400",
+  //   iconColor: "text-gray-400",
+  //   countColor: "text-gray-500",
+  // },
 ];
 
-export const MANUAL_PIPELINE_STAGES = ["LEAD", "FOLLOW_UP", "ACTIVE_SEARCH"] as const;
+export const MANUAL_PIPELINE_STAGES = [
+  "LEAD",
+  "FOLLOW_UP",
+  "ACTIVE_SEARCH",
+] as const;
 
 export function getPipelineStageUI(value: string): PipelineStageUI | undefined {
   return PIPELINE_STAGE_UI.find((s) => s.value === value);

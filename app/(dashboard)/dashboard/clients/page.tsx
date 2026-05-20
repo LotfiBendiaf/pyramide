@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { SectionHeader } from "@/components/SectionHeader";
-import { fetchClients, fetchClientPipelineCounts } from "@/lib/actions/client.action";
+import {
+  fetchClients,
+  fetchClientPipelineCounts,
+} from "@/lib/actions/client.action";
 import { fetchNegotiationListingOptions } from "@/lib/actions/negotiation.action";
 import { fetchTeamMembers } from "@/lib/actions/users.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
@@ -49,7 +52,10 @@ async function ClientsContent({
     if (searchParams.agentId && searchParams.agentId !== "__all__") {
       filterParams.agentId = searchParams.agentId;
     }
-    if (searchParams.qualification && searchParams.qualification !== "__all__") {
+    if (
+      searchParams.qualification &&
+      searchParams.qualification !== "__all__"
+    ) {
       filterParams.qualificationStatus =
         searchParams.qualification as ClientFilters["qualificationStatus"];
     }

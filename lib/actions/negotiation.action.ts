@@ -48,22 +48,18 @@ export async function fetchNegotiationListingOptions(options?: {
   try {
     await dbConnect();
 
-    const isAdmin = isElevatedRole(user.data.role);
-    const filter = {
-      pipelineStatus: options?.includeAllStatuses
-        ? { $nin: ["SOLD", "ARCHIVED"] } // Exclude only SOLD and ARCHIVED
-        : {
-            $in: [
-              "DRAFT",
-              "PENDING_VALIDATION",
-              "PHOTO_VISIT_PENDING",
-              "ACTIVE",
-              "UNDER_NEGOTIATION",
-              "CLOSING",
-            ],
-          }, // Default: all negotiable statuses
+    const now = new Date();
+    const pipelineStatusFilter = options?.includeAllStatuses
+      ? { $nin: ["SOLD", "ARCHIVED"] }
+      : { $in: ["ACTIVE", "PHOTO_VISIT_PENDING"] };
+
+    const filter: Record<string, unknown> = {
+      pipelineStatus: pipelineStatusFilter,
       archived: { $ne: true },
-      ...(isAdmin ? {} : { agent: user.data._id }),
+      $or: [
+        { blockedUntil: { $exists: false } },
+        { blockedUntil: { $lte: now } },
+      ],
     };
 
     const listings = await Listing.find(filter)

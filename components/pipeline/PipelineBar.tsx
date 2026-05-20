@@ -42,7 +42,7 @@ export function PipelineBar({ counts }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
       {/* "Tous" card */}
       <Link
         href={stageHref(undefined)}
@@ -90,20 +90,28 @@ export function PipelineBar({ counts }: Props) {
               isActive
                 ? `${stage.topBorder} bg-muted/40 border-border`
                 : count === 0
-                ? `${stage.topBorder} border-border bg-muted/10 opacity-50 hover:opacity-70`
-                : `${stage.topBorder} border-border bg-card hover:bg-muted/30`
+                  ? `${stage.topBorder} border-border bg-muted/10 opacity-50 hover:opacity-70`
+                  : `${stage.topBorder} border-border bg-card hover:bg-muted/30`
             )}
           >
             <Icon
               className={cn(
                 "h-5 w-5",
-                isActive ? stage.iconColor : count === 0 ? "text-muted-foreground/50" : stage.iconColor
+                isActive
+                  ? stage.iconColor
+                  : count === 0
+                    ? "text-muted-foreground/50"
+                    : stage.iconColor
               )}
             />
             <span
               className={cn(
                 "text-2xl font-bold leading-none",
-                isActive ? stage.countColor : count === 0 ? "text-muted-foreground/40" : stage.countColor
+                isActive
+                  ? stage.countColor
+                  : count === 0
+                    ? "text-muted-foreground/40"
+                    : stage.countColor
               )}
             >
               {count}

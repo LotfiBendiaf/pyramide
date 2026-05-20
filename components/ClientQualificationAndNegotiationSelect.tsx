@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -149,6 +150,7 @@ export default function ClientQualificationAndNegotiationSelect({
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [listingId, setListingId] = useState("");
+  const [listingSearch, setListingSearch] = useState("");
   const [blockHours, setBlockHours] = useState<"24" | "48">("24");
   const [notes, setNotes] = useState("");
   const [uploadingDocument, setUploadingDocument] = useState(false);
@@ -157,6 +159,14 @@ export default function ClientQualificationAndNegotiationSelect({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentValue = getCurrentValue(qualificationStatus, pipelineStage);
+
+  const filteredListings = listings.filter((listing) => {
+    const query = listingSearch.trim().toLowerCase();
+    if (!query) return true;
+    return [listing.referenceCode, listing.label]
+      .filter(Boolean)
+      .some((field) => field?.toLowerCase().includes(query));
+  });
 
   const handleChange = async (newValue: PipelineStatusOption) => {
     // If selecting IN_NEGOTIATION, show dialog
@@ -330,8 +340,17 @@ export default function ClientQualificationAndNegotiationSelect({
                   <SelectValue placeholder="Sélectionner un bien" />
                 </SelectTrigger>
                 <SelectContent>
-                  {listings && listings.length > 0 ? (
-                    listings.map((listing) => (
+                  <div className="p-3">
+                    <Input
+                      id="listingSearch"
+                      placeholder="Référence ou titre du bien"
+                      value={listingSearch}
+                      onChange={(e) => setListingSearch(e.target.value)}
+                      className="mb-2"
+                    />
+                  </div>
+                  {filteredListings.length > 0 ? (
+                    filteredListings.map((listing) => (
                       <SelectItem key={listing.value} value={listing.value}>
                         <div className="flex flex-col">
                           <span className="font-medium">{listing.label}</span>
@@ -348,7 +367,7 @@ export default function ClientQualificationAndNegotiationSelect({
                     ))
                   ) : (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Aucun bien disponible
+                      Aucun bien correspondant
                     </div>
                   )}
                 </SelectContent>
