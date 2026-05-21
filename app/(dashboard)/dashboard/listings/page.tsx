@@ -38,7 +38,9 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
 
   // Annonces validées: always filter isValidated=true and default sort by referenceCode asc
   const sortBy = params?.sortBy ?? (isActiveView ? "referenceCode" : undefined);
-  const sortOrder = (params?.sortOrder as "asc" | "desc" | undefined) ?? (isActiveView ? "desc" : undefined);
+  const sortOrder =
+    (params?.sortOrder as "asc" | "desc" | undefined) ??
+    (isActiveView ? "desc" : undefined);
 
   const result = await fetchListings({
     search: params?.search,
@@ -74,8 +76,8 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
         {isArchiveView
           ? "Aucune annonce archivée."
           : isNeutreView
-          ? "Aucune nouvelle annonce en attente."
-          : "Aucune annonce trouvée."}
+            ? "Aucune nouvelle annonce en attente."
+            : "Aucune annonce trouvée."}
       </div>
     );
   }
@@ -108,7 +110,7 @@ export default async function ListingsPage({
   return (
     <section className="space-y-10">
       <SectionHeader
-        title="Biens à vendre à Oran"
+        title="Biens à vendre ou à louer"
         buttonLabel="Ajouter un bien"
         buttonHref={ROUTES.LISTING_ADD}
       />
