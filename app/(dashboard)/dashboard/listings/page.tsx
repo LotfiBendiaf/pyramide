@@ -132,7 +132,7 @@ export default async function ListingsPage({
           href={`${ROUTES.LISTINGS_DASHBOARD}?view=archives`}
           className={tabClass(isArchiveView)}
         >
-          Archives
+          Annonces archivées
         </Link>
       </div>
 
