@@ -305,14 +305,14 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="cursor-pointer w-full bg-gradient-to-r from-sidebar-accent to-sidebar-accent/50 hover:from-sidebar-accent/80 hover:to-sidebar-accent/30 border border-sidebar-border rounded-xl p-3 transition-all duration-200 hover:shadow-md"
+                  className="group h-auto min-h-16 w-full cursor-pointer rounded-xl border border-sidebar-border/80 bg-sidebar-accent/60 p-2.5 shadow-sm transition-all duration-200 hover:border-primary/25 hover:bg-sidebar-accent hover:shadow-md data-[state=open]:border-primary/30 data-[state=open]:bg-sidebar-accent"
                 >
-                  <Avatar className="h-9 w-9 rounded-lg border-2 border-primary/20 shadow-sm">
+                  <Avatar className="h-10 w-10 rounded-xl border border-primary/20 bg-background shadow-sm ring-2 ring-background">
                     <AvatarImage
                       src={user?.image || ""}
                       alt={user?.name || ""}
                     />
-                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold text-sm">
+                    <AvatarFallback className="rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
                       {user?.name
                         ?.split(" ")
                         .map((n) => n[0])
@@ -321,35 +321,35 @@ export function AppSidebar() {
                         .slice(0, 2) || "?"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col flex-1 text-left text-sm leading-tight ml-2 overflow-hidden">
-                    <span className="font-semibold truncate">
+                  <div className="ml-2 flex min-w-0 flex-1 flex-col gap-1 text-left leading-tight">
+                    <span className="truncate text-sm font-semibold text-sidebar-foreground">
                       {status === "loading" ? "Chargement..." : user?.name}
                     </span>
                     {user?.role && (
-                      <span className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                        <BadgeCheck className="h-3 w-3 text-primary" />
+                      <span className="inline-flex w-fit max-w-full items-center gap-1 rounded-full border border-primary/15 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        <BadgeCheck className="h-3 w-3 shrink-0" />
                         {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
                       </span>
                     )}
                   </div>
-                  <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 group-hover:text-sidebar-foreground" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent
                 side="top"
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-xl p-1.5"
                 align="start"
                 sideOffset={8}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-3 px-3 py-3 text-left">
-                    <Avatar className="h-10 w-10 rounded-lg border-2 border-primary/20">
+                  <div className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-3 text-left">
+                    <Avatar className="h-11 w-11 rounded-xl border border-primary/20 bg-background shadow-sm">
                       <AvatarImage
                         src={user?.image || ""}
                         alt={user?.name || ""}
                       />
-                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold">
+                      <AvatarFallback className="rounded-xl bg-primary text-primary-foreground font-semibold">
                         {user?.name
                           ?.split(" ")
                           .map((n) => n[0])
@@ -358,11 +358,19 @@ export function AppSidebar() {
                           .slice(0, 2) || "?"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col space-y-0.5 leading-none">
-                      <p className="font-semibold text-sm">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[180px]">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <p className="truncate text-sm font-semibold leading-tight">
+                        {user?.name}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
                         {user?.email}
                       </p>
+                      {user?.role && (
+                        <span className="mt-0.5 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                          <BadgeCheck className="h-3 w-3" />
+                          {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </DropdownMenuLabel>
@@ -372,11 +380,12 @@ export function AppSidebar() {
                   <span>Paramètres</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <div className="mx-auto">
-                    <LogoutButton />
-                  </div>
-                </DropdownMenuItem>
+                <div className="px-1 py-1">
+                  <LogoutButton
+                    variant="ghost"
+                    className="h-9 w-full justify-start rounded-lg px-3 text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/20"
+                  />
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
