@@ -16,6 +16,10 @@ type ListingsSectionProps = {
     status?: string;
     minPrice?: string;
     maxPrice?: string;
+    rentMinPrice?: string;
+    rentMaxPrice?: string;
+    saleMinPrice?: string;
+    saleMaxPrice?: string;
     bedrooms?: string;
     minScore?: number;
     propertyType?: string;
@@ -48,6 +52,18 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     status: params?.status as "En Vente" | "En Location" | undefined,
     minPrice: params?.minPrice ? Number(params.minPrice) : undefined,
     maxPrice: params?.maxPrice ? Number(params.maxPrice) : undefined,
+    rentMinPrice: params?.rentMinPrice
+      ? Number(params.rentMinPrice)
+      : undefined,
+    rentMaxPrice: params?.rentMaxPrice
+      ? Number(params.rentMaxPrice)
+      : undefined,
+    saleMinPrice: params?.saleMinPrice
+      ? Number(params.saleMinPrice)
+      : undefined,
+    saleMaxPrice: params?.saleMaxPrice
+      ? Number(params.saleMaxPrice)
+      : undefined,
     minScore: params?.minScore ? Number(params.minScore) : undefined,
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
     propertyType: params?.propertyType,

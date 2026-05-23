@@ -10,10 +10,15 @@ import { PaginationControls } from "@/components/PaginationControls";
 const LIMIT = 8;
 
 type SearchParams = {
+  search?: string;
   city?: string;
   status?: string;
   minPrice?: string;
   maxPrice?: string;
+  rentMinPrice?: string;
+  rentMaxPrice?: string;
+  saleMinPrice?: string;
+  saleMaxPrice?: string;
   bedrooms?: string;
   propertyType?: string;
   page?: string;
@@ -31,6 +36,7 @@ async function ListingsContent({
   const page = Math.max(1, Number(searchParams?.page) || 1);
 
   const result = await fetchListings({
+    search: searchParams?.search,
     city: searchParams?.city,
     status: searchParams?.status as "En Vente" | "En Location",
     minPrice: searchParams?.minPrice
@@ -38,6 +44,18 @@ async function ListingsContent({
       : undefined,
     maxPrice: searchParams?.maxPrice
       ? Number(searchParams.maxPrice)
+      : undefined,
+    rentMinPrice: searchParams?.rentMinPrice
+      ? Number(searchParams.rentMinPrice)
+      : undefined,
+    rentMaxPrice: searchParams?.rentMaxPrice
+      ? Number(searchParams.rentMaxPrice)
+      : undefined,
+    saleMinPrice: searchParams?.saleMinPrice
+      ? Number(searchParams.saleMinPrice)
+      : undefined,
+    saleMaxPrice: searchParams?.saleMaxPrice
+      ? Number(searchParams.saleMaxPrice)
       : undefined,
     bedrooms: searchParams?.bedrooms
       ? Number(searchParams.bedrooms)
@@ -110,8 +128,8 @@ export default async function ListingsPage({
         </div>
 
         <Suspense fallback={<ListingsSkeleton />}>
-          <div className="mt-8">
-            <SearchFilter variant="inline" className="mb-8" />
+          <div className="mt-8 space-y-4">
+            <SearchFilter />
             <ListingsContent searchParams={params} />
           </div>
         </Suspense>

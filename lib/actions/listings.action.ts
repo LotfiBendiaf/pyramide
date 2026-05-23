@@ -218,6 +218,10 @@ interface FetchListingsParams {
   propertyType?: string;
   minPrice?: number;
   maxPrice?: number;
+  rentMinPrice?: number;
+  rentMaxPrice?: number;
+  saleMinPrice?: number;
+  saleMaxPrice?: number;
   bedrooms?: number;
   limit?: number;
   page?: number;
@@ -227,6 +231,20 @@ interface FetchListingsParams {
   referenceCodeSearch?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+}
+
+type PriceFilter = {
+  $gte?: number;
+  $lte?: number;
+};
+
+function buildPriceFilter(minPrice?: number, maxPrice?: number): PriceFilter {
+  const price: PriceFilter = {};
+
+  if (minPrice !== undefined) price.$gte = minPrice;
+  if (maxPrice !== undefined) price.$lte = maxPrice;
+
+  return price;
 }
 
 export async function fetchListings(
@@ -242,6 +260,10 @@ export async function fetchListings(
       propertyType,
       minPrice,
       maxPrice,
+      rentMinPrice,
+      rentMaxPrice,
+      saleMinPrice,
+      saleMaxPrice,
       bedrooms,
       limit,
       page = 1,
@@ -256,6 +278,8 @@ export async function fetchListings(
     const skip = limit ? (page - 1) * limit : 0;
 
     const query: FilterQuery<Listing> = {};
+
+    await dbConnect();
 
     if (isPublished !== undefined) {
       query.isPublished = isPublished;
@@ -287,7 +311,48 @@ export async function fetchListings(
       query["features.bedrooms"] = bedrooms;
     }
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
+    const hasLegacyPriceFilter =
+      minPrice !== undefined || maxPrice !== undefined;
+    const hasRentPriceFilter =
+      rentMinPrice !== undefined || rentMaxPrice !== undefined;
+    const hasSalePriceFilter =
+      saleMinPrice !== undefined || saleMaxPrice !== undefined;
+
+    if (
+      status === "En Location" &&
+      (hasRentPriceFilter || hasLegacyPriceFilter)
+    ) {
+      const effectiveMinPrice = rentMinPrice ?? minPrice;
+      const effectiveMaxPrice = rentMaxPrice ?? maxPrice;
+
+      query.price = buildPriceFilter(effectiveMinPrice, effectiveMaxPrice);
+    } else if (
+      status === "En Vente" &&
+      (hasSalePriceFilter || hasLegacyPriceFilter)
+    ) {
+      const effectiveMinPrice = saleMinPrice ?? minPrice;
+      const effectiveMaxPrice = saleMaxPrice ?? maxPrice;
+
+      query.price = buildPriceFilter(effectiveMinPrice, effectiveMaxPrice);
+    } else if (!status && (hasRentPriceFilter || hasSalePriceFilter)) {
+      const priceStatusClauses: FilterQuery<Listing>[] = [];
+
+      if (hasRentPriceFilter) {
+        const price = buildPriceFilter(rentMinPrice, rentMaxPrice);
+
+        priceStatusClauses.push({ status: "En Location", price });
+      }
+
+      if (hasSalePriceFilter) {
+        const price = buildPriceFilter(saleMinPrice, saleMaxPrice);
+
+        priceStatusClauses.push({ status: "En Vente", price });
+      }
+
+      if (priceStatusClauses.length > 0) {
+        query.$and = [...(query.$and ?? []), { $or: priceStatusClauses }];
+      }
+    } else if (hasLegacyPriceFilter) {
       query.price = {};
       if (minPrice !== undefined) query.price.$gte = minPrice;
       if (maxPrice !== undefined) query.price.$lte = maxPrice;
@@ -323,8 +388,6 @@ export async function fetchListings(
       const escaped = referenceCodeSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       query.referenceCode = { $regex: escaped, $options: "i" };
     }
-
-    await dbConnect();
 
     // 2. Fetch listings and total count in parallel
     const sortField = sortBy || "createdAt";
