@@ -70,6 +70,8 @@ export interface IClient {
   assignedAgent?: Schema.Types.ObjectId;
 
   archived: boolean;
+  archivedAt?: Date;
+  archiveReason?: string;
 
   createdAt: Date;
   updatedAt: Date;
@@ -166,6 +168,8 @@ const clientSchema = new Schema<IClient>(
     },
 
     archived: { type: Boolean, default: false },
+    archivedAt: Date,
+    archiveReason: String,
   },
   { timestamps: true }
 );

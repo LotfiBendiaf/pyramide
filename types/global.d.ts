@@ -191,6 +191,8 @@ interface Client {
   assignedAgent?: Schema.Types.ObjectId;
 
   archived: boolean;
+  archivedAt?: Date;
+  archiveReason?: string;
 
   createdAt: Date;
   updatedAt: Date;

@@ -375,7 +375,8 @@ export async function qualifyClient(
 
 export async function updateClientQualification(
   clientId: string,
-  qualificationStatus: ClientQualification
+  qualificationStatus: ClientQualification,
+  archiveReason?: string
 ): Promise<ActionResponse> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
@@ -409,6 +410,18 @@ export async function updateClientQualification(
     };
   }
 
+  const trimmedArchiveReason = archiveReason?.trim();
+  if (
+    qualificationStatus === "ARCHIVED" &&
+    (!trimmedArchiveReason || trimmedArchiveReason.length < 5)
+  ) {
+    return {
+      success: false,
+      error: { message: "La raison doit contenir au moins 5 caractères" },
+      status: 400,
+    };
+  }
+
   try {
     await dbConnect();
 
@@ -430,6 +443,7 @@ export async function updateClientQualification(
               pipelineStage: "ACTIVE_SEARCH",
               archived: false,
             },
+            $unset: { archiveReason: "", archivedAt: "" },
           }
         : qualificationStatus === "COLD"
           ? {
@@ -439,6 +453,7 @@ export async function updateClientQualification(
                 pipelineStage: "FOLLOW_UP",
                 archived: false,
               },
+              $unset: { archiveReason: "", archivedAt: "" },
             }
           : qualificationStatus === "NEW" ||
               qualificationStatus === "NEUTRAL" ||
@@ -449,7 +464,11 @@ export async function updateClientQualification(
                   pipelineStage: "LEAD",
                   archived: false,
                 },
-                $unset: { clientTemperature: "" },
+                $unset: {
+                  clientTemperature: "",
+                  archiveReason: "",
+                  archivedAt: "",
+                },
               }
             : qualificationStatus === "ARCHIVED" ||
                 qualificationStatus === "NOT_RELEVANT"
@@ -458,14 +477,27 @@ export async function updateClientQualification(
                     qualificationStatus,
                     pipelineStage: "ARCHIVED",
                     archived: true,
+                    ...(qualificationStatus === "ARCHIVED"
+                      ? {
+                          archivedAt: new Date(),
+                          archiveReason: trimmedArchiveReason,
+                        }
+                      : {}),
                   },
+                  ...(qualificationStatus === "NOT_RELEVANT"
+                    ? { $unset: { archiveReason: "", archivedAt: "" } }
+                    : {}),
                 }
               : {
                   $set: {
                     qualificationStatus,
                     archived: false,
                   },
-                  $unset: { clientTemperature: "" },
+                  $unset: {
+                    clientTemperature: "",
+                    archiveReason: "",
+                    archivedAt: "",
+                  },
                 };
 
     const client = await Client.findOneAndUpdate(filter, update, { new: true });
@@ -741,7 +773,10 @@ export async function updateClientNotes(
 
 /* -------------------------------- Archive / Restore -------------------------------- */
 
-export async function archiveClient(clientId: string): Promise<ActionResponse> {
+export async function archiveClient(
+  clientId: string,
+  archiveReason: string
+): Promise<ActionResponse> {
   const user = await getUserBySessionEmail();
 
   if (!user?.data) {
@@ -761,11 +796,23 @@ export async function archiveClient(clientId: string): Promise<ActionResponse> {
       };
     }
 
+    const trimmedArchiveReason = archiveReason.trim();
+    if (trimmedArchiveReason.length < 5) {
+      return {
+        success: false,
+        error: { message: "La raison doit contenir au moins 5 caractères" },
+        status: 400,
+      };
+    }
+
     await dbConnect();
 
     const client = await Client.findByIdAndUpdate(clientId, {
       archived: true,
+      archivedAt: new Date(),
+      archiveReason: trimmedArchiveReason,
       qualificationStatus: "ARCHIVED",
+      pipelineStage: "ARCHIVED",
     });
 
     if (!client) {
@@ -807,9 +854,12 @@ export async function restoreClient(clientId: string): Promise<ActionResponse> {
     await dbConnect();
 
     const client = await Client.findByIdAndUpdate(clientId, {
-      archived: false,
-      qualificationStatus: "NEW",
-      pipelineStage: "LEAD",
+      $set: {
+        archived: false,
+        qualificationStatus: "NEW",
+        pipelineStage: "LEAD",
+      },
+      $unset: { archiveReason: 1, archivedAt: 1 },
     });
 
     if (!client) {

@@ -150,6 +150,8 @@ export default function ClientQualificationAndNegotiationSelect({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [archiveReason, setArchiveReason] = useState("");
   const [listingId, setListingId] = useState("");
   const [listingSearch, setListingSearch] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
@@ -162,6 +164,7 @@ export default function ClientQualificationAndNegotiationSelect({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentValue = getCurrentValue(qualificationStatus, pipelineStage);
+  const archiveReasonId = `archiveReason-${clientId}`;
 
   const filteredListings = listings.filter((listing) => {
     const query = listingSearch.trim().toLowerCase();
@@ -175,6 +178,11 @@ export default function ClientQualificationAndNegotiationSelect({
     // If selecting IN_NEGOTIATION, show dialog
     if (newValue === "IN_NEGOTIATION" && currentValue !== "IN_NEGOTIATION") {
       setDialogOpen(true);
+      return;
+    }
+
+    if (newValue === "ARCHIVED" && currentValue !== "ARCHIVED") {
+      setArchiveDialogOpen(true);
       return;
     }
 
@@ -212,6 +220,36 @@ export default function ClientQualificationAndNegotiationSelect({
       toast.success("Statut mis à jour");
       router.refresh();
     }
+  };
+
+  const handleArchiveClient = async () => {
+    const trimmedReason = archiveReason.trim();
+    if (trimmedReason.length < 5) {
+      toast.error("Raison requise", {
+        description: "La raison doit contenir au moins 5 caractères.",
+      });
+      return;
+    }
+
+    setLoading(true);
+    const result = await updateClientQualification(
+      clientId,
+      "ARCHIVED",
+      trimmedReason
+    );
+    setLoading(false);
+
+    if (!result.success) {
+      toast.error("Erreur", {
+        description: result.error?.message as string,
+      });
+      return;
+    }
+
+    toast.success("Client archivé");
+    setArchiveDialogOpen(false);
+    setArchiveReason("");
+    router.refresh();
   };
 
   const handleOpenNegotiation = async () => {
@@ -518,6 +556,60 @@ export default function ClientQualificationAndNegotiationSelect({
                 </>
               ) : (
                 "Ouvrir la négociation"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={archiveDialogOpen}
+        onOpenChange={(open) => {
+          setArchiveDialogOpen(open);
+          if (!open) setArchiveReason("");
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Archiver le client</DialogTitle>
+            <DialogDescription>
+              Indiquez la raison de l&apos;archivage. Le client ne sera plus
+              visible dans la liste active.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor={archiveReasonId}>Raison d&apos;archivage</Label>
+            <Textarea
+              id={archiveReasonId}
+              value={archiveReason}
+              onChange={(e) => setArchiveReason(e.target.value)}
+              placeholder="Ex: demande non pertinente, client injoignable, dossier abandonné..."
+              className="min-h-28"
+              disabled={loading}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setArchiveDialogOpen(false)}
+              disabled={loading}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleArchiveClient}
+              disabled={loading || archiveReason.trim().length < 5}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Archivage...
+                </>
+              ) : (
+                "Archiver"
               )}
             </Button>
           </DialogFooter>

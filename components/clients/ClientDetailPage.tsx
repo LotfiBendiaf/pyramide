@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -64,15 +66,25 @@ export default function ClientDetailPage({
 }: ClientDetailPageProps) {
   const router = useRouter();
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveReason, setArchiveReason] = useState("");
   const [isWorking, setIsWorking] = useState(false);
 
   const qualificationLabel =
     CLIENT_QUALIFICATIONS.find((q) => q.value === client.qualificationStatus)
       ?.label ?? client.qualificationStatus;
+  const archiveReasonId = `archiveReason-${client._id}`;
 
   const handleArchive = async () => {
+    const trimmedReason = archiveReason.trim();
+    if (trimmedReason.length < 5) {
+      toast.error("Raison requise", {
+        description: "La raison doit contenir au moins 5 caractères.",
+      });
+      return;
+    }
+
     setIsWorking(true);
-    const result = await archiveClient(client._id);
+    const result = await archiveClient(client._id, trimmedReason);
     setIsWorking(false);
 
     if (!result.success) {
@@ -84,6 +96,7 @@ export default function ClientDetailPage({
       description: `${client.firstName} ${client.lastName} a été archivé.`,
     });
     setArchiveOpen(false);
+    setArchiveReason("");
     router.push(ROUTES.CLIENTS_DASHBOARD);
   };
 
@@ -250,7 +263,13 @@ export default function ClientDetailPage({
       </Card>
 
       {/* Archive confirmation dialog */}
-      <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+      <Dialog
+        open={archiveOpen}
+        onOpenChange={(open) => {
+          setArchiveOpen(open);
+          if (!open) setArchiveReason("");
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Archiver le client</DialogTitle>
@@ -263,14 +282,27 @@ export default function ClientDetailPage({
               dans le système.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor={archiveReasonId}>Raison d&apos;archivage</Label>
+            <Textarea
+              id={archiveReasonId}
+              value={archiveReason}
+              onChange={(e) => setArchiveReason(e.target.value)}
+              placeholder="Ex: demande non pertinente, client injoignable, dossier abandonné..."
+              className="min-h-28"
+              disabled={isWorking}
+            />
+          </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Annuler</Button>
+              <Button variant="outline" disabled={isWorking}>
+                Annuler
+              </Button>
             </DialogClose>
             <Button
               variant="destructive"
               onClick={handleArchive}
-              disabled={isWorking}
+              disabled={isWorking || archiveReason.trim().length < 5}
             >
               {isWorking ? "En cours…" : "Archiver"}
             </Button>
