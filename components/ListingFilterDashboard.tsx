@@ -337,80 +337,84 @@ export default function ListingFilterDashboard() {
                   );
                 })}
               </div>
-          {/* <Input
-            type="number"
-            min={0}
-            max={10}
-            step={1}
-            placeholder="Note min /10"
-            value={minScore}
-            onChange={(e) => setMinScore(e.target.value)}
-          /> */}
+              {/* <Input
+                type="number"
+                min={0}
+                max={10}
+                step={1}
+                placeholder="Note min /10"
+                value={minScore}
+                onChange={(e) => setMinScore(e.target.value)}
+              /> */}
             </div>
-        {/* <Select value={idealBuyer} onValueChange={setIdealBuyer}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Acheteur idéal" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Famille">Famille</SelectItem>
-            <SelectItem value="Investisseur">Investisseur</SelectItem>
-            <SelectItem value="Jeune couple">Jeune couple</SelectItem>
-            <SelectItem value="Commercial">Usage commercial</SelectItem>
-          </SelectContent>
-        </Select> */}
-        {/* <Button
-          type="button"
-          variant={evaluatedOnly ? "default" : "outline"}
-          onClick={() => setEvaluatedOnly(!evaluatedOnly)}
-        >
-          Biens évalués
-        </Button> */}
-        {/* <Button
-          type="button"
-          variant={validatedOnly ? "default" : "outline"}
-          onClick={() => setValidatedOnly(!validatedOnly)}
-        >
-          Validés
-        </Button> */}
+            {/* <Select value={idealBuyer} onValueChange={setIdealBuyer}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Acheteur idéal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Famille">Famille</SelectItem>
+                <SelectItem value="Investisseur">Investisseur</SelectItem>
+                <SelectItem value="Jeune couple">Jeune couple</SelectItem>
+                <SelectItem value="Commercial">Usage commercial</SelectItem>
+              </SelectContent>
+            </Select> */}
+            {/* <Button
+              type="button"
+              variant={evaluatedOnly ? "default" : "outline"}
+              onClick={() => setEvaluatedOnly(!evaluatedOnly)}
+            >
+              Biens évalués
+            </Button> */}
+            {/* <Button
+              type="button"
+              variant={validatedOnly ? "default" : "outline"}
+              onClick={() => setValidatedOnly(!validatedOnly)}
+            >
+              Validés
+            </Button> */}
             <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-          {/* Sale price */}
-          <div className="min-w-0 space-y-2">
-            <p className="text-xs font-medium">Prix vente / achat</p>
-            <Slider
-              value={salePriceRange}
-              onValueChange={(v) => setSalePriceRange(v as [number, number])}
-              min={SALE_PRICE_RANGE_MIN}
-              max={SALE_PRICE_RANGE_MAX}
-              step={1000000}
-            />
-            <div className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground min-[420px]:flex-row min-[420px]:justify-between">
-              <span className="whitespace-nowrap">
-                {formatPriceAlgeria(salePriceRange[0])}
-              </span>
-              <span className="whitespace-nowrap">
-                {formatPriceAlgeria(salePriceRange[1])}
-              </span>
-            </div>
-          </div>
-          {/* Rent price */}
-          <div className="min-w-0 space-y-2">
-            <p className="text-xs font-medium">Prix location</p>
-            <Slider
-              value={rentPriceRange}
-              onValueChange={(v) => setRentPriceRange(v as [number, number])}
-              min={RENT_PRICE_RANGE_MIN}
-              max={RENT_PRICE_RANGE_MAX}
-              step={5000}
-            />
-            <div className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground min-[420px]:flex-row min-[420px]:justify-between">
-              <span className="whitespace-nowrap">
-                {rentPriceRange[0].toLocaleString()} DZD
-              </span>
-              <span className="whitespace-nowrap">
-                {rentPriceRange[1].toLocaleString()} DZD
-              </span>
-            </div>
-          </div>
+              {/* Sale price */}
+              <div className="min-w-0 space-y-2">
+                <p className="text-xs font-medium">Prix vente / achat</p>
+                <Slider
+                  value={salePriceRange}
+                  onValueChange={(v) =>
+                    setSalePriceRange(v as [number, number])
+                  }
+                  min={SALE_PRICE_RANGE_MIN}
+                  max={SALE_PRICE_RANGE_MAX}
+                  step={1000000}
+                />
+                <div className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground min-[420px]:flex-row min-[420px]:justify-between">
+                  <span className="whitespace-nowrap">
+                    {formatPriceAlgeria(salePriceRange[0])}
+                  </span>
+                  <span className="whitespace-nowrap">
+                    {formatPriceAlgeria(salePriceRange[1])}
+                  </span>
+                </div>
+              </div>
+              {/* Rent price */}
+              <div className="min-w-0 space-y-2">
+                <p className="text-xs font-medium">Prix location</p>
+                <Slider
+                  value={rentPriceRange}
+                  onValueChange={(v) =>
+                    setRentPriceRange(v as [number, number])
+                  }
+                  min={RENT_PRICE_RANGE_MIN}
+                  max={RENT_PRICE_RANGE_MAX}
+                  step={5000}
+                />
+                <div className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground min-[420px]:flex-row min-[420px]:justify-between">
+                  <span className="whitespace-nowrap">
+                    {rentPriceRange[0].toLocaleString()} DZD
+                  </span>
+                  <span className="whitespace-nowrap">
+                    {rentPriceRange[1].toLocaleString()} DZD
+                  </span>
+                </div>
+              </div>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
