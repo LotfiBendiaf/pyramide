@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarPlus, Loader2 } from "lucide-react";
+import { CalendarIcon, CalendarPlus, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -30,26 +36,65 @@ import { scheduleVisitSchema } from "@/lib/validators/visit";
 import { scheduleVisit } from "@/lib/actions/visit.action";
 import { fetchClients } from "@/lib/actions/client.action";
 import { fetchListings } from "@/lib/actions/listings.action";
+import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 type FormValues = z.infer<typeof scheduleVisitSchema>;
 
 interface Props {
   prefilledClientId?: string;
   prefilledListingId?: string;
+  prefilledClientOption?: ComboboxOption;
+  prefilledListingOption?: ComboboxOption;
   trigger?: React.ReactNode;
+}
+
+function mergeOption(
+  options: ComboboxOption[],
+  option?: ComboboxOption
+): ComboboxOption[] {
+  if (!option || options.some((item) => item.value === option.value)) {
+    return options;
+  }
+
+  return [option, ...options];
+}
+
+function applyDatePart(current: Date | string | undefined, selected: Date) {
+  const next = current ? new Date(current) : new Date();
+  next.setFullYear(
+    selected.getFullYear(),
+    selected.getMonth(),
+    selected.getDate()
+  );
+  return next;
+}
+
+function applyTimePart(current: Date | string | undefined, time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  const next = current ? new Date(current) : new Date();
+  next.setHours(hours, minutes, 0, 0);
+  return next;
 }
 
 export function ScheduleVisitDialog({
   prefilledClientId,
   prefilledListingId,
+  prefilledClientOption,
+  prefilledListingOption,
   trigger,
 }: Props) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const [clientOptions, setClientOptions] = useState<ComboboxOption[]>([]);
-  const [listingOptions, setListingOptions] = useState<ComboboxOption[]>([]);
+  const [clientOptions, setClientOptions] = useState<ComboboxOption[]>(
+    prefilledClientOption ? [prefilledClientOption] : []
+  );
+  const [listingOptions, setListingOptions] = useState<ComboboxOption[]>(
+    prefilledListingOption ? [prefilledListingOption] : []
+  );
   const [clientLoading, setClientLoading] = useState(false);
   const [listingLoading, setListingLoading] = useState(false);
 
@@ -59,21 +104,28 @@ export function ScheduleVisitDialog({
   const searchClients = useCallback(async (query: string) => {
     setClientLoading(true);
     try {
-      const result = await fetchClients({ search: query || undefined, limit: 20 });
+      const result = await fetchClients({
+        search: query || undefined,
+        limit: 50,
+      });
       const clients = result.data?.clients ?? [];
-      setClientOptions(
-        clients.map((c) => ({
-          value: String(c._id),
-          label:
-            [c.firstName, c.lastName].filter(Boolean).join(" ") || c.phone,
-          searchableText: `${c.referenceCode} ${c.firstName ?? ""} ${c.lastName ?? ""} ${c.phone}`,
-          metadata: c.referenceCode,
-        }))
-      );
+      const options = clients.map((c) => ({
+        value: String(c._id),
+        label: [c.firstName, c.lastName].filter(Boolean).join(" ") || c.phone,
+        searchableText: `${c.referenceCode} ${c.firstName ?? ""} ${
+          c.lastName ?? ""
+        } ${c.phone}`,
+        metadata: c.referenceCode,
+        description:
+          [c.firstName, c.lastName].filter(Boolean).join(" ") && c.phone
+            ? c.phone
+            : undefined,
+      }));
+      setClientOptions(mergeOption(options, prefilledClientOption));
     } finally {
       setClientLoading(false);
     }
-  }, []);
+  }, [prefilledClientOption]);
 
   const searchListings = useCallback(async (query: string) => {
     setListingLoading(true);
@@ -84,18 +136,17 @@ export function ScheduleVisitDialog({
         limit: 20,
       });
       const listings = result.data ?? [];
-      setListingOptions(
-        listings.map((l) => ({
-          value: String(l._id),
-          label: l.title ?? "Sans titre",
-          searchableText: `${l.referenceCode ?? ""} ${l.title ?? ""}`,
-          metadata: l.referenceCode,
-        }))
-      );
+      const options = listings.map((l) => ({
+        value: String(l._id),
+        label: l.title ?? "Sans titre",
+        searchableText: `${l.referenceCode ?? ""} ${l.title ?? ""}`,
+        metadata: l.referenceCode,
+      }));
+      setListingOptions(mergeOption(options, prefilledListingOption));
     } finally {
       setListingLoading(false);
     }
-  }, []);
+  }, [prefilledListingOption]);
 
   useEffect(() => {
     if (open) {
@@ -237,6 +288,7 @@ export function ScheduleVisitDialog({
                       disabled={!!prefilledClientId}
                       onSearchChange={handleClientSearch}
                       loading={clientLoading}
+                      listMaxHeight="min(420px, calc(100vh - 360px))"
                     />
                   </FormControl>
                   <FormMessage />
@@ -251,19 +303,78 @@ export function ScheduleVisitDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Date et heure</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="datetime-local"
-                      value={
-                        field.value instanceof Date
-                          ? field.value.toISOString().slice(0, 16)
-                          : String(field.value ?? "").slice(0, 16)
-                      }
-                      onChange={(e) =>
-                        field.onChange(new Date(e.target.value))
-                      }
-                    />
-                  </FormControl>
+                  <div className="grid gap-2 sm:grid-cols-[1fr_132px]">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                            {field.value
+                              ? format(new Date(field.value), "EEEE dd MMM yyyy", {
+                                  locale: fr,
+                                })
+                              : "Choisir une date"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            field.value ? new Date(field.value) : undefined
+                          }
+                          onSelect={(date) => {
+                            if (!date) return;
+                            field.onChange(applyDatePart(field.value, date));
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    <FormControl>
+                      <div className="relative">
+                        <Clock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          type="time"
+                          className="pl-9"
+                          value={
+                            field.value
+                              ? format(new Date(field.value), "HH:mm")
+                              : "09:00"
+                          }
+                          onChange={(e) =>
+                            field.onChange(
+                              applyTimePart(field.value, e.target.value)
+                            )
+                          }
+                        />
+                      </div>
+                    </FormControl>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {["09:00", "11:00", "14:00", "16:00"].map((time) => (
+                      <Button
+                        key={time}
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() =>
+                          field.onChange(applyTimePart(field.value, time))
+                        }
+                      >
+                        {time}
+                      </Button>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

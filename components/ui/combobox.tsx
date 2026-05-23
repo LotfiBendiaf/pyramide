@@ -16,6 +16,7 @@ export interface ComboboxOption {
   label: string;
   searchableText?: string;
   metadata?: string;
+  description?: string;
 }
 
 interface ComboboxProps {
@@ -29,6 +30,7 @@ interface ComboboxProps {
   disabled?: boolean;
   onSearchChange?: (query: string) => void;
   loading?: boolean;
+  listMaxHeight?: number | string;
 }
 
 export function Combobox({
@@ -42,6 +44,7 @@ export function Combobox({
   disabled = false,
   onSearchChange,
   loading = false,
+  listMaxHeight = 360,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -97,7 +100,12 @@ export function Combobox({
               className="h-9"
             />
           </div>
-          <div className="overflow-y-auto max-h-[250px] p-1">
+          <div
+            className="overflow-y-auto overscroll-contain p-1"
+            style={{ maxHeight: listMaxHeight }}
+            onWheelCapture={(event) => event.stopPropagation()}
+            onTouchMoveCapture={(event) => event.stopPropagation()}
+          >
             {loading ? (
               <div className="py-6 flex justify-center">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -126,9 +134,11 @@ export function Combobox({
                   />
                   <div className="flex flex-col items-start flex-1 min-w-0 text-left">
                     <span className="truncate w-full">{option.label}</span>
-                    {option.metadata && (
+                    {(option.metadata || option.description) && (
                       <span className="text-xs text-muted-foreground truncate w-full">
-                        {option.metadata}
+                        {[option.metadata, option.description]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </span>
                     )}
                   </div>
