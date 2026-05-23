@@ -14,6 +14,18 @@ type BudgetWindow = {
   exactMax: number;
 };
 
+function getListingStatusForClient(client: Client): Listing["status"] | null {
+  if (client.type === "BUYER") return "En Vente";
+  if (client.type === "RENTER") return "En Location";
+  return null;
+}
+
+function getClientTypesForListing(listing: Listing): Array<Client["type"]> {
+  if (listing.status === "En Vente") return ["BUYER"];
+  if (listing.status === "En Location") return ["RENTER"];
+  return [];
+}
+
 function getBudgetWindow(client: Client): BudgetWindow | null {
   const budgetReference =
     client.budgetMax !== undefined
@@ -182,15 +194,15 @@ export async function matchClientToListings(
       return { success: false, error: { message: "Client introuvable" } };
     }
 
-    if (client.type !== "BUYER" && client.type !== "RENTER") {
+    const statusFilter = getListingStatusForClient(client);
+
+    if (!statusFilter) {
       return { success: true, data: [] };
     }
 
-    const statusFilter = client.type === "BUYER" ? "En Vente" : "En Location";
-
     const listings = await Listing.find({ status: statusFilter })
       .select(
-        "referenceCode title propertyType location price features.bedrooms features.area evaluation.finalScore isPublished"
+        "referenceCode title propertyType status location price features.bedrooms features.area evaluation.finalScore isPublished"
       )
       .lean<Listing[]>();
 
@@ -239,12 +251,11 @@ export async function matchListingToClients(
       return { success: false, error: { message: "Annonce introuvable" } };
     }
 
-    const typeFilter =
-      listing.status === "En Vente"
-        ? ["BUYER"]
-        : listing.status === "En Location"
-          ? ["RENTER"]
-          : ["BUYER", "RENTER"];
+    const typeFilter = getClientTypesForListing(listing);
+
+    if (typeFilter.length === 0) {
+      return { success: true, data: [] };
+    }
 
     const clients = await Client.find({
       archived: false,

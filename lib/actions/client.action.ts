@@ -175,7 +175,7 @@ export async function createClient(
         { $project: { codeNum: 1 } },
       ]);
       const lastNum = agg?.codeNum ?? 0;
-      const referenceCode = `${prefix}-${String(lastNum + 1).padStart(3, "0")}`;
+      const referenceCode = `${prefix}-${String(lastNum + 1).padStart(5, "0")}`;
 
       try {
         client = await Client.create({

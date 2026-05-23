@@ -148,7 +148,7 @@ interface Listing {
 interface Client {
   _id: string;
 
-  referenceCode: string; // BUY-032
+  referenceCode: string; // BUY-00032
   type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
 
   firstName?: string;
