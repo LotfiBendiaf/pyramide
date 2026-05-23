@@ -14,6 +14,8 @@ export const ELEVATED_ROLES = ["MANAGER", "ADMIN", "DEVELOPER"] as const;
 export const isElevatedRole = (role: string): boolean =>
   (ELEVATED_ROLES as readonly string[]).includes(role);
 
+export const MANAGER_NOTIFICATION_ROLES = ["MANAGER", "ADMIN"] as const;
+
 export const ROLE_LABELS = {
   MANAGER: "Gérant",
   ADMIN: "Administrateur",

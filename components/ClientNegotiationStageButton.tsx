@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { setClientNegotiationStage } from "@/lib/actions/client.action";
@@ -30,6 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type NegotiationStageChoice = "NEUTRAL" | "IN_NEGOTIATION" | "CLOSED";
+type BlockHoursChoice = "24" | "48" | "OTHER";
 
 type NegotiationDocument = {
   publicId: string;
@@ -74,7 +76,9 @@ const OPTIONS: {
 ];
 
 function valueFromPipelineStage(stage?: string): NegotiationStageChoice {
-  if (stage === "IN_NEGOTIATION" || stage === "CLOSED") return stage;
+  if (stage === "IN_NEGOTIATION" || stage === "CLOSED") {
+    return stage;
+  }
   return "NEUTRAL";
 }
 
@@ -87,7 +91,9 @@ export default function ClientNegotiationStageSelect({
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [listingId, setListingId] = useState("");
-  const [blockHours, setBlockHours] = useState<"24" | "48">("24");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [blockHours, setBlockHours] = useState<BlockHoursChoice>("24");
+  const [customBlockHours, setCustomBlockHours] = useState("72");
   const [notes, setNotes] = useState("");
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [uploadedDocument, setUploadedDocument] =
@@ -124,11 +130,40 @@ export default function ClientNegotiationStageSelect({
       return;
     }
 
+    const selectedBlockHours =
+      blockHours === "OTHER" ? Number(customBlockHours) : Number(blockHours);
+
+    if (
+      !Number.isInteger(selectedBlockHours) ||
+      selectedBlockHours < 24 ||
+      selectedBlockHours > 2160
+    ) {
+      toast.error("Durée invalide", {
+        description: "Choisissez une durée entre 24h et 2160h.",
+      });
+      return;
+    }
+
+    const parsedDepositAmount = depositAmount.trim()
+      ? Number(depositAmount)
+      : undefined;
+
+    if (
+      parsedDepositAmount !== undefined &&
+      (!Number.isFinite(parsedDepositAmount) || parsedDepositAmount <= 0)
+    ) {
+      toast.error("Montant invalide", {
+        description: "Le versement doit être un montant positif.",
+      });
+      return;
+    }
+
     setLoading(true);
     const result = await openNegotiation({
       clientId,
       listingId,
-      blockHours: Number(blockHours) as 24 | 48,
+      depositAmount: parsedDepositAmount,
+      blockHours: selectedBlockHours,
       notes,
       document: uploadedDocument ?? undefined,
     });
@@ -144,7 +179,9 @@ export default function ClientNegotiationStageSelect({
     toast.success("Négociation ouverte");
     setDialogOpen(false);
     setListingId("");
+    setDepositAmount("");
     setBlockHours("24");
+    setCustomBlockHours("72");
     setNotes("");
     setUploadedDocument(null);
     router.refresh();
@@ -324,10 +361,24 @@ export default function ClientNegotiationStageSelect({
             </div>
 
             <div className="space-y-2">
+              <Label>Versement (DZD)</Label>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                value={depositAmount}
+                onChange={(event) => setDepositAmount(event.target.value)}
+                placeholder="Montant du dépôt si le client a versé"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Blocage des visites</Label>
               <Select
                 value={blockHours}
-                onValueChange={(value) => setBlockHours(value as "24" | "48")}
+                onValueChange={(value) =>
+                  setBlockHours(value as BlockHoursChoice)
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -335,8 +386,20 @@ export default function ClientNegotiationStageSelect({
                 <SelectContent>
                   <SelectItem value="24">24h</SelectItem>
                   <SelectItem value="48">48h</SelectItem>
+                  <SelectItem value="OTHER">Autre</SelectItem>
                 </SelectContent>
               </Select>
+              {blockHours === "OTHER" && (
+                <Input
+                  type="number"
+                  min={24}
+                  max={2160}
+                  step={1}
+                  value={customBlockHours}
+                  onChange={(event) => setCustomBlockHours(event.target.value)}
+                  placeholder="Durée en heures"
+                />
+              )}
             </div>
 
             <div className="space-y-2">

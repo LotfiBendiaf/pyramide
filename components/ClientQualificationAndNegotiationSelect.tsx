@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatPriceAlgeria } from "@/lib/utils";
 import { updateClientQualification } from "@/lib/actions/client.action";
 import { setClientNegotiationStage } from "@/lib/actions/client.action";
 import {
@@ -33,6 +33,7 @@ import {
 import { ClientQualification } from "@/constants/values";
 
 type PipelineStatusOption = ClientQualification | "IN_NEGOTIATION" | "CLOSED";
+type BlockHoursChoice = "24" | "48" | "OTHER";
 
 type NegotiationDocument = {
   publicId: string;
@@ -151,7 +152,9 @@ export default function ClientQualificationAndNegotiationSelect({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [listingId, setListingId] = useState("");
   const [listingSearch, setListingSearch] = useState("");
-  const [blockHours, setBlockHours] = useState<"24" | "48">("24");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [blockHours, setBlockHours] = useState<BlockHoursChoice>("24");
+  const [customBlockHours, setCustomBlockHours] = useState("72");
   const [notes, setNotes] = useState("");
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [uploadedDocument, setUploadedDocument] =
@@ -175,7 +178,7 @@ export default function ClientQualificationAndNegotiationSelect({
       return;
     }
 
-    // If it's a negotiation status (IN_NEGOTIATION or CLOSED)
+    // If it's a negotiation status
     if (newValue === "IN_NEGOTIATION" || newValue === "CLOSED") {
       setLoading(true);
       const result = await setClientNegotiationStage(clientId, newValue);
@@ -219,11 +222,40 @@ export default function ClientQualificationAndNegotiationSelect({
       return;
     }
 
+    const selectedBlockHours =
+      blockHours === "OTHER" ? Number(customBlockHours) : Number(blockHours);
+
+    if (
+      !Number.isInteger(selectedBlockHours) ||
+      selectedBlockHours < 24 ||
+      selectedBlockHours > 2160
+    ) {
+      toast.error("Durée invalide", {
+        description: "Choisissez une durée entre 24h et 2160h.",
+      });
+      return;
+    }
+
+    const parsedDepositAmount = depositAmount.trim()
+      ? Number(depositAmount)
+      : undefined;
+
+    if (
+      parsedDepositAmount !== undefined &&
+      (!Number.isFinite(parsedDepositAmount) || parsedDepositAmount <= 0)
+    ) {
+      toast.error("Montant invalide", {
+        description: "Le versement doit être un montant positif.",
+      });
+      return;
+    }
+
     setLoading(true);
     const result = await openNegotiation({
       clientId,
       listingId,
-      blockHours: Number(blockHours) as 24 | 48,
+      depositAmount: parsedDepositAmount,
+      blockHours: selectedBlockHours,
       notes,
       document: uploadedDocument ?? undefined,
     });
@@ -243,7 +275,9 @@ export default function ClientQualificationAndNegotiationSelect({
     });
     setDialogOpen(false);
     setListingId("");
+    setDepositAmount("");
     setBlockHours("24");
+    setCustomBlockHours("72");
     setNotes("");
     setUploadedDocument(null);
     router.refresh();
@@ -356,10 +390,7 @@ export default function ClientQualificationAndNegotiationSelect({
                           <span className="font-medium">{listing.label}</span>
                           {listing.price && (
                             <span className="text-xs text-muted-foreground">
-                              {new Intl.NumberFormat("fr-FR", {
-                                style: "currency",
-                                currency: "EUR",
-                              }).format(listing.price)}
+                              {formatPriceAlgeria(listing.price)}
                             </span>
                           )}
                         </div>
@@ -381,10 +412,23 @@ export default function ClientQualificationAndNegotiationSelect({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="depositAmount">Versement (DZD)</Label>
+              <Input
+                id="depositAmount"
+                type="number"
+                min={0}
+                step={1}
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                placeholder="Montant du dépôt si le client a versé"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="blockHours">Blocage (heures)</Label>
               <Select
                 value={blockHours}
-                onValueChange={(v) => setBlockHours(v as "24" | "48")}
+                onValueChange={(v) => setBlockHours(v as BlockHoursChoice)}
               >
                 <SelectTrigger id="blockHours">
                   <SelectValue />
@@ -392,8 +436,20 @@ export default function ClientQualificationAndNegotiationSelect({
                 <SelectContent>
                   <SelectItem value="24">24 heures</SelectItem>
                   <SelectItem value="48">48 heures</SelectItem>
+                  <SelectItem value="OTHER">Autre</SelectItem>
                 </SelectContent>
               </Select>
+              {blockHours === "OTHER" && (
+                <Input
+                  type="number"
+                  min={24}
+                  max={2160}
+                  step={1}
+                  value={customBlockHours}
+                  onChange={(e) => setCustomBlockHours(e.target.value)}
+                  placeholder="Durée en heures"
+                />
+              )}
             </div>
 
             <div className="space-y-2">

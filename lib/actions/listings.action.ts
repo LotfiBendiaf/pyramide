@@ -1,6 +1,6 @@
 "use server";
 
-import { Listing, Client, Visit } from "@/models";
+import { Listing, Client, Negotiation, Visit } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import action from "../handlers/action";
 import handleError from "../handlers/error";
@@ -1141,6 +1141,7 @@ export interface ActiveListingWithVisits {
   referenceCode?: string;
   title?: string;
   pipelineStatus?: string;
+  blockedUntil?: string | Date;
   location?: { city?: string; address?: string };
   propertyType?: string;
   price?: number;
@@ -1169,12 +1170,33 @@ export async function fetchMyActiveListings(): Promise<
   try {
     await dbConnect();
 
-    const listings = await Listing.find({
+    const activeNegotiations = await Negotiation.find({
       agent: user.data._id,
+      status: { $in: ["ACTIVE", "CLOSING"] },
+    })
+      .select("listing")
+      .lean();
+
+    const negotiatedListingIds = activeNegotiations.map((n) => n.listing);
+
+    const ownershipFilter: FilterQuery<Listing> =
+      negotiatedListingIds.length > 0
+        ? {
+            $or: [
+              { agent: user.data._id },
+              { _id: { $in: negotiatedListingIds } },
+            ],
+          }
+        : { agent: user.data._id };
+
+    const listings = await Listing.find({
+      ...ownershipFilter,
       pipelineStatus: { $in: ["ACTIVE", "UNDER_NEGOTIATION", "CLOSING"] },
       archived: { $ne: true },
     })
-      .select("referenceCode title pipelineStatus location propertyType price")
+      .select(
+        "referenceCode title pipelineStatus blockedUntil location propertyType price"
+      )
       .lean();
 
     if (!listings.length) {

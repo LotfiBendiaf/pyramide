@@ -44,6 +44,7 @@ import { useRouter } from "next/navigation";
 import { PROPERTY_TYPES, WILAYAS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { COUNTRY_CODES, type CountryId } from "@/lib/country-codes";
+import { formatPriceAlgeria } from "@/lib/utils";
 import { Textarea } from "../ui/textarea";
 
 // --- Types ---
@@ -977,11 +978,18 @@ export default function ListingForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Prix (DZD)</FormLabel>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Aperçu: {formatPriceAlgeria(Number(field.value) || 0)} DA
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

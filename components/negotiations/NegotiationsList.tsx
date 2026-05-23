@@ -39,7 +39,11 @@ export interface Negotiation {
   };
 }
 
-export function NegotiationsList({ negotiations }: { negotiations: Negotiation[] }) {
+export function NegotiationsList({
+  negotiations,
+}: {
+  negotiations: Negotiation[];
+}) {
   if (negotiations.length === 0) {
     return (
       <div className="rounded-lg border bg-muted/30 py-16 text-center text-sm text-muted-foreground">
@@ -51,18 +55,19 @@ export function NegotiationsList({ negotiations }: { negotiations: Negotiation[]
   return (
     <div className="space-y-3">
       {negotiations.map((neg) => {
-        const pendingBlocks = neg.blockingRequests?.filter(
-          (r) => r.status === "PENDING"
-        ).length ?? 0;
+        const pendingBlocks =
+          neg.blockingRequests?.filter((r) => r.status === "PENDING").length ??
+          0;
 
         const clientName = neg.client
-          ? [neg.client.firstName, neg.client.lastName].filter(Boolean).join(" ") ||
-            neg.client.phone
+          ? [neg.client.firstName, neg.client.lastName]
+              .filter(Boolean)
+              .join(" ") || neg.client.phone
           : "—";
 
         return (
           <Link key={neg._id} href={ROUTES.NEGOTIATION_DETAIL(neg._id)}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer mb-3">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0 space-y-2">
@@ -119,7 +124,11 @@ export function NegotiationsList({ negotiations }: { negotiations: Negotiation[]
                       )}
                       {neg.closingDetails?.finalPrice && (
                         <span>
-                          · {neg.closingDetails.finalPrice.toLocaleString("fr-DZ")} DZD
+                          ·{" "}
+                          {neg.closingDetails.finalPrice.toLocaleString(
+                            "fr-DZ"
+                          )}{" "}
+                          DZD
                         </span>
                       )}
                     </div>
@@ -130,7 +139,8 @@ export function NegotiationsList({ negotiations }: { negotiations: Negotiation[]
                     {pendingBlocks > 0 && (
                       <div className="flex items-center gap-1 text-xs text-amber-600 font-medium">
                         <Lock className="h-3 w-3" />
-                        {pendingBlocks} blocage{pendingBlocks > 1 ? "s" : ""} en attente
+                        {pendingBlocks} blocage{pendingBlocks > 1 ? "s" : ""} en
+                        attente
                       </div>
                     )}
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />

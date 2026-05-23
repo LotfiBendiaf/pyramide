@@ -3,10 +3,19 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Building2, CalendarCheck, User, ChevronRight } from "lucide-react";
+import {
+  Building2,
+  CalendarCheck,
+  CalendarPlus,
+  User,
+  ChevronRight,
+  Lock,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ListingPipelineBadge } from "@/components/pipeline/PipelineBadges";
+import { ScheduleVisitDialog } from "@/components/visits/ScheduleVisitDialog";
 import ROUTES from "@/constants/routes";
 import type { ActiveListingWithVisits } from "@/lib/actions/listings.action";
 
@@ -52,6 +61,18 @@ export function MyActiveListings({ listings }: Props) {
                       {listing.propertyType && ` · ${listing.propertyType}`}
                     </p>
                   )}
+                  {listing.blockedUntil &&
+                    new Date(listing.blockedUntil) > new Date() && (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Lock className="h-3 w-3" />
+                        Bloqué jusqu&apos;au{" "}
+                        {format(
+                          new Date(listing.blockedUntil),
+                          "dd MMM yyyy HH:mm",
+                          { locale: fr }
+                        )}
+                      </p>
+                    )}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -102,6 +123,20 @@ export function MyActiveListings({ listings }: Props) {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </div>
+                      {visit.client && (
+                        <div className="ml-auto shrink-0">
+                          <ScheduleVisitDialog
+                            prefilledClientId={visit.client._id}
+                            prefilledListingId={listing._id}
+                            trigger={
+                              <Button variant="outline" size="sm">
+                                <CalendarPlus className="mr-1.5 h-3.5 w-3.5" />
+                                + Visite
+                              </Button>
+                            }
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}

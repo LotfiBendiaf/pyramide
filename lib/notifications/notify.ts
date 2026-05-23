@@ -3,7 +3,7 @@ import User from "@/models/user.model";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import NotificationEmail from "@/emails/NotificationEmail";
-import { ELEVATED_ROLES } from "@/constants/values";
+import { MANAGER_NOTIFICATION_ROLES } from "@/constants/values";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -54,7 +54,7 @@ export async function notifyManagers(
   input: Omit<NotifyInput, "recipientId">
 ): Promise<void> {
   const managers = await User.find({
-    role: { $in: ELEVATED_ROLES },
+    role: { $in: MANAGER_NOTIFICATION_ROLES },
   })
     .select("_id")
     .lean<{ _id: { toString(): string } }[]>();

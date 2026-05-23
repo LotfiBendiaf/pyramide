@@ -193,12 +193,12 @@ export function NegotiationDetail({
         </CardContent>
       </Card>
 
-      {/* Closing details (CLOSING or DEAL_DONE) */}
+      {/* Versement / closing details */}
       {negotiation.closingDetails?.depositAmount && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Banknote className="h-4 w-4" /> Acompte
+              <Banknote className="h-4 w-4" /> Versement
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
@@ -641,7 +641,7 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
       toast.error("Erreur", { description: result.error?.message });
       return;
     }
-    toast.success("Acompte confirmé — Closing en cours");
+    toast.success("Versement confirmé");
     setOpen(false);
     router.refresh();
   }
@@ -650,12 +650,12 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
       <DialogTrigger asChild>
         <Button size="sm">
           <Banknote className="h-3.5 w-3.5 mr-1.5" />
-          Confirmer l&apos;acompte
+          Confirmer le versement
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Confirmer l&apos;acompte</DialogTitle>
+          <DialogTitle>Confirmer le versement</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -664,7 +664,7 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
               name="depositAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Montant de l&apos;acompte (DZD)</FormLabel>
+                  <FormLabel>Montant du versement (DZD)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"

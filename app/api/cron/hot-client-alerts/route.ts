@@ -3,7 +3,7 @@ import dbConnect from "@/lib/mongoose";
 import { Client, User } from "@/models";
 import Notification from "@/models/notification.model";
 import { IClient } from "@/models/client.model";
-import { ELEVATED_ROLES } from "@/constants/values";
+import { MANAGER_NOTIFICATION_ROLES } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all managers for the digest notification
-    const managers = await User.find({ role: { $in: ELEVATED_ROLES } })
+    const managers = await User.find({ role: { $in: MANAGER_NOTIFICATION_ROLES } })
       .select("_id email firstname lastname")
       .lean<{ _id: { toString(): string }; email: string; firstname: string; lastname: string }[]>();
 

@@ -114,6 +114,7 @@ export async function openNegotiation(
     listingId,
     clientId,
     visitId,
+    depositAmount,
     blockHours = 24,
     notes,
     document,
@@ -195,7 +196,7 @@ export async function openNegotiation(
         client: clientId,
         agent: user.data._id,
         visit: visitId ?? undefined,
-        status: "ACTIVE",
+        status: depositAmount ? "CLOSING" : "ACTIVE",
         blockingRequests: [
           {
             requestedBy: user.data._id,
@@ -223,10 +224,19 @@ export async function openNegotiation(
               },
             ]
           : undefined,
-        ...(notes ? { "closingDetails.notes": notes } : {}),
+        ...(depositAmount || notes
+          ? {
+              closingDetails: {
+                ...(depositAmount
+                  ? { depositAmount, depositAt: new Date() }
+                  : {}),
+                ...(notes ? { notes } : {}),
+              },
+            }
+          : {}),
       }),
       Listing.findByIdAndUpdate(listingId, {
-        pipelineStatus: "UNDER_NEGOTIATION",
+        pipelineStatus: depositAmount ? "CLOSING" : "UNDER_NEGOTIATION",
         blockedForClient: clientId,
         blockedUntil,
       }),
@@ -237,6 +247,7 @@ export async function openNegotiation(
     ]);
 
     revalidatePath(ROUTES.NEGOTIATIONS);
+    revalidatePath(ROUTES.MES_BIENS);
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -454,6 +465,7 @@ export async function approveBlock(
     ]);
 
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
+    revalidatePath(ROUTES.MES_BIENS);
     revalidatePath(
       ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
     );
@@ -658,8 +670,8 @@ export async function confirmDeposit(
 
     await notifyManagers({
       type: "DEPOSIT_CONFIRMED",
-      title: "Acompte confirmé — Closing en cours",
-      body: "Un acompte a été enregistré. La négociation est maintenant en phase de closing.",
+      title: "Versement confirmé",
+      body: "Un versement a été enregistré sur la négociation.",
       link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
       relatedEntity: { type: "NEGOTIATION", id: negotiationId },
     });
@@ -758,6 +770,7 @@ export async function closeDeal(
     ]);
 
     revalidatePath(ROUTES.NEGOTIATIONS);
+    revalidatePath(ROUTES.MES_BIENS);
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
     revalidatePath(
       ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
@@ -871,6 +884,7 @@ export async function cancelNegotiation(
     ]);
 
     revalidatePath(ROUTES.NEGOTIATIONS);
+    revalidatePath(ROUTES.MES_BIENS);
     revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
     revalidatePath(
       ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())

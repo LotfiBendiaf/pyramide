@@ -1,10 +1,16 @@
-export type NegotiationStatus = "ACTIVE" | "CLOSING" | "DEAL_DONE" | "CANCELLED";
+export type NegotiationStatus =
+  | "ACTIVE"
+  | "CLOSING"
+  | "DEAL_DONE"
+  | "CANCELLED";
 export type BlockRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type OpenNegotiationInput = {
   listingId: string;
   clientId: string;
   visitId?: string;
+  depositAmount?: number;
+  blockHours?: number;
   notes?: string;
 };
 
