@@ -13,6 +13,46 @@ export const SignInSchema = z.object({
     .max(100, { message: "Password cannot exceed 100 characters." }),
 });
 
+export const ForgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .email({ message: "Veuillez donner une adresse mail valide." })
+    .min(1, { message: "Email : Ce champ est requis" })
+    .transform((val) => val.toLowerCase()),
+});
+
+const PasswordSchema = z
+  .string()
+  .min(6, {
+    message: "Le mot de passe doit contenir au moins 6 caractères.",
+  })
+  .max(100, {
+    message: "Le mot de passe ne peut pas dépasser 100 caractères.",
+  })
+  .regex(/[A-Z]/, {
+    message: "Le mot de passe doit contenir au moins une lettre majuscule.",
+  })
+  .regex(/[a-z]/, {
+    message: "Le mot de passe doit contenir au moins une lettre minuscule.",
+  })
+  .regex(/[0-9]/, {
+    message: "Le mot de passe doit contenir au moins un chiffre.",
+  })
+  .regex(/[^a-zA-Z0-9]/, {
+    message: "Le mot de passe doit contenir au moins un caractère spécial.",
+  });
+
+export const ResetPasswordSchema = z
+  .object({
+    token: z.string().min(32, { message: "Lien de réinitialisation invalide." }),
+    password: PasswordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Les mots de passe ne correspondent pas.",
+  });
+
 export const SignUpSchema = z
   .object({
     username: z
@@ -55,26 +95,7 @@ export const SignUpSchema = z
       .email({ message: "Veuillez fournir une adresse email valide." })
       .min(1, { message: "L'email est requis." }),
 
-    password: z
-      .string()
-      .min(6, {
-        message: "Le mot de passe doit contenir au moins 6 caractères.",
-      })
-      .max(100, {
-        message: "Le mot de passe ne peut pas dépasser 100 caractères.",
-      })
-      .regex(/[A-Z]/, {
-        message: "Le mot de passe doit contenir au moins une lettre majuscule.",
-      })
-      .regex(/[a-z]/, {
-        message: "Le mot de passe doit contenir au moins une lettre minuscule.",
-      })
-      .regex(/[0-9]/, {
-        message: "Le mot de passe doit contenir au moins un chiffre.",
-      })
-      .regex(/[^a-zA-Z0-9]/, {
-        message: "Le mot de passe doit contenir au moins un caractère spécial.",
-      }),
+    password: PasswordSchema,
 
     confirmPassword: z.string(),
     role: z.enum(ROLES),

@@ -1,6 +1,8 @@
 const ROUTES = {
   HOME: "/",
   SIGN_IN: "/sign-in",
+  FORGOT_PASSWORD: "/forgot-password",
+  RESET_PASSWORD: "/reset-password",
   SIGN_IN_WITH_OAUTH: "/signin-with-oauth",
   SIGN_UP: "/sign-up",
 

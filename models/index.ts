@@ -12,6 +12,7 @@ import ArchiveRequest from "./archiveRequest.model";
 import Visit from "./visit.model";
 import Negotiation from "./negotiation.model";
 import Notification from "./notification.model";
+import PasswordResetToken from "./passwordResetToken.model";
 
 export {
   Account,
@@ -28,4 +29,5 @@ export {
   Visit,
   Negotiation,
   Notification,
+  PasswordResetToken,
 };

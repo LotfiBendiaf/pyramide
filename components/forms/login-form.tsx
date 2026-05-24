@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import ROUTES from "@/constants/routes";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Separator } from "../ui/separator";
@@ -89,8 +90,8 @@ const SignInForm = <T extends FieldValues>({
                       field.name === "password"
                         ? "password"
                         : field.name === "email"
-                        ? "email"
-                        : "text"
+                          ? "email"
+                          : "text"
                     }
                     {...field}
                     className=""
@@ -104,6 +105,15 @@ const SignInForm = <T extends FieldValues>({
             )}
           />
         ))}
+
+        <div className="flex justify-end -mt-2">
+          <Link
+            href={ROUTES.FORGOT_PASSWORD}
+            className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-primary transition-colors"
+          >
+            Mot de passe oublié ?
+          </Link>
+        </div>
 
         <Button disabled={form.formState.isSubmitting} type="submit">
           {form.formState.isSubmitting ? (
