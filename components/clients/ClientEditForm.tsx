@@ -10,11 +10,12 @@ import { updateClient } from "@/lib/actions/client.action";
 import { updateClientSchema } from "@/lib/validators/client";
 import { ClientType } from "@/models/client.model";
 import { CLIENT_QUALIFICATIONS, WILAYAS } from "@/constants/values";
-import { cn } from "@/lib/utils";
+import { cn, formatPriceAlgeria } from "@/lib/utils";
 
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -237,7 +238,7 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder="Min"
+                    placeholder="Ex: 12000000"
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
@@ -246,6 +247,9 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                     }
                   />
                 </FormControl>
+                <FormDescription className="text-xs">
+                  {formatPriceAlgeria(Number(field.value) || 0)} DA
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -260,7 +264,7 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder="Max"
+                    placeholder="Ex: 18000000"
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
@@ -269,6 +273,9 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                     }
                   />
                 </FormControl>
+                <FormDescription className="text-xs">
+                  {formatPriceAlgeria(Number(field.value) || 0)} DA
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -303,11 +310,21 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
           name="wantedPropertyType"
           render={({ field }) => {
             const WANTED_PROPERTY_TYPES = [
-              "Appartement", "Maison", "Villa", "Studio", "Terrain",
-              "Duplex", "Hangar", "Penthouse", "Local Commercial",
+              "Appartement",
+              "Maison",
+              "Villa",
+              "Studio",
+              "Terrain",
+              "Duplex",
+              "Hangar",
+              "Penthouse",
+              "Local Commercial",
             ];
             const selected = field.value
-              ? field.value.split(",").map((s) => s.trim()).filter(Boolean)
+              ? field.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
               : [];
             const toggle = (type: string) => {
               if (selected.includes(type)) {
@@ -357,7 +374,9 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                     placeholder="Ex: 3"
                     value={field.value ?? ""}
                     onChange={(e) =>
-                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      field.onChange(
+                        e.target.value ? Number(e.target.value) : undefined
+                      )
                     }
                   />
                 </FormControl>
@@ -377,7 +396,9 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                     placeholder="Ex: 90"
                     value={field.value ?? ""}
                     onChange={(e) =>
-                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      field.onChange(
+                        e.target.value ? Number(e.target.value) : undefined
+                      )
                     }
                   />
                 </FormControl>
@@ -400,7 +421,9 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                     placeholder="Ex: 1"
                     value={field.value ?? ""}
                     onChange={(e) =>
-                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      field.onChange(
+                        e.target.value ? Number(e.target.value) : undefined
+                      )
                     }
                   />
                 </FormControl>
@@ -420,7 +443,9 @@ export default function ClientEditForm({ client }: ClientEditFormProps) {
                     placeholder="Ex: 6"
                     value={field.value ?? ""}
                     onChange={(e) =>
-                      field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      field.onChange(
+                        e.target.value ? Number(e.target.value) : undefined
+                      )
                     }
                   />
                 </FormControl>
