@@ -246,7 +246,7 @@ export default function ClientQualificationAndNegotiationSelect({
       return;
     }
 
-    toast.success("Client archivé");
+    toast.success("Demande d'archivage envoyée");
     setArchiveDialogOpen(false);
     setArchiveReason("");
     router.refresh();
@@ -573,8 +573,8 @@ export default function ClientQualificationAndNegotiationSelect({
           <DialogHeader>
             <DialogTitle>Archiver le client</DialogTitle>
             <DialogDescription>
-              Indiquez la raison de l&apos;archivage. Le client ne sera plus
-              visible dans la liste active.
+              Indiquez la raison de l&apos;archivage. Le client restera actif
+              jusqu&apos;à validation.
             </DialogDescription>
           </DialogHeader>
 
@@ -606,10 +606,10 @@ export default function ClientQualificationAndNegotiationSelect({
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Archivage...
+                  Envoi...
                 </>
               ) : (
-                "Archiver"
+                "Envoyer la demande"
               )}
             </Button>
           </DialogFooter>

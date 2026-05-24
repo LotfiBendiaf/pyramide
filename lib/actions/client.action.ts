@@ -1,6 +1,6 @@
 "use server";
 
-import { Client } from "@/models";
+import { ArchiveRequest, Client } from "@/models";
 import {
   IClient,
   PipelineStage,
@@ -434,6 +434,57 @@ export async function updateClientQualification(
       ];
     }
 
+    if (qualificationStatus === "ARCHIVED") {
+      const client = await Client.findOne(filter).select("_id").lean();
+
+      if (!client) {
+        return {
+          success: false,
+          error: { message: "Client introuvable ou accès refusé" },
+          status: 404,
+        };
+      }
+
+      const existing = await ArchiveRequest.findOne({
+        entityType: "CLIENT",
+        entityId: clientId,
+        status: "PENDING",
+      }).lean();
+
+      if (existing) {
+        return {
+          success: false,
+          error: {
+            message:
+              "Une demande d'archivage est déjà en attente pour ce client",
+          },
+          status: 409,
+        };
+      }
+
+      await ArchiveRequest.create({
+        entityType: "CLIENT",
+        entityId: clientId,
+        requestedBy: user.data._id,
+        reason: trimmedArchiveReason,
+        status: "PENDING",
+      });
+
+      revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+      revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+      revalidatePath(ROUTES.DEMANDES);
+
+      await notifyManagers({
+        type: "ARCHIVE_REQUESTED",
+        title: "Demande d'archivage client",
+        body: "Une demande d'archivage client nécessite votre validation.",
+        link: ROUTES.DEMANDES,
+        relatedEntity: { type: "CLIENT", id: clientId },
+      });
+
+      return { success: true, status: 201 };
+    }
+
     const update =
       qualificationStatus === "HOT"
         ? {
@@ -470,23 +521,14 @@ export async function updateClientQualification(
                   archivedAt: "",
                 },
               }
-            : qualificationStatus === "ARCHIVED" ||
-                qualificationStatus === "NOT_RELEVANT"
+            : qualificationStatus === "NOT_RELEVANT"
               ? {
                   $set: {
                     qualificationStatus,
                     pipelineStage: "ARCHIVED",
                     archived: true,
-                    ...(qualificationStatus === "ARCHIVED"
-                      ? {
-                          archivedAt: new Date(),
-                          archiveReason: trimmedArchiveReason,
-                        }
-                      : {}),
                   },
-                  ...(qualificationStatus === "NOT_RELEVANT"
-                    ? { $unset: { archiveReason: "", archivedAt: "" } }
-                    : {}),
+                  $unset: { archiveReason: "", archivedAt: "" },
                 }
               : {
                   $set: {
@@ -807,13 +849,7 @@ export async function archiveClient(
 
     await dbConnect();
 
-    const client = await Client.findByIdAndUpdate(clientId, {
-      archived: true,
-      archivedAt: new Date(),
-      archiveReason: trimmedArchiveReason,
-      qualificationStatus: "ARCHIVED",
-      pipelineStage: "ARCHIVED",
-    });
+    const client = await Client.findById(clientId).select("_id").lean();
 
     if (!client) {
       return {
@@ -823,9 +859,43 @@ export async function archiveClient(
       };
     }
 
-    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    const existing = await ArchiveRequest.findOne({
+      entityType: "CLIENT",
+      entityId: clientId,
+      status: "PENDING",
+    }).lean();
 
-    return { success: true, status: 200 };
+    if (existing) {
+      return {
+        success: false,
+        error: {
+          message: "Une demande d'archivage est déjà en attente pour ce client",
+        },
+        status: 409,
+      };
+    }
+
+    await ArchiveRequest.create({
+      entityType: "CLIENT",
+      entityId: clientId,
+      requestedBy: user.data._id,
+      reason: trimmedArchiveReason,
+      status: "PENDING",
+    });
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+    revalidatePath(ROUTES.DEMANDES);
+
+    await notifyManagers({
+      type: "ARCHIVE_REQUESTED",
+      title: "Demande d'archivage client",
+      body: "Une demande d'archivage client nécessite votre validation.",
+      link: ROUTES.DEMANDES,
+      relatedEntity: { type: "CLIENT", id: clientId },
+    });
+
+    return { success: true, status: 201 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

@@ -98,9 +98,13 @@ export function NegotiationRequestsList({
                     <Badge variant="warning">En attente de vérification</Badge>
                     <span className="text-xs text-muted-foreground">
                       Demandée le{" "}
-                      {format(new Date(request.createdAt), "dd MMM yyyy", {
-                        locale: fr,
-                      })}
+                      {format(
+                        new Date(request.createdAt),
+                        "dd MMM yyyy HH:mm",
+                        {
+                          locale: fr,
+                        }
+                      )}
                     </span>
                   </div>
 

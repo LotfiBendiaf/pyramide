@@ -13,8 +13,11 @@ import { Types } from "mongoose";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
-import { isElevatedRole } from "@/constants/values";
 import { notify, notifyManagers } from "../notifications/notify";
+
+function canReviewArchiveRequests(role: string): boolean {
+  return role === "ADMIN" || role === "MANAGER";
+}
 
 /* ─────────────────────── Request Archive ─────────────────────── */
 
@@ -66,12 +69,13 @@ export async function requestArchive(
     });
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.DEMANDES);
 
     await notifyManagers({
       type: "ARCHIVE_REQUESTED",
       title: "Demande d'archivage en attente",
       body: "Une demande d'archivage nécessite votre validation.",
-      link: ROUTES.CLIENTS_DASHBOARD,
+      link: ROUTES.DEMANDES,
       relatedEntity: {
         type: entityType === "CLIENT" ? "CLIENT" : "LISTING",
         id: entityId,
@@ -104,7 +108,7 @@ export async function approveArchiveRequest(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager = isElevatedRole(user.data.role);
+  const isManager = canReviewArchiveRequests(user.data.role);
   if (!isManager) {
     return {
       success: false,
@@ -144,6 +148,8 @@ export async function approveArchiveRequest(
       archiveRequest.entityType === "CLIENT"
         ? Client.findByIdAndUpdate(archiveRequest.entityId, {
             archived: true,
+            archivedAt: new Date(),
+            archiveReason: archiveRequest.reason,
             qualificationStatus: "ARCHIVED",
             pipelineStage: "ARCHIVED",
           })
@@ -164,13 +170,17 @@ export async function approveArchiveRequest(
     } else {
       revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     }
+    revalidatePath(ROUTES.DEMANDES);
 
     await notify({
       recipientId: archiveRequest.requestedBy.toString(),
       type: "ARCHIVE_APPROVED",
       title: "Demande d'archivage approuvée",
       body: "Votre demande d'archivage a été approuvée.",
-      link: ROUTES.CLIENTS_DASHBOARD,
+      link:
+        archiveRequest.entityType === "CLIENT"
+          ? ROUTES.CLIENT_DETAIL(archiveRequest.entityId.toString())
+          : ROUTES.LISTINGS_DASHBOARD,
     });
 
     return { success: true, status: 200 };
@@ -199,7 +209,7 @@ export async function rejectArchiveRequest(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager = isElevatedRole(user.data.role);
+  const isManager = canReviewArchiveRequests(user.data.role);
   if (!isManager) {
     return {
       success: false,
@@ -235,13 +245,19 @@ export async function rejectArchiveRequest(
     await archiveRequest.save();
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.DEMANDES);
 
     await notify({
       recipientId: archiveRequest.requestedBy.toString(),
       type: "ARCHIVE_REJECTED",
       title: "Demande d'archivage refusée",
-      body: "Votre demande d'archivage a été refusée.",
-      link: ROUTES.CLIENTS_DASHBOARD,
+      body: managerNote
+        ? `Votre demande d'archivage a été refusée : ${managerNote}`
+        : "Votre demande d'archivage a été refusée.",
+      link:
+        archiveRequest.entityType === "CLIENT"
+          ? ROUTES.CLIENT_DETAIL(archiveRequest.entityId.toString())
+          : ROUTES.LISTINGS_DASHBOARD,
     });
 
     return { success: true, status: 200 };
@@ -260,7 +276,7 @@ export async function fetchPendingArchiveRequests(): Promise<
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const isManager = isElevatedRole(user.data.role);
+  const isManager = canReviewArchiveRequests(user.data.role);
   if (!isManager) {
     return {
       success: false,
@@ -280,10 +296,54 @@ export async function fetchPendingArchiveRequests(): Promise<
       ArchiveRequest.countDocuments({ status: "PENDING" }),
     ]);
 
+    const clientIds = requests
+      .filter((request) => request.entityType === "CLIENT")
+      .map((request) => request.entityId);
+    const listingIds = requests
+      .filter((request) => request.entityType === "LISTING")
+      .map((request) => request.entityId);
+
+    const [clients, listings] = await Promise.all([
+      Client.find({ _id: { $in: clientIds } })
+        .select("referenceCode firstName lastName phone")
+        .lean<
+          {
+            _id: Types.ObjectId;
+            referenceCode?: string;
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+          }[]
+        >(),
+      Listing.find({ _id: { $in: listingIds } })
+        .select("referenceCode title")
+        .lean<
+          { _id: Types.ObjectId; referenceCode?: string; title?: string }[]
+        >(),
+    ]);
+
+    const clientMap = new Map(
+      clients.map((client) => [client._id.toString(), client])
+    );
+    const listingMap = new Map(
+      listings.map((listing) => [listing._id.toString(), listing])
+    );
+    const hydratedRequests = requests.map((request) => ({
+      ...request,
+      relatedClient:
+        request.entityType === "CLIENT"
+          ? clientMap.get(request.entityId.toString())
+          : undefined,
+      relatedListing:
+        request.entityType === "LISTING"
+          ? listingMap.get(request.entityId.toString())
+          : undefined,
+    }));
+
     return {
       success: true,
       data: {
-        requests: JSON.parse(JSON.stringify(requests)),
+        requests: JSON.parse(JSON.stringify(hydratedRequests)),
         total,
       },
       status: 200,
@@ -299,6 +359,18 @@ type IArchiveRequest = {
   entityType: "CLIENT" | "LISTING";
   entityId: string;
   requestedBy: { firstname: string; lastname: string; role: string };
+  relatedClient?: {
+    _id: string;
+    referenceCode?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  };
+  relatedListing?: {
+    _id: string;
+    referenceCode?: string;
+    title?: string;
+  };
   reason: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   reviewedBy?: string;

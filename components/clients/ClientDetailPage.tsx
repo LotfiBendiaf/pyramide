@@ -92,12 +92,12 @@ export default function ClientDetailPage({
       return;
     }
 
-    toast.success("Client archivé", {
-      description: `${client.firstName} ${client.lastName} a été archivé.`,
+    toast.success("Demande d'archivage envoyée", {
+      description: `${client.firstName} ${client.lastName} attend une validation.`,
     });
     setArchiveOpen(false);
     setArchiveReason("");
-    router.push(ROUTES.CLIENTS_DASHBOARD);
+    router.refresh();
   };
 
   const handleRestore = async () => {
@@ -274,12 +274,11 @@ export default function ClientDetailPage({
           <DialogHeader>
             <DialogTitle>Archiver le client</DialogTitle>
             <DialogDescription>
-              Cette action archivera{" "}
+              Cette action enverra une demande d&apos;archivage pour{" "}
               <strong>
                 {client.firstName} {client.lastName}
               </strong>
-              . Le client ne sera plus visible dans la liste active mais restera
-              dans le système.
+              . Le client restera actif jusqu&apos;à validation.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -304,7 +303,7 @@ export default function ClientDetailPage({
               onClick={handleArchive}
               disabled={isWorking || archiveReason.trim().length < 5}
             >
-              {isWorking ? "En cours…" : "Archiver"}
+              {isWorking ? "En cours…" : "Envoyer la demande"}
             </Button>
           </DialogFooter>
         </DialogContent>
