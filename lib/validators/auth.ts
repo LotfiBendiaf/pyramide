@@ -53,6 +53,23 @@ export const ResetPasswordSchema = z
     message: "Les mots de passe ne correspondent pas.",
   });
 
+export const ChangePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(1, { message: "Le mot de passe actuel est requis." }),
+    password: PasswordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Les mots de passe ne correspondent pas.",
+  })
+  .refine((data) => data.currentPassword !== data.password, {
+    path: ["password"],
+    message: "Le nouveau mot de passe doit être différent de l'ancien.",
+  });
+
 export const SignUpSchema = z
   .object({
     username: z

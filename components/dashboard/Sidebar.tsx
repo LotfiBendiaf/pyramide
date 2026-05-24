@@ -29,9 +29,9 @@ import { useSession } from "next-auth/react";
 import Logo from "../Logo";
 import LogoutButton from "../LogoutButton";
 import Link from "next/link";
+import ChangePasswordDialog from "../forms/change-password-form";
 import {
   ChevronUp,
-  Settings,
   PlusCircle,
   Users,
   UserPlus,
@@ -51,6 +51,7 @@ import {
   Handshake,
   BriefcaseBusiness,
   ClipboardCheck,
+  Lock,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -236,6 +237,7 @@ export function AppSidebar() {
   const userRole = user?.role as Role | undefined;
   const pathname = usePathname();
   const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Reset loading state when pathname changes (navigation complete)
@@ -382,9 +384,15 @@ export function AppSidebar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg mx-1">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <span>Paramètres</span>
+                <DropdownMenuItem
+                  className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg mx-1"
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setIsChangePasswordOpen(true);
+                  }}
+                >
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                  <span>Changer le mot de passe</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <div className="px-1 py-1">
@@ -395,6 +403,10 @@ export function AppSidebar() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
+            <ChangePasswordDialog
+              open={isChangePasswordOpen}
+              onOpenChange={setIsChangePasswordOpen}
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

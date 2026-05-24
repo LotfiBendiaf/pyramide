@@ -4,17 +4,18 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import mongoose from "mongoose";
 
-import { signIn } from "@/auth";
+import { auth, signIn } from "@/auth";
 
 import action from "../handlers/action";
 import handleError from "../handlers/error";
 import {
+  ChangePasswordSchema,
   ForgotPasswordSchema,
   ResetPasswordSchema,
   SignInSchema,
   SignUpSchema,
 } from "../validators/auth";
-import { NotFoundError } from "../http-errors";
+import { NotFoundError, UnauthorizedError } from "../http-errors";
 import { Account, PasswordResetToken, User } from "@/models";
 import { sendEmail } from "../email/emailService";
 
@@ -323,5 +324,76 @@ export async function resetPassword(params: {
     return handleError(error) as ErrorResponse;
   } finally {
     await session.endSession();
+  }
+}
+
+export async function changeCurrentUserPassword(params: {
+  currentPassword: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<ActionResponse> {
+  const validationResult = await action({
+    params,
+    schema: ChangePasswordSchema,
+  });
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return handleError(new UnauthorizedError()) as ErrorResponse;
+  }
+
+  const { currentPassword, password } = validationResult.params!;
+
+  try {
+    const existingAccount = await Account.findOne({
+      userId: session.user.id,
+      provider: "credentials",
+      password: { $exists: true },
+    });
+
+    if (!existingAccount?.password) {
+      return {
+        success: false,
+        status: 400,
+        error: {
+          message:
+            "Ce compte ne possède pas de mot de passe local à modifier.",
+        },
+      };
+    }
+
+    const passwordMatch = await bcrypt.compare(
+      currentPassword,
+      existingAccount.password
+    );
+
+    if (!passwordMatch) {
+      return {
+        success: false,
+        status: 400,
+        error: { message: "Le mot de passe actuel est incorrect." },
+      };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    await Account.updateOne(
+      { _id: existingAccount._id },
+      { $set: { password: hashedPassword } }
+    );
+
+    await PasswordResetToken.updateMany(
+      { userId: session.user.id, usedAt: { $exists: false } },
+      { $set: { usedAt: new Date() } }
+    );
+
+    return { success: true };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
   }
 }
