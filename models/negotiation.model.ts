@@ -1,10 +1,12 @@
 import { Schema, model, models } from "mongoose";
 
 export type NegotiationStatus =
+  | "PENDING_VERIFICATION"
   | "ACTIVE"
   | "CLOSING"
   | "DEAL_DONE"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "REJECTED";
 export type BlockRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface IBlockingRequest {
@@ -54,7 +56,9 @@ export interface INegotiation {
   };
 
   cancelReason?: string;
+  rejectionReason?: string;
   cancelledAt?: Date;
+  rejectedAt?: Date;
   closedAt?: Date;
 
   createdAt: Date;
@@ -104,8 +108,15 @@ const negotiationSchema = new Schema<INegotiation>(
 
     status: {
       type: String,
-      enum: ["ACTIVE", "CLOSING", "DEAL_DONE", "CANCELLED"],
-      default: "ACTIVE",
+      enum: [
+        "PENDING_VERIFICATION",
+        "ACTIVE",
+        "CLOSING",
+        "DEAL_DONE",
+        "CANCELLED",
+        "REJECTED",
+      ],
+      default: "PENDING_VERIFICATION",
     },
 
     blockingRequests: [blockingRequestSchema],
@@ -119,7 +130,9 @@ const negotiationSchema = new Schema<INegotiation>(
     },
 
     cancelReason: { type: String, trim: true },
+    rejectionReason: { type: String, trim: true },
     cancelledAt: Date,
+    rejectedAt: Date,
     closedAt: Date,
   },
   { timestamps: true }

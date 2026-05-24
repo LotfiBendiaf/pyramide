@@ -42,6 +42,7 @@ const ROUTES = {
   // Negotiations
   NEGOTIATIONS: "/dashboard/negotiations",
   NEGOTIATION_DETAIL: (id: string) => `/dashboard/negotiations/${id}`,
+  DEMANDES: "/dashboard/demandes",
   // Mes biens
   MES_BIENS: "/dashboard/mes-biens",
 };

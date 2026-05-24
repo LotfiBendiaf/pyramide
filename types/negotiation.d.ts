@@ -1,8 +1,10 @@
 export type NegotiationStatus =
+  | "PENDING_VERIFICATION"
   | "ACTIVE"
   | "CLOSING"
   | "DEAL_DONE"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "REJECTED";
 export type BlockRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type OpenNegotiationInput = {

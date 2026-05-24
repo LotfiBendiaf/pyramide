@@ -17,10 +17,12 @@ const PER_PAGE = 20;
 
 const STATUS_TABS = [
   { value: undefined, label: "Toutes" },
+  { value: "PENDING_VERIFICATION", label: "En vérification" },
   { value: "ACTIVE", label: "En cours" },
   { value: "CLOSING", label: "Closing" },
   { value: "DEAL_DONE", label: "Conclues" },
   { value: "CANCELLED", label: "Annulées" },
+  { value: "REJECTED", label: "Refusées" },
 ] as const;
 
 type SearchParams = { status?: string; page?: string };

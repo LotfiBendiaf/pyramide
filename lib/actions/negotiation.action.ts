@@ -9,6 +9,7 @@ import {
   openNegotiationSchema,
   requestBlockSchema,
   reviewBlockSchema,
+  reviewNegotiationSchema,
   confirmDepositSchema,
   closeDealSchema,
   cancelNegotiationSchema,
@@ -16,6 +17,7 @@ import {
   OpenNegotiationInput,
   RequestBlockInput,
   ReviewBlockInput,
+  ReviewNegotiationInput,
   ConfirmDepositInput,
   CloseDealInput,
   CancelNegotiationInput,
@@ -36,6 +38,10 @@ export type NegotiationListingOption = {
   propertyType?: string;
   address?: string;
 };
+
+function canReviewNegotiations(role: string): boolean {
+  return role === "ADMIN" || role === "MANAGER";
+}
 
 export async function fetchNegotiationListingOptions(options?: {
   includeAllStatuses?: boolean;
@@ -174,79 +180,68 @@ export async function openNegotiation(
       };
     }
 
-    // Check for existing active negotiation on this listing
+    // Check for existing active or pending negotiation on this listing
     const existing = await Negotiation.findOne({
       listing: listingId,
-      status: { $in: ["ACTIVE", "CLOSING"] },
+      status: { $in: ["PENDING_VERIFICATION", "ACTIVE", "CLOSING"] },
     }).lean();
 
     if (existing) {
       return {
         success: false,
-        error: { message: "Une négociation est déjà en cours pour ce bien" },
+        error: {
+          message:
+            "Une négociation est déjà en attente ou en cours pour ce bien",
+        },
         status: 409,
       };
     }
 
     const blockedUntil = new Date(Date.now() + blockHours * 60 * 60 * 1000);
 
-    const [negotiation] = await Promise.all([
-      Negotiation.create({
-        listing: listingId,
-        client: clientId,
-        agent: user.data._id,
-        visit: visitId ?? undefined,
-        status: depositAmount ? "CLOSING" : "ACTIVE",
-        blockingRequests: [
-          {
-            requestedBy: user.data._id,
-            requestedAt: new Date(),
-            durationDays: blockHours / 24,
-            reason: notes,
-            status: "APPROVED",
-            reviewedBy: user.data._id,
-            reviewedAt: new Date(),
-            blockedUntil,
-          },
-        ],
-        documents: document
-          ? [
-              {
-                publicId: document.publicId,
-                url: document.url,
-                secureUrl: document.secureUrl,
-                originalFilename: document.originalFilename,
-                format: document.format,
-                resourceType: document.resourceType,
-                bytes: document.bytes,
-                uploadedBy: user.data._id,
-                uploadedAt: new Date(),
-              },
-            ]
-          : undefined,
-        ...(depositAmount || notes
-          ? {
-              closingDetails: {
-                ...(depositAmount
-                  ? { depositAmount, depositAt: new Date() }
-                  : {}),
-                ...(notes ? { notes } : {}),
-              },
-            }
-          : {}),
-      }),
-      Listing.findByIdAndUpdate(listingId, {
-        pipelineStatus: depositAmount ? "CLOSING" : "UNDER_NEGOTIATION",
-        blockedForClient: clientId,
-        blockedUntil,
-      }),
-      Client.findByIdAndUpdate(clientId, {
-        pipelineStage: "IN_NEGOTIATION",
-        lastContactedAt: new Date(),
-      }),
-    ]);
+    const negotiation = await Negotiation.create({
+      listing: listingId,
+      client: clientId,
+      agent: user.data._id,
+      visit: visitId ?? undefined,
+      status: "PENDING_VERIFICATION",
+      blockingRequests: [
+        {
+          requestedBy: user.data._id,
+          requestedAt: new Date(),
+          durationDays: blockHours / 24,
+          reason: notes,
+          status: "PENDING",
+          blockedUntil,
+        },
+      ],
+      documents: document
+        ? [
+            {
+              publicId: document.publicId,
+              url: document.url,
+              secureUrl: document.secureUrl,
+              originalFilename: document.originalFilename,
+              format: document.format,
+              resourceType: document.resourceType,
+              bytes: document.bytes,
+              uploadedBy: user.data._id,
+              uploadedAt: new Date(),
+            },
+          ]
+        : undefined,
+      ...(depositAmount || notes
+        ? {
+            closingDetails: {
+              ...(depositAmount ? { depositAmount, depositAt: new Date() } : {}),
+              ...(notes ? { notes } : {}),
+            },
+          }
+        : {}),
+    });
 
     revalidatePath(ROUTES.NEGOTIATIONS);
+    revalidatePath(ROUTES.DEMANDES);
     revalidatePath(ROUTES.MES_BIENS);
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
@@ -254,9 +249,9 @@ export async function openNegotiation(
 
     await notifyManagers({
       type: "NEGOTIATION_OPENED",
-      title: "Nouvelle négociation ouverte",
-      body: "Une négociation a été ouverte sur un bien du portefeuille.",
-      link: ROUTES.NEGOTIATION_DETAIL(negotiation._id.toString()),
+      title: "Nouvelle négociation à vérifier",
+      body: "Une négociation nécessite votre validation avant activation.",
+      link: ROUTES.DEMANDES,
       relatedEntity: { type: "NEGOTIATION", id: negotiation._id.toString() },
     });
 
@@ -265,6 +260,221 @@ export async function openNegotiation(
       data: JSON.parse(JSON.stringify(negotiation)),
       status: 201,
     };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* ─────────────────────── Review Negotiation ─────────────────────── */
+
+export async function approveNegotiation(
+  params: ReviewNegotiationInput
+): Promise<ActionResponse> {
+  const validationResult = await action({
+    params,
+    schema: reviewNegotiationSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!canReviewNegotiations(user.data.role)) {
+    return {
+      success: false,
+      error: { message: "Seul un administrateur ou gérant peut valider" },
+      status: 403,
+    };
+  }
+
+  const { negotiationId, managerNote } = validationResult.params;
+
+  if (!Types.ObjectId.isValid(negotiationId)) {
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
+  }
+
+  try {
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
+
+    if (!negotiation) {
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
+    }
+
+    if (negotiation.status !== "PENDING_VERIFICATION") {
+      return {
+        success: false,
+        error: { message: "Cette demande a déjà été traitée" },
+        status: 409,
+      };
+    }
+
+    const blockReq = negotiation.blockingRequests?.[0];
+    const blockedUntil = blockReq?.blockedUntil
+      ? new Date(blockReq.blockedUntil)
+      : new Date(
+          Date.now() + (blockReq?.durationDays ?? 1) * 24 * 60 * 60 * 1000
+        );
+    const nextStatus = negotiation.closingDetails?.depositAmount
+      ? "CLOSING"
+      : "ACTIVE";
+    const now = new Date();
+
+    await Promise.all([
+      Negotiation.findByIdAndUpdate(negotiationId, {
+        $set: {
+          status: nextStatus,
+          ...(blockReq
+            ? {
+                "blockingRequests.0.status": "APPROVED",
+                "blockingRequests.0.reviewedBy": user.data._id,
+                "blockingRequests.0.reviewedAt": now,
+                "blockingRequests.0.managerNote": managerNote,
+                "blockingRequests.0.blockedUntil": blockedUntil,
+              }
+            : {}),
+        },
+      }),
+      Listing.findByIdAndUpdate(negotiation.listing, {
+        pipelineStatus:
+          nextStatus === "CLOSING" ? "CLOSING" : "UNDER_NEGOTIATION",
+        blockedForClient: negotiation.client,
+        blockedUntil,
+        ...(negotiation.closingDetails?.finalPrice
+          ? { offeredPrice: negotiation.closingDetails.finalPrice }
+          : {}),
+      }),
+      Client.findByIdAndUpdate(negotiation.client, {
+        pipelineStage: "IN_NEGOTIATION",
+        lastContactedAt: now,
+      }),
+    ]);
+
+    revalidatePath(ROUTES.DEMANDES);
+    revalidatePath(ROUTES.NEGOTIATIONS);
+    revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
+    revalidatePath(ROUTES.MES_BIENS);
+    revalidatePath(
+      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+    );
+    revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+
+    await notify({
+      recipientId: negotiation.agent.toString(),
+      type: "NEGOTIATION_APPROVED",
+      title: "Négociation approuvée",
+      body: "Votre négociation a été validée et activée.",
+      link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+      relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+    });
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function rejectNegotiation(
+  params: ReviewNegotiationInput
+): Promise<ActionResponse> {
+  const validationResult = await action({
+    params,
+    schema: reviewNegotiationSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!canReviewNegotiations(user.data.role)) {
+    return {
+      success: false,
+      error: { message: "Seul un administrateur ou gérant peut refuser" },
+      status: 403,
+    };
+  }
+
+  const { negotiationId, managerNote } = validationResult.params;
+
+  if (!Types.ObjectId.isValid(negotiationId)) {
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
+  }
+
+  try {
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
+
+    if (!negotiation) {
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
+    }
+
+    if (negotiation.status !== "PENDING_VERIFICATION") {
+      return {
+        success: false,
+        error: { message: "Cette demande a déjà été traitée" },
+        status: 409,
+      };
+    }
+
+    const now = new Date();
+
+    await Negotiation.findByIdAndUpdate(negotiationId, {
+      $set: {
+        status: "REJECTED",
+        rejectionReason: managerNote,
+        rejectedAt: now,
+        "blockingRequests.0.status": "REJECTED",
+        "blockingRequests.0.reviewedBy": user.data._id,
+        "blockingRequests.0.reviewedAt": now,
+        "blockingRequests.0.managerNote": managerNote,
+      },
+    });
+
+    revalidatePath(ROUTES.DEMANDES);
+    revalidatePath(ROUTES.NEGOTIATIONS);
+    revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
+
+    await notify({
+      recipientId: negotiation.agent.toString(),
+      type: "NEGOTIATION_REJECTED",
+      title: "Négociation refusée",
+      body: managerNote
+        ? `Votre négociation a été refusée : ${managerNote}`
+        : "Votre négociation a été refusée.",
+      link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+      relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+    });
+
+    return { success: true, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }
@@ -393,7 +603,7 @@ export async function approveBlock(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  if (!isElevatedRole(user.data.role)) {
+  if (!canReviewNegotiations(user.data.role)) {
     return {
       success: false,
       error: { message: "Seul le gérant peut approuver un blocage" },
@@ -505,7 +715,7 @@ export async function rejectBlock(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  if (!isElevatedRole(user.data.role)) {
+  if (!canReviewNegotiations(user.data.role)) {
     return {
       success: false,
       error: { message: "Seul le gérant peut rejeter un blocage" },
@@ -1061,7 +1271,7 @@ export async function fetchPendingBlockRequests(): Promise<
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  if (!isElevatedRole(user.data.role)) {
+  if (!canReviewNegotiations(user.data.role)) {
     return { success: false, error: { message: "Accès refusé" }, status: 403 };
   }
 
@@ -1076,6 +1286,44 @@ export async function fetchPendingBlockRequests(): Promise<
         .populate("blockingRequests.requestedBy", "firstname lastname role")
         .lean<INegotiation[]>(),
       Negotiation.countDocuments({ "blockingRequests.status": "PENDING" }),
+    ]);
+
+    return {
+      success: true,
+      data: { negotiations: JSON.parse(JSON.stringify(negotiations)), total },
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function fetchPendingNegotiationRequests(): Promise<
+  ActionResponse<{ negotiations: INegotiation[]; total: number }>
+> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!canReviewNegotiations(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé" }, status: 403 };
+  }
+
+  try {
+    await dbConnect();
+
+    const filter = { status: "PENDING_VERIFICATION" };
+
+    const [negotiations, total] = await Promise.all([
+      Negotiation.find(filter)
+        .populate("listing", "referenceCode title pipelineStatus status price")
+        .populate("client", "referenceCode firstName lastName phone")
+        .populate("agent", "firstname lastname role")
+        .populate("blockingRequests.requestedBy", "firstname lastname role")
+        .sort({ createdAt: -1 })
+        .lean<INegotiation[]>(),
+      Negotiation.countDocuments(filter),
     ]);
 
     return {

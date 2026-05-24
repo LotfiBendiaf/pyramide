@@ -90,6 +90,8 @@ export interface NegotiationDetailProps {
     closedAt?: string | Date;
     cancelledAt?: string | Date;
     cancelReason?: string;
+    rejectedAt?: string | Date;
+    rejectionReason?: string;
     blockingRequests: BlockingRequest[];
     documents?: NegotiationDocument[];
     closingDetails?: {
@@ -312,6 +314,30 @@ export function NegotiationDetail({
         </Card>
       )}
 
+      {/* Rejection info */}
+      {negotiation.status === "REJECTED" && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="p-4 text-sm">
+            <p className="mb-1 font-medium text-destructive">
+              Négociation refusée
+            </p>
+            {negotiation.rejectionReason && (
+              <p className="text-muted-foreground">
+                {negotiation.rejectionReason}
+              </p>
+            )}
+            {negotiation.rejectedAt && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Le{" "}
+                {format(new Date(negotiation.rejectedAt), "dd MMM yyyy", {
+                  locale: fr,
+                })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Deal done */}
       {negotiation.status === "DEAL_DONE" && (
         <Card className="border-green-200 bg-green-50/50">
@@ -385,18 +411,20 @@ export function NegotiationDetail({
                   <BlockStatusBadge status={req.status} />
                 </div>
                 {/* Manager approve/reject buttons */}
-                {req.status === "PENDING" && isManager && (
-                  <div className="flex gap-2 pt-1">
-                    <ApproveBlockButton
-                      negotiationId={negotiation._id}
-                      blockingRequestId={req._id}
-                    />
-                    <RejectBlockButton
-                      negotiationId={negotiation._id}
-                      blockingRequestId={req._id}
-                    />
-                  </div>
-                )}
+                {req.status === "PENDING" &&
+                  isManager &&
+                  negotiation.status === "ACTIVE" && (
+                    <div className="flex gap-2 pt-1">
+                      <ApproveBlockButton
+                        negotiationId={negotiation._id}
+                        blockingRequestId={req._id}
+                      />
+                      <RejectBlockButton
+                        negotiationId={negotiation._id}
+                        blockingRequestId={req._id}
+                      />
+                    </div>
+                  )}
               </div>
             ))
           )}

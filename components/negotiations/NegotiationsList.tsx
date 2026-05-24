@@ -23,6 +23,7 @@ export interface Negotiation {
   createdAt: string | Date;
   closedAt?: string | Date;
   cancelledAt?: string | Date;
+  rejectionReason?: string;
   listing?: {
     _id: string;
     referenceCode?: string;
@@ -183,6 +184,11 @@ export function NegotiationsList({
                     />
                   )}
                   <NegotiationStatusBadge status={neg.status} />
+                  {neg.status === "REJECTED" && neg.rejectionReason && (
+                    <span className="max-w-48 truncate text-xs text-muted-foreground">
+                      {neg.rejectionReason}
+                    </span>
+                  )}
                   {pendingBlocks > 0 && (
                     <div className="flex items-center gap-1 text-xs text-amber-600 font-medium">
                       <Lock className="h-3 w-3" />

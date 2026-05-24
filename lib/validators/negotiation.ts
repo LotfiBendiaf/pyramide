@@ -36,6 +36,11 @@ export const reviewBlockSchema = z.object({
   managerNote: z.string().trim().optional(),
 });
 
+export const reviewNegotiationSchema = z.object({
+  negotiationId: z.string().min(1),
+  managerNote: z.string().trim().optional(),
+});
+
 export const confirmDepositSchema = z.object({
   negotiationId: z.string().min(1),
   depositAmount: z
@@ -57,7 +62,16 @@ export const cancelNegotiationSchema = z.object({
 });
 
 export const negotiationFiltersSchema = z.object({
-  status: z.enum(["ACTIVE", "CLOSING", "DEAL_DONE", "CANCELLED"]).optional(),
+  status: z
+    .enum([
+      "PENDING_VERIFICATION",
+      "ACTIVE",
+      "CLOSING",
+      "DEAL_DONE",
+      "CANCELLED",
+      "REJECTED",
+    ])
+    .optional(),
   agentId: z.string().optional(),
   listingId: z.string().optional(),
   clientId: z.string().optional(),
@@ -68,6 +82,7 @@ export const negotiationFiltersSchema = z.object({
 export type OpenNegotiationInput = z.infer<typeof openNegotiationSchema>;
 export type RequestBlockInput = z.infer<typeof requestBlockSchema>;
 export type ReviewBlockInput = z.infer<typeof reviewBlockSchema>;
+export type ReviewNegotiationInput = z.infer<typeof reviewNegotiationSchema>;
 export type ConfirmDepositInput = z.infer<typeof confirmDepositSchema>;
 export type CloseDealInput = z.infer<typeof closeDealSchema>;
 export type CancelNegotiationInput = z.infer<typeof cancelNegotiationSchema>;

@@ -176,7 +176,7 @@ export default function ClientNegotiationStageSelect({
       return;
     }
 
-    toast.success("Négociation ouverte");
+    toast.success("Négociation soumise pour vérification");
     setDialogOpen(false);
     setListingId("");
     setDepositAmount("");

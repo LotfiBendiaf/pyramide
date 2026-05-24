@@ -140,6 +140,7 @@ export const routeTitles: Record<string, string> = {
   // Negotiations
   "/dashboard/negotiations": "Négociations",
   "/dashboard/negotiations/[id]": "Négociation",
+  "/dashboard/demandes": "Demandes",
 
   // Settings
   "/dashboard/settings": "Paramètres",
@@ -235,10 +236,16 @@ export type ClientTemperatureValue =
 // ─── Negotiations ──────────────────────────────────────────────────────────
 
 export const NEGOTIATION_STATUSES = [
+  {
+    value: "PENDING_VERIFICATION",
+    label: "En attente de vérification",
+    color: "warning",
+  },
   { value: "ACTIVE", label: "En cours", color: "destructive" },
   { value: "CLOSING", label: "Closing", color: "info" },
   { value: "DEAL_DONE", label: "Conclu", color: "success" },
   { value: "CANCELLED", label: "Annulée", color: "secondary" },
+  { value: "REJECTED", label: "Refusée", color: "secondary" },
 ] as const;
 
 export type NegotiationStatusValue =

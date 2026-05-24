@@ -9,6 +9,8 @@ export type NotificationType =
   | "VISIT_SCHEDULED"
   | "VISIT_CANCELLED"
   | "NEGOTIATION_OPENED"
+  | "NEGOTIATION_APPROVED"
+  | "NEGOTIATION_REJECTED"
   | "BLOCK_REQUESTED"
   | "BLOCK_APPROVED"
   | "BLOCK_REJECTED"
@@ -57,6 +59,8 @@ const notificationSchema = new Schema<INotification>(
         "VISIT_SCHEDULED",
         "VISIT_CANCELLED",
         "NEGOTIATION_OPENED",
+        "NEGOTIATION_APPROVED",
+        "NEGOTIATION_REJECTED",
         "BLOCK_REQUESTED",
         "BLOCK_APPROVED",
         "BLOCK_REJECTED",

@@ -50,6 +50,7 @@ import {
   CalendarCheck,
   Handshake,
   BriefcaseBusiness,
+  ClipboardCheck,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -160,6 +161,12 @@ const sidebarConfig: SidebarGroup[] = [
         title: "Négociations",
         url: ROUTES.NEGOTIATIONS,
         icon: Handshake,
+      },
+      {
+        title: "Demandes",
+        url: ROUTES.DEMANDES,
+        icon: ClipboardCheck,
+        roles: ["ADMIN", "MANAGER"],
       },
     ],
   },
@@ -326,7 +333,7 @@ export function AppSidebar() {
                       {status === "loading" ? "Chargement..." : user?.name}
                     </span>
                     {user?.role && (
-                      <span className="inline-flex w-fit max-w-full items-center gap-1 rounded-full border border-primary/15 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                      <span className="inline-flex w-fit max-w-full items-center gap-1 rounded-full border border-primary/15 bg-primary/10 px-1 py-0.5 text-[11px] font-medium text-primary">
                         <BadgeCheck className="h-3 w-3 shrink-0" />
                         {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
                       </span>
@@ -366,7 +373,7 @@ export function AppSidebar() {
                         {user?.email}
                       </p>
                       {user?.role && (
-                        <span className="mt-0.5 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        <span className="mt-0.5 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1 py-0.5 text-[11px] font-medium text-primary">
                           <BadgeCheck className="h-3 w-3" />
                           {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
                         </span>
