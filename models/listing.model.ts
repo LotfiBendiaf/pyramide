@@ -16,7 +16,7 @@ export type ListingPipelineStatus =
 export type SellerMotivation = "LOW" | "MEDIUM" | "HIGH";
 
 export interface IListing {
-  referenceCode?: string; // VA-0001 (Vente Appartement), LV-0001 (Location Villa) — assigned on validation
+  referenceCode?: string; // V-0000001 (vente), L-0000001 (location) — assigned on validation
   title?: string;
   slug?: string;
 

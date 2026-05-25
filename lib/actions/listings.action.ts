@@ -21,6 +21,42 @@ import { PropertyStatus, isElevatedRole } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { clientPrefix, formatPriceAlgeria } from "../utils";
 
+function getListingReferencePrefix(status: string): "V" | "L" {
+  return status === "En Location" ? "L" : "V";
+}
+
+function hasListingReferencePrefix(referenceCode: string | undefined, prefix: "V" | "L") {
+  return referenceCode?.startsWith(`${prefix}-`) ?? false;
+}
+
+async function generateListingReferenceCode(prefix: "V" | "L") {
+  const lastListing = (await Listing.findOne({
+    referenceCode: { $regex: `^${prefix}-` },
+  })
+    .sort({ referenceCode: -1 })
+    .select("referenceCode")
+    .lean()) as { referenceCode?: string } | null;
+
+  const lastNumber = lastListing?.referenceCode
+    ? parseInt(lastListing.referenceCode.split("-")[1], 10)
+    : 0;
+
+  return `${prefix}-${String(lastNumber + 1).padStart(7, "0")}`;
+}
+
+function upsertReferenceInDescription(
+  description: string | undefined,
+  referenceCode: string
+) {
+  if (!description) return description;
+
+  if (description.includes("Réf :")) {
+    return description.replace(/^Réf : .+$/m, `Réf : ${referenceCode}`);
+  }
+
+  return description.replace(/^([\s\S]*?)(Type :)/m, `$1Réf : ${referenceCode}\n$2`);
+}
+
 function buildListingDescription(
   params: ListingInput,
   referenceCode?: string
@@ -519,8 +555,36 @@ export async function updateListingStatus(
 ) {
   try {
     await dbConnect();
-    await Listing.findByIdAndUpdate(listingId, { status });
+
+    const listing = await Listing.findById(listingId).select(
+      "referenceCode description isValidated"
+    );
+
+    if (!listing) {
+      return { success: false };
+    }
+
+    const update: {
+      status: PropertyStatus;
+      referenceCode?: string;
+      description?: string;
+    } = { status };
+
+    const expectedPrefix = getListingReferencePrefix(status);
+    if (
+      listing.isValidated &&
+      !hasListingReferencePrefix(listing.referenceCode, expectedPrefix)
+    ) {
+      const referenceCode = await generateListingReferenceCode(expectedPrefix);
+      update.referenceCode = referenceCode;
+      update.description =
+        upsertReferenceInDescription(listing.description, referenceCode) ||
+        listing.description;
+    }
+
+    await Listing.findByIdAndUpdate(listingId, update);
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
     return { success: true };
   } catch (error) {
     handleError(error);
@@ -585,22 +649,29 @@ export async function updateListing(
         : undefined;
 
     const existingListing = (await Listing.findById(listingId)
-      .select("referenceCode")
-      .lean()) as { referenceCode?: string } | null;
+      .select("referenceCode isValidated")
+      .lean()) as { referenceCode?: string; isValidated?: boolean } | null;
 
-    const description = buildListingDescription(
-      parsedParams,
-      existingListing?.referenceCode
-    );
+    const expectedPrefix = getListingReferencePrefix(parsedParams.status);
+    let referenceCode = existingListing?.referenceCode;
+    if (
+      existingListing?.isValidated &&
+      !hasListingReferencePrefix(referenceCode, expectedPrefix)
+    ) {
+      referenceCode = await generateListingReferenceCode(expectedPrefix);
+    }
+
+    const description = buildListingDescription(parsedParams, referenceCode);
 
     const updated = await Listing.findByIdAndUpdate(
       listingId,
       {
         ...parsedParams,
         description,
+        referenceCode,
         propertyTypeCustom: normalizedPropertyTypeCustom,
         evaluation,
-        // Do not overwrite agent or referenceCode
+        // Do not overwrite agent or seller form-only fields
         sellerFirstName: undefined,
         sellerLastName: undefined,
         sellerPhone: undefined,
@@ -667,30 +738,14 @@ export async function toggleListingValidation(
       // — Validate: assign reference code if not already set —
       let referenceCode = listing.referenceCode as string | undefined;
       let updatedDescription = listing.description;
+      const prefix = getListingReferencePrefix(listing.status);
 
-      if (!referenceCode) {
-        const { status } = listing;
-        const isVente = status === "En Vente";
-        const prefix = isVente ? "V" : "L";
-        // Find the highest existing reference number for this prefix
-        const lastListing = (await Listing.findOne({
-          referenceCode: { $regex: `^${prefix}-` },
-        })
-          .sort({ referenceCode: -1 })
-          .select("referenceCode")
-          .lean()) as { referenceCode?: string } | null;
-        const lastNumber = lastListing?.referenceCode
-          ? parseInt(lastListing.referenceCode.split("-")[1], 10)
-          : 0;
-        referenceCode = `${prefix}-${String(lastNumber + 1).padStart(7, "0")}`;
-
-        const descriptionHasRef = listing.description?.includes("Réf :");
-        if (!descriptionHasRef) {
-          updatedDescription = listing.description?.replace(
-            /^([\s\S]*?)(Type :)/m,
-            `$1Réf : ${referenceCode}\n$2`
-          );
-        }
+      if (!hasListingReferencePrefix(referenceCode, prefix)) {
+        referenceCode = await generateListingReferenceCode(prefix);
+        updatedDescription = upsertReferenceInDescription(
+          listing.description,
+          referenceCode
+        );
       }
 
       await Listing.findByIdAndUpdate(listingId, {
