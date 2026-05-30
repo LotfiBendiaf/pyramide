@@ -65,9 +65,11 @@ export async function createFollowUp(
 
     // Sync to Google Calendar if the follow-up has a scheduled time
     if (followUp.reminderAt || followUp.startTime) {
-      createCalendarEventFromFollowUp(followUp._id.toString()).catch((err) =>
-        console.error("Failed to sync follow-up to Google Calendar:", err)
-      );
+      try {
+        await createCalendarEventFromFollowUp(followUp._id.toString());
+      } catch (err) {
+        console.error("Failed to sync follow-up to Google Calendar:", err);
+      }
     }
 
     return {

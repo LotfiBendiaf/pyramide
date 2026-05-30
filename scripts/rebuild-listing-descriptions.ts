@@ -11,6 +11,26 @@ dotenv.config({ path: ".env.local" });
 const MONGODB_URI = process.env.MONGODB_URI as string;
 if (!MONGODB_URI) throw new Error("MONGODB_URI is not defined");
 
+type ListingDescriptionSource = {
+  _id: mongoose.Types.ObjectId;
+  referenceCode?: string;
+  status: string;
+  propertyType: string;
+  propertyTypeCustom?: string;
+  price?: number;
+  location?: {
+    city?: string;
+    district?: string;
+    address?: string;
+  };
+  features?: {
+    area?: number;
+    etage?: number;
+    nombreEtages?: number;
+    elevator?: boolean;
+  };
+};
+
 /* ---------- helpers (mirrors listings.action.ts) ---------- */
 
 function formatPriceAlgeria(value: number): string {
@@ -33,7 +53,10 @@ function formatPriceAlgeria(value: number): string {
   return `${centimes.toLocaleString("fr-DZ")}`;
 }
 
-function buildListingDescription(listing: any, referenceCode?: string): string {
+function buildListingDescription(
+  listing: ListingDescriptionSource,
+  referenceCode?: string
+): string {
   const statusLine =
     listing.status === "En Location"
       ? "𝗣𝗬𝗥𝗔𝗠𝗜𝗗𝗘 𝗜𝗠𝗠𝗢𝗕𝗜𝗟𝗜𝗘𝗥 met en location"
@@ -121,7 +144,7 @@ async function main() {
   console.log("Connected to MongoDB");
 
   const db = mongoose.connection.db!;
-  const collection = db.collection("listings");
+  const collection = db.collection<ListingDescriptionSource>("listings");
 
   const listings = await collection.find({}).toArray();
   console.log(`Found ${listings.length} listing(s) to update`);

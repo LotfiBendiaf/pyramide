@@ -232,7 +232,7 @@ export async function createCalendarEventFromFollowUp(
   }
 
   const user = await User.findById(followUp.agent);
-  if (!user?.calendarSettings?.syncFollowUps) {
+  if (!user || user.calendarSettings?.syncFollowUps === false) {
     return { success: true }; // Sync disabled, not an error
   }
 
@@ -292,7 +292,7 @@ export async function createCalendarEventFromTask(
   }
 
   const user = await User.findById(task.agent);
-  if (!user?.calendarSettings?.syncTasks) {
+  if (!user || user.calendarSettings?.syncTasks === false) {
     return { success: true }; // Sync disabled, not an error
   }
 
