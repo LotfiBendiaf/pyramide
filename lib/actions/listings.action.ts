@@ -22,7 +22,7 @@ import ROUTES from "@/constants/routes";
 import { clientPrefix, formatPriceAlgeria } from "../utils";
 
 function getListingReferencePrefix(status: string): "V" | "L" {
-  return status === "En Location" ? "L" : "V";
+  return status === "En Location" || status === "Loué" ? "L" : "V";
 }
 
 function hasListingReferencePrefix(referenceCode: string | undefined, prefix: "V" | "L") {
