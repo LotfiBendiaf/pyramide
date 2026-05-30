@@ -44,6 +44,16 @@ interface PaginatedSearchParams {
   tomorrow?: boolean;
 }
 
+type ListingPipelineStatus =
+  | "DRAFT"
+  | "PENDING_VALIDATION"
+  | "PHOTO_VISIT_PENDING"
+  | "ACTIVE"
+  | "UNDER_NEGOTIATION"
+  | "CLOSING"
+  | "SOLD"
+  | "ARCHIVED";
+
 interface Listing {
   _id: string;
   title?: string;
@@ -56,6 +66,7 @@ interface Listing {
   priceLabel?: string; // ex: "80 000 DA / mois"
   offeredPrice?: number;
 
+  pipelineStatus: ListingPipelineStatus;
   status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
   propertyType:
     | "Appartement"

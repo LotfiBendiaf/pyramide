@@ -39,6 +39,7 @@ import {
   EyeOff,
   Loader2,
   ShowerHead,
+  Radio,
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
@@ -251,7 +252,7 @@ export function ListingTable({ listings }: ListingTableProps) {
                     className="font-medium"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 items-start">
                       {listing.referenceCode && (
                         <span className="font-mono text-xs text-muted-foreground">
                           {listing.referenceCode}
@@ -316,6 +317,12 @@ export function ListingTable({ listings }: ListingTableProps) {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      {listing.pipelineStatus !== "PHOTO_VISIT_PENDING" && (
+                        <Badge variant="orange" className="text-xs">
+                          <Radio />
+                          Actuellement en visite
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
 
@@ -335,17 +342,20 @@ export function ListingTable({ listings }: ListingTableProps) {
                         {listing.propertyTypeCustom || listing.propertyType}
                       </Badge>
 
-                      {listing.propertyType === "Appartement" &&
-                        listing.features.etage && (
-                          <div className="flex gap-1 items-center">
-                            <Badge variant="success">
-                              F{listing.features.bedrooms}
-                            </Badge>
-                            <p className="text-muted-foreground text-xs">
-                              {listing.features.etage}ème étage
-                            </p>
-                          </div>
-                        )}
+                      {listing.propertyType === "Appartement" && (
+                        <div className="flex gap-1 items-center">
+                          <Badge variant="success">
+                            F
+                            {listing.features.bedrooms
+                              ? listing.features.bedrooms
+                              : "?"}
+                          </Badge>
+                          <p className="text-muted-foreground text-xs">
+                            {listing.features.etage &&
+                              `${listing.features.etage}ème étage`}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </TableCell>
 
