@@ -4,6 +4,8 @@ export type NegotiationStatus =
   | "PENDING_VERIFICATION"
   | "ACTIVE"
   | "CLOSING"
+  | "CLOSING_DEPOSIT"
+  | "CLOSING_FINALISATION"
   | "DEAL_DONE"
   | "CANCELLED"
   | "REJECTED";
@@ -51,6 +53,9 @@ export interface INegotiation {
   closingDetails?: {
     depositAmount?: number;
     depositAt?: Date;
+    depositPaymentDate?: Date;
+    depositPaymentMethod?: string;
+    depositProofNotes?: string;
     finalPrice?: number;
     notes?: string;
   };
@@ -112,6 +117,8 @@ const negotiationSchema = new Schema<INegotiation>(
         "PENDING_VERIFICATION",
         "ACTIVE",
         "CLOSING",
+        "CLOSING_DEPOSIT",
+        "CLOSING_FINALISATION",
         "DEAL_DONE",
         "CANCELLED",
         "REJECTED",
@@ -125,6 +132,9 @@ const negotiationSchema = new Schema<INegotiation>(
     closingDetails: {
       depositAmount: Number,
       depositAt: Date,
+      depositPaymentDate: Date,
+      depositPaymentMethod: { type: String, trim: true },
+      depositProofNotes: { type: String, trim: true },
       finalPrice: Number,
       notes: { type: String, trim: true },
     },

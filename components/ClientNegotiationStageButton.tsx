@@ -91,7 +91,6 @@ export default function ClientNegotiationStageSelect({
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [listingId, setListingId] = useState("");
-  const [depositAmount, setDepositAmount] = useState("");
   const [blockHours, setBlockHours] = useState<BlockHoursChoice>("24");
   const [customBlockHours, setCustomBlockHours] = useState("72");
   const [notes, setNotes] = useState("");
@@ -144,25 +143,10 @@ export default function ClientNegotiationStageSelect({
       return;
     }
 
-    const parsedDepositAmount = depositAmount.trim()
-      ? Number(depositAmount)
-      : undefined;
-
-    if (
-      parsedDepositAmount !== undefined &&
-      (!Number.isFinite(parsedDepositAmount) || parsedDepositAmount <= 0)
-    ) {
-      toast.error("Montant invalide", {
-        description: "Le versement doit être un montant positif.",
-      });
-      return;
-    }
-
     setLoading(true);
     const result = await openNegotiation({
       clientId,
       listingId,
-      depositAmount: parsedDepositAmount,
       blockHours: selectedBlockHours,
       notes,
       document: uploadedDocument ?? undefined,
@@ -179,7 +163,6 @@ export default function ClientNegotiationStageSelect({
     toast.success("Négociation soumise pour vérification");
     setDialogOpen(false);
     setListingId("");
-    setDepositAmount("");
     setBlockHours("24");
     setCustomBlockHours("72");
     setNotes("");
@@ -358,18 +341,6 @@ export default function ClientNegotiationStageSelect({
                   </p>
                 ) : null}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Versement (DZD)</Label>
-              <Input
-                type="number"
-                min={0}
-                step={1}
-                value={depositAmount}
-                onChange={(event) => setDepositAmount(event.target.value)}
-                placeholder="Montant du dépôt si le client a versé"
-              />
             </div>
 
             <div className="space-y-2">

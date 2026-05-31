@@ -4,7 +4,6 @@ export const openNegotiationSchema = z.object({
   listingId: z.string().min(1, "Annonce requise"),
   clientId: z.string().min(1, "Client requis"),
   visitId: z.string().optional(),
-  depositAmount: z.number().positive().optional(),
   blockHours: z.number().int().min(24).max(2160).optional(),
   notes: z.string().trim().optional(),
   document: z
@@ -41,12 +40,18 @@ export const reviewNegotiationSchema = z.object({
   managerNote: z.string().trim().optional(),
 });
 
+export const beginClosingSchema = z.object({
+  negotiationId: z.string().min(1),
+});
+
 export const confirmDepositSchema = z.object({
   negotiationId: z.string().min(1),
   depositAmount: z
     .number({ required_error: "Montant du dépôt requis" })
     .positive(),
-  finalPrice: z.number({ required_error: "Prix final requis" }).positive(),
+  paymentDate: z.coerce.date({ required_error: "Date de paiement requise" }),
+  paymentMethod: z.string().min(1, "Méthode de paiement requise").trim(),
+  proofNotes: z.string().trim().optional(),
   notes: z.string().trim().optional(),
 });
 
@@ -67,6 +72,8 @@ export const negotiationFiltersSchema = z.object({
       "PENDING_VERIFICATION",
       "ACTIVE",
       "CLOSING",
+      "CLOSING_DEPOSIT",
+      "CLOSING_FINALISATION",
       "DEAL_DONE",
       "CANCELLED",
       "REJECTED",
@@ -83,6 +90,7 @@ export type OpenNegotiationInput = z.infer<typeof openNegotiationSchema>;
 export type RequestBlockInput = z.infer<typeof requestBlockSchema>;
 export type ReviewBlockInput = z.infer<typeof reviewBlockSchema>;
 export type ReviewNegotiationInput = z.infer<typeof reviewNegotiationSchema>;
+export type BeginClosingInput = z.infer<typeof beginClosingSchema>;
 export type ConfirmDepositInput = z.infer<typeof confirmDepositSchema>;
 export type CloseDealInput = z.infer<typeof closeDealSchema>;
 export type CancelNegotiationInput = z.infer<typeof cancelNegotiationSchema>;

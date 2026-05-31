@@ -242,7 +242,17 @@ export const NEGOTIATION_STATUSES = [
     color: "warning",
   },
   { value: "ACTIVE", label: "En cours", color: "destructive" },
-  { value: "CLOSING", label: "Closing", color: "info" },
+  { value: "CLOSING", label: "Closing — Finalisation", color: "info" },
+  {
+    value: "CLOSING_DEPOSIT",
+    label: "Closing — Dépôt & confirmation",
+    color: "warning",
+  },
+  {
+    value: "CLOSING_FINALISATION",
+    label: "Closing — Finalisation",
+    color: "info",
+  },
   { value: "DEAL_DONE", label: "Conclu", color: "success" },
   { value: "CANCELLED", label: "Annulée", color: "secondary" },
   { value: "REJECTED", label: "Refusée", color: "secondary" },

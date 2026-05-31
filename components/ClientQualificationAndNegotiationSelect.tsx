@@ -154,7 +154,6 @@ export default function ClientQualificationAndNegotiationSelect({
   const [archiveReason, setArchiveReason] = useState("");
   const [listingId, setListingId] = useState("");
   const [listingSearch, setListingSearch] = useState("");
-  const [depositAmount, setDepositAmount] = useState("");
   const [blockHours, setBlockHours] = useState<BlockHoursChoice>("24");
   const [customBlockHours, setCustomBlockHours] = useState("72");
   const [notes, setNotes] = useState("");
@@ -274,25 +273,10 @@ export default function ClientQualificationAndNegotiationSelect({
       return;
     }
 
-    const parsedDepositAmount = depositAmount.trim()
-      ? Number(depositAmount)
-      : undefined;
-
-    if (
-      parsedDepositAmount !== undefined &&
-      (!Number.isFinite(parsedDepositAmount) || parsedDepositAmount <= 0)
-    ) {
-      toast.error("Montant invalide", {
-        description: "Le versement doit être un montant positif.",
-      });
-      return;
-    }
-
     setLoading(true);
     const result = await openNegotiation({
       clientId,
       listingId,
-      depositAmount: parsedDepositAmount,
       blockHours: selectedBlockHours,
       notes,
       document: uploadedDocument ?? undefined,
@@ -313,7 +297,6 @@ export default function ClientQualificationAndNegotiationSelect({
     });
     setDialogOpen(false);
     setListingId("");
-    setDepositAmount("");
     setBlockHours("24");
     setCustomBlockHours("72");
     setNotes("");
@@ -447,19 +430,6 @@ export default function ClientQualificationAndNegotiationSelect({
                   vous avez des biens qui ne sont pas archivés ou vendus.
                 </p>
               )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="depositAmount">Versement (DZD)</Label>
-              <Input
-                id="depositAmount"
-                type="number"
-                min={0}
-                step={1}
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                placeholder="Montant du dépôt si le client a versé"
-              />
             </div>
 
             <div className="space-y-2">

@@ -10,6 +10,7 @@ import {
   requestBlockSchema,
   reviewBlockSchema,
   reviewNegotiationSchema,
+  beginClosingSchema,
   confirmDepositSchema,
   closeDealSchema,
   cancelNegotiationSchema,
@@ -18,6 +19,7 @@ import {
   RequestBlockInput,
   ReviewBlockInput,
   ReviewNegotiationInput,
+  BeginClosingInput,
   ConfirmDepositInput,
   CloseDealInput,
   CancelNegotiationInput,
@@ -120,7 +122,6 @@ export async function openNegotiation(
     listingId,
     clientId,
     visitId,
-    depositAmount,
     blockHours = 24,
     notes,
     document,
@@ -183,7 +184,15 @@ export async function openNegotiation(
     // Check for existing active or pending negotiation on this listing
     const existing = await Negotiation.findOne({
       listing: listingId,
-      status: { $in: ["PENDING_VERIFICATION", "ACTIVE", "CLOSING"] },
+      status: {
+        $in: [
+          "PENDING_VERIFICATION",
+          "ACTIVE",
+          "CLOSING",
+          "CLOSING_DEPOSIT",
+          "CLOSING_FINALISATION",
+        ],
+      },
     }).lean();
 
     if (existing) {
@@ -230,14 +239,7 @@ export async function openNegotiation(
             },
           ]
         : undefined,
-      ...(depositAmount || notes
-        ? {
-            closingDetails: {
-              ...(depositAmount ? { depositAmount, depositAt: new Date() } : {}),
-              ...(notes ? { notes } : {}),
-            },
-          }
-        : {}),
+      ...(notes ? { closingDetails: { notes } } : {}),
     });
 
     revalidatePath(ROUTES.NEGOTIATIONS);
@@ -329,15 +331,12 @@ export async function approveNegotiation(
       : new Date(
           Date.now() + (blockReq?.durationDays ?? 1) * 24 * 60 * 60 * 1000
         );
-    const nextStatus = negotiation.closingDetails?.depositAmount
-      ? "CLOSING"
-      : "ACTIVE";
     const now = new Date();
 
     await Promise.all([
       Negotiation.findByIdAndUpdate(negotiationId, {
         $set: {
-          status: nextStatus,
+          status: "ACTIVE",
           ...(blockReq
             ? {
                 "blockingRequests.0.status": "APPROVED",
@@ -350,13 +349,9 @@ export async function approveNegotiation(
         },
       }),
       Listing.findByIdAndUpdate(negotiation.listing, {
-        pipelineStatus:
-          nextStatus === "CLOSING" ? "CLOSING" : "UNDER_NEGOTIATION",
+        pipelineStatus: "UNDER_NEGOTIATION",
         blockedForClient: negotiation.client,
         blockedUntil,
-        ...(negotiation.closingDetails?.finalPrice
-          ? { offeredPrice: negotiation.closingDetails.finalPrice }
-          : {}),
       }),
       Client.findByIdAndUpdate(negotiation.client, {
         pipelineStage: "IN_NEGOTIATION",
@@ -793,14 +788,14 @@ export async function rejectBlock(
   }
 }
 
-/* ─────────────────────── Confirm Deposit ─────────────────────── */
+/* ─────────────────────── Begin Closing ─────────────────────── */
 
-export async function confirmDeposit(
-  params: ConfirmDepositInput
+export async function beginClosing(
+  params: BeginClosingInput
 ): Promise<ActionResponse> {
   const validationResult = await action({
     params,
-    schema: confirmDepositSchema,
+    schema: beginClosingSchema,
     authorize: true,
   });
 
@@ -813,8 +808,7 @@ export async function confirmDeposit(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { negotiationId, depositAmount, finalPrice, notes } =
-    validationResult.params;
+  const { negotiationId } = validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
     return {
@@ -839,7 +833,8 @@ export async function confirmDeposit(
       return {
         success: false,
         error: {
-          message: "Seules les négociations actives peuvent passer en closing",
+          message:
+            "Seules les négociations actives peuvent passer en closing",
         },
         status: 409,
       };
@@ -859,17 +854,111 @@ export async function confirmDeposit(
 
     await Promise.all([
       Negotiation.findByIdAndUpdate(negotiationId, {
-        status: "CLOSING",
+        status: "CLOSING_DEPOSIT",
+      }),
+      Listing.findByIdAndUpdate(negotiation.listing, {
+        pipelineStatus: "CLOSING",
+      }),
+    ]);
+
+    revalidatePath(ROUTES.NEGOTIATIONS);
+    revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
+    revalidatePath(
+      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+    );
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* ─────────────────────── Confirm Deposit ─────────────────────── */
+
+export async function confirmDeposit(
+  params: ConfirmDepositInput
+): Promise<ActionResponse> {
+  const validationResult = await action({
+    params,
+    schema: confirmDepositSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  const {
+    negotiationId,
+    depositAmount,
+    paymentDate,
+    paymentMethod,
+    proofNotes,
+    notes,
+  } = validationResult.params;
+
+  if (!Types.ObjectId.isValid(negotiationId)) {
+    return {
+      success: false,
+      error: { message: "ID négociation invalide" },
+      status: 400,
+    };
+  }
+
+  try {
+    const negotiation =
+      await Negotiation.findById(negotiationId).lean<INegotiation>();
+    if (!negotiation) {
+      return {
+        success: false,
+        error: { message: "Négociation introuvable" },
+        status: 404,
+      };
+    }
+
+    if (negotiation.status !== "CLOSING_DEPOSIT") {
+      return {
+        success: false,
+        error: {
+          message:
+            "Le dépôt ne peut être ajouté que dans la phase Closing — Dépôt & confirmation",
+        },
+        status: 409,
+      };
+    }
+
+    const isManager = isElevatedRole(user.data.role);
+    const isNegotiationAgent =
+      negotiation.agent?.toString() === user.data._id?.toString();
+
+    if (!isManager && !isNegotiationAgent) {
+      return {
+        success: false,
+        error: { message: "Accès refusé" },
+        status: 403,
+      };
+    }
+
+    await Promise.all([
+      Negotiation.findByIdAndUpdate(negotiationId, {
+        status: "CLOSING_FINALISATION",
         closingDetails: {
+          ...negotiation.closingDetails,
           depositAmount,
           depositAt: new Date(),
-          finalPrice,
+          depositPaymentDate: paymentDate,
+          depositPaymentMethod: paymentMethod,
+          depositProofNotes: proofNotes,
           notes,
         },
       }),
       Listing.findByIdAndUpdate(negotiation.listing, {
         pipelineStatus: "CLOSING",
-        offeredPrice: finalPrice,
       }),
     ]);
 
@@ -933,11 +1022,28 @@ export async function closeDeal(
       };
     }
 
-    if (negotiation.status !== "CLOSING") {
+    if (
+      !["CLOSING", "CLOSING_FINALISATION"].includes(negotiation.status)
+    ) {
       return {
         success: false,
         error: {
-          message: "Seules les négociations en closing peuvent être conclues",
+          message:
+            "Seules les négociations en closing finalisation peuvent être conclues",
+        },
+        status: 409,
+      };
+    }
+
+    if (
+      negotiation.status === "CLOSING_FINALISATION" &&
+      !negotiation.closingDetails?.depositAmount
+    ) {
+      return {
+        success: false,
+        error: {
+          message:
+            "Le dépôt doit être confirmé avant de marquer l'affaire comme conclue",
         },
         status: 409,
       };
@@ -1055,7 +1161,11 @@ export async function cancelNegotiation(
       };
     }
 
-    if (!["ACTIVE", "CLOSING"].includes(negotiation.status)) {
+    if (
+      !["ACTIVE", "CLOSING", "CLOSING_DEPOSIT", "CLOSING_FINALISATION"].includes(
+        negotiation.status
+      )
+    ) {
       return {
         success: false,
         error: { message: "Cette négociation ne peut pas être annulée" },

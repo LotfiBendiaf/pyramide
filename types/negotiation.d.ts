@@ -2,6 +2,8 @@ export type NegotiationStatus =
   | "PENDING_VERIFICATION"
   | "ACTIVE"
   | "CLOSING"
+  | "CLOSING_DEPOSIT"
+  | "CLOSING_FINALISATION"
   | "DEAL_DONE"
   | "CANCELLED"
   | "REJECTED";
@@ -11,7 +13,6 @@ export type OpenNegotiationInput = {
   listingId: string;
   clientId: string;
   visitId?: string;
-  depositAmount?: number;
   blockHours?: number;
   notes?: string;
 };
@@ -28,10 +29,16 @@ export type ReviewBlockInput = {
   managerNote?: string;
 };
 
+export type BeginClosingInput = {
+  negotiationId: string;
+};
+
 export type ConfirmDepositInput = {
   negotiationId: string;
   depositAmount: number;
-  finalPrice: number;
+  paymentDate: Date | string;
+  paymentMethod: string;
+  proofNotes?: string;
   notes?: string;
 };
 

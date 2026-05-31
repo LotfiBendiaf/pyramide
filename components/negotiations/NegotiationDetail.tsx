@@ -39,6 +39,7 @@ import {
   requestBlock,
   approveBlock,
   rejectBlock,
+  beginClosing,
   confirmDeposit,
   closeDeal,
   cancelNegotiation,
@@ -97,6 +98,9 @@ export interface NegotiationDetailProps {
     closingDetails?: {
       depositAmount?: number;
       depositAt?: string | Date;
+      depositPaymentDate?: string | Date;
+      depositPaymentMethod?: string;
+      depositProofNotes?: string;
       finalPrice?: number;
       notes?: string;
     };
@@ -226,7 +230,7 @@ export function NegotiationDetail({
             )}
             {negotiation.closingDetails.depositAt && (
               <p className="text-muted-foreground text-xs">
-                Le{" "}
+                Confirmé le{" "}
                 {format(
                   new Date(negotiation.closingDetails.depositAt),
                   "dd MMM yyyy",
@@ -234,6 +238,36 @@ export function NegotiationDetail({
                     locale: fr,
                   }
                 )}
+              </p>
+            )}
+            {negotiation.closingDetails.depositPaymentDate && (
+              <p>
+                Date de paiement:{" "}
+                <strong>
+                  {format(
+                    new Date(negotiation.closingDetails.depositPaymentDate),
+                    "dd MMM yyyy",
+                    { locale: fr }
+                  )}
+                </strong>
+              </p>
+            )}
+            {negotiation.closingDetails.depositPaymentMethod && (
+              <p>
+                Méthode:{" "}
+                <strong>
+                  {negotiation.closingDetails.depositPaymentMethod}
+                </strong>
+              </p>
+            )}
+            {negotiation.closingDetails.depositProofNotes && (
+              <p className="text-muted-foreground">
+                Preuve / notes: {negotiation.closingDetails.depositProofNotes}
+              </p>
+            )}
+            {negotiation.closingDetails.notes && (
+              <p className="text-muted-foreground">
+                Notes: {negotiation.closingDetails.notes}
               </p>
             )}
           </CardContent>
@@ -444,17 +478,31 @@ export function NegotiationDetail({
       </Card>
 
       {/* Action buttons */}
-      {canAct && ["ACTIVE", "CLOSING"].includes(negotiation.status) && (
+      {canAct &&
+        [
+          "ACTIVE",
+          "CLOSING",
+          "CLOSING_DEPOSIT",
+          "CLOSING_FINALISATION",
+        ].includes(negotiation.status) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">Actions</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             {negotiation.status === "ACTIVE" && (
+              <BeginClosingDialog negotiationId={negotiation._id} />
+            )}
+            {negotiation.status === "CLOSING_DEPOSIT" && (
               <ConfirmDepositDialog negotiationId={negotiation._id} />
             )}
-            {negotiation.status === "CLOSING" && (
-              <CloseDealDialog negotiationId={negotiation._id} />
+            {["CLOSING", "CLOSING_FINALISATION"].includes(
+              negotiation.status
+            ) && (
+              <CloseDealDialog
+                negotiationId={negotiation._id}
+                closingDetails={negotiation.closingDetails}
+              />
             )}
             <Button size="sm" variant="outline" asChild>
               <Link href={ROUTES.DOCUMENTS}>Ajouter un document</Link>
@@ -650,6 +698,47 @@ function RequestBlockDialog({ negotiationId }: { negotiationId: string }) {
   );
 }
 
+function BeginClosingDialog({ negotiationId }: { negotiationId: string }) {
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  async function onConfirm() {
+    const result = await beginClosing({ negotiationId });
+    if (!result.success) {
+      toast.error("Erreur", { description: result.error?.message });
+      return;
+    }
+    toast.success("Closing démarré");
+    setOpen(false);
+    router.refresh();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <Banknote className="h-3.5 w-3.5 mr-1.5" />
+          Passer au closing
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Passer au closing</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Le dossier passera à la phase Closing — Dépôt & confirmation.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            Annuler
+          </Button>
+          <Button onClick={onConfirm}>Continuer</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -659,7 +748,9 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
     defaultValues: {
       negotiationId,
       depositAmount: 0,
-      finalPrice: 0,
+      paymentDate: new Date(),
+      paymentMethod: "",
+      proofNotes: "",
       notes: "",
     },
   });
@@ -706,18 +797,47 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
             />
             <FormField
               control={form.control}
-              name="finalPrice"
+              name="paymentDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Prix final convenu (DZD)</FormLabel>
+                  <FormLabel>Date de paiement</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      type="date"
+                      value={
+                        field.value
+                          ? format(new Date(field.value), "yyyy-MM-dd")
+                          : ""
+                      }
+                      onChange={(e) => field.onChange(e.target.value)}
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Méthode de paiement</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Espèces, virement, chèque..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="proofNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preuve / notes du paiement</FormLabel>
+                  <FormControl>
+                    <Textarea rows={2} {...field} />
+                  </FormControl>
                 </FormItem>
               )}
             />
@@ -755,7 +875,13 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
   );
 }
 
-function CloseDealDialog({ negotiationId }: { negotiationId: string }) {
+function CloseDealDialog({
+  negotiationId,
+  closingDetails,
+}: {
+  negotiationId: string;
+  closingDetails?: NegotiationDetailProps["negotiation"]["closingDetails"];
+}) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   type Values = z.infer<typeof closeDealSchema>;
@@ -788,6 +914,18 @@ function CloseDealDialog({ negotiationId }: { negotiationId: string }) {
         <DialogHeader>
           <DialogTitle>Clôturer l&apos;affaire</DialogTitle>
         </DialogHeader>
+        <div className="rounded-md border p-3 text-sm space-y-1">
+          <p className="font-medium">Résumé closing</p>
+          <p>
+            Dépôt:{" "}
+            {closingDetails?.depositAmount
+              ? `${closingDetails.depositAmount.toLocaleString("fr-DZ")} DZD`
+              : "Non renseigné"}
+          </p>
+          <p>
+            Paiement: {closingDetails?.depositPaymentMethod ?? "Non renseigné"}
+          </p>
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -879,6 +1017,10 @@ function CancelNegotiationDialog({ negotiationId }: { negotiationId: string }) {
         <DialogHeader>
           <DialogTitle>Annuler la négociation</DialogTitle>
         </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Confirmez l&apos;annulation pour marquer le dossier comme perdu et
+          libérer le bien bloqué.
+        </p>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -914,7 +1056,7 @@ function CancelNegotiationDialog({ negotiationId }: { negotiationId: string }) {
                 {form.formState.isSubmitting && (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 )}
-                Annuler
+                Confirmer l&apos;annulation
               </Button>
             </div>
           </form>
