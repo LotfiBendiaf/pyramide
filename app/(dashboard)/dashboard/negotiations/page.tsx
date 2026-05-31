@@ -1,5 +1,8 @@
 import { Suspense } from "react";
-import { fetchNegotiations } from "@/lib/actions/negotiation.action";
+import {
+  fetchNegotiations,
+  fetchPendingNegotiationVerificationCount,
+} from "@/lib/actions/negotiation.action";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import {
@@ -71,6 +74,9 @@ export default async function NegotiationsPage({
 }) {
   const params = await searchParams;
   const activeStatus = params.status;
+  const pendingVerificationResult =
+    await fetchPendingNegotiationVerificationCount();
+  const pendingVerificationCount = pendingVerificationResult.data ?? 0;
 
   return (
     <section className="container py-6 space-y-6">
@@ -87,17 +93,26 @@ export default async function NegotiationsPage({
           const href = tab.value
             ? `${ROUTES.NEGOTIATIONS}?status=${tab.value}`
             : ROUTES.NEGOTIATIONS;
+          const showPendingCount =
+            tab.value === "PENDING_VERIFICATION" &&
+            pendingVerificationCount > 0;
+
           return (
             <Link
               key={tab.label}
               href={href}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 isActive
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab.label}
+              {showPendingCount && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-amber-700">
+                  {pendingVerificationCount}
+                </span>
+              )}
             </Link>
           );
         })}
