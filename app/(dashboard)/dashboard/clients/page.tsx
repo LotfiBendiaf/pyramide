@@ -5,7 +5,10 @@ import {
   fetchClients,
   fetchClientPipelineCounts,
 } from "@/lib/actions/client.action";
-import { fetchNegotiationListingOptions } from "@/lib/actions/negotiation.action";
+import {
+  fetchNegotiationListingOptions,
+  fetchPendingNegotiationVerificationCount,
+} from "@/lib/actions/negotiation.action";
 import { fetchTeamMembers } from "@/lib/actions/users.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
@@ -125,12 +128,18 @@ export default async function ClientPage({
   const canUsePipeline = currentUser.data?.role === "AGENT";
   const isArchiveView = params?.view === "archives";
 
-  const [agentsResult, countsResult] = await Promise.all([
-    isAdmin ? fetchTeamMembers() : Promise.resolve({ success: true, data: [] }),
-    canUsePipeline && !isArchiveView
-      ? fetchClientPipelineCounts()
-      : Promise.resolve({ success: true, data: [] }),
-  ]);
+  const [agentsResult, countsResult, pendingNegotiationVerificationResult] =
+    await Promise.all([
+      isAdmin
+        ? fetchTeamMembers()
+        : Promise.resolve({ success: true, data: [] }),
+      canUsePipeline && !isArchiveView
+        ? fetchClientPipelineCounts()
+        : Promise.resolve({ success: true, data: [] }),
+      canUsePipeline && !isArchiveView
+        ? fetchPendingNegotiationVerificationCount()
+        : Promise.resolve({ success: true, data: 0 }),
+    ]);
 
   return (
     <section className="container py-6 space-y-6">
@@ -165,7 +174,12 @@ export default async function ClientPage({
       )}
 
       {canUsePipeline && !isArchiveView && (
-        <PipelineBar counts={countsResult.data ?? []} />
+        <PipelineBar
+          counts={countsResult.data ?? []}
+          pendingNegotiationVerificationCount={
+            pendingNegotiationVerificationResult.data ?? 0
+          }
+        />
       )}
 
       {!isArchiveView && (

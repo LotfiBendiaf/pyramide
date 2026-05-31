@@ -1308,6 +1308,33 @@ export async function fetchNegotiations(
   }
 }
 
+export async function fetchPendingNegotiationVerificationCount(): Promise<
+  ActionResponse<number>
+> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  try {
+    await dbConnect();
+
+    const filter: Record<string, unknown> = {
+      status: "PENDING_VERIFICATION",
+    };
+
+    if (!isElevatedRole(user.data.role)) {
+      filter.agent = user.data._id;
+    }
+
+    const total = await Negotiation.countDocuments(filter);
+
+    return { success: true, data: total, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function fetchNegotiationById(
   negotiationId: string
 ): Promise<ActionResponse<INegotiation>> {
