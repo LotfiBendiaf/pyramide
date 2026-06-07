@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +80,11 @@ interface NegotiationDocument {
   uploadedBy?: string;
   uploadedAt?: string | Date;
 }
+
+type UploadedNegotiationDocument = Omit<
+  NegotiationDocument,
+  "_id" | "uploadedBy" | "uploadedAt"
+>;
 
 interface BlockingRequest {
   _id: string;
@@ -554,6 +559,106 @@ function BlockStatusBadge({ status }: { status: string }) {
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
 }
 
+async function uploadNegotiationDocument(
+  file: File
+): Promise<UploadedNegotiationDocument> {
+  if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
+    throw new Error("Configuration Cloudinary manquante");
+  }
+
+  if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+    throw new Error("Configuration Cloudinary manquante");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append(
+    "upload_preset",
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+  );
+  formData.append("folder", "pyramide/negotiations");
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(
+      errorData?.error?.message ||
+        "Erreur lors du téléchargement du document"
+    );
+  }
+
+  const result = await response.json();
+  return {
+    publicId: result.public_id,
+    url: result.url,
+    secureUrl: result.secure_url,
+    originalFilename: result.original_filename ?? file.name,
+    format: result.format,
+    resourceType: result.resource_type,
+    bytes: result.bytes,
+  };
+}
+
+function DocumentUploadField({
+  inputId,
+  fileInputRef,
+  uploadingDocument,
+  uploadedDocument,
+  onChange,
+}: {
+  inputId: string;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  uploadingDocument: boolean;
+  uploadedDocument: UploadedNegotiationDocument | null;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <FormLabel htmlFor={inputId}>Document (optionnel)</FormLabel>
+      <input
+        ref={fileInputRef}
+        id={inputId}
+        type="file"
+        accept="application/pdf,.doc,.docx,image/png,image/jpeg"
+        className="hidden"
+        onChange={onChange}
+        disabled={uploadingDocument}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploadingDocument}
+      >
+        {uploadingDocument ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            Upload...
+          </>
+        ) : (
+          <>
+            <FileText className="h-4 w-4 mr-2" />
+            Ajouter un document
+          </>
+        )}
+      </Button>
+      {uploadedDocument && (
+        <p className="text-sm text-green-600">
+          Document prêt : {uploadedDocument.originalFilename}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ── Block dialogs ── */
 
 function ApproveBlockButton({
@@ -769,6 +874,10 @@ function BeginClosingDialog({ negotiationId }: { negotiationId: string }) {
 
 function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
   const [open, setOpen] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [uploadedDocument, setUploadedDocument] =
+    useState<UploadedNegotiationDocument | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   type Values = z.infer<typeof confirmDepositSchema>;
   const form = useForm<Values>({
@@ -783,17 +892,52 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
     },
   });
   async function onSubmit(values: Values) {
-    const result = await confirmDeposit(values);
+    const result = await confirmDeposit({
+      ...values,
+      document: uploadedDocument ?? undefined,
+    });
     if (!result.success) {
       toast.error("Erreur", { description: result.error?.message });
       return;
     }
     toast.success("Versement confirmé");
     setOpen(false);
+    setUploadedDocument(null);
     router.refresh();
   }
+
+  async function handleDocumentSelect(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingDocument(true);
+    setUploadedDocument(null);
+
+    try {
+      const document = await uploadNegotiationDocument(file);
+      setUploadedDocument(document);
+      toast.success("Document téléchargé");
+    } catch (error) {
+      toast.error("Échec du téléchargement", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Erreur lors de l'upload",
+      });
+    } finally {
+      setUploadingDocument(false);
+      event.target.value = "";
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) setUploadedDocument(null);
+      }}
+    >
       <DialogTrigger asChild>
         <Button size="sm">
           <Banknote className="h-3.5 w-3.5 mr-1.5" />
@@ -894,6 +1038,13 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
                 </FormItem>
               )}
             />
+            <DocumentUploadField
+              inputId={`deposit-document-${negotiationId}`}
+              fileInputRef={fileInputRef}
+              uploadingDocument={uploadingDocument}
+              uploadedDocument={uploadedDocument}
+              onChange={handleDocumentSelect}
+            />
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
@@ -924,6 +1075,10 @@ function CloseDealDialog({
   closingDetails?: NegotiationDetailProps["negotiation"]["closingDetails"];
 }) {
   const [open, setOpen] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [uploadedDocument, setUploadedDocument] =
+    useState<UploadedNegotiationDocument | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   type Values = z.infer<typeof closeDealSchema>;
   const form = useForm<Values>({
@@ -944,17 +1099,52 @@ function CloseDealDialog({
     ((Number(finalPrice) || 0) * (Number(commissionPercentage) || 0)) / 100;
 
   async function onSubmit(values: Values) {
-    const result = await closeDeal(values);
+    const result = await closeDeal({
+      ...values,
+      document: uploadedDocument ?? undefined,
+    });
     if (!result.success) {
       toast.error("Erreur", { description: result.error?.message });
       return;
     }
     toast.success("Affaire conclue !");
     setOpen(false);
+    setUploadedDocument(null);
     router.refresh();
   }
+
+  async function handleDocumentSelect(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingDocument(true);
+    setUploadedDocument(null);
+
+    try {
+      const document = await uploadNegotiationDocument(file);
+      setUploadedDocument(document);
+      toast.success("Document téléchargé");
+    } catch (error) {
+      toast.error("Échec du téléchargement", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Erreur lors de l'upload",
+      });
+    } finally {
+      setUploadingDocument(false);
+      event.target.value = "";
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) setUploadedDocument(null);
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           size="sm"
@@ -1049,6 +1239,13 @@ function CloseDealDialog({
                   </FormControl>
                 </FormItem>
               )}
+            />
+            <DocumentUploadField
+              inputId={`closing-document-${negotiationId}`}
+              fileInputRef={fileInputRef}
+              uploadingDocument={uploadingDocument}
+              uploadedDocument={uploadedDocument}
+              onChange={handleDocumentSelect}
             />
             <div className="flex justify-end gap-2">
               <Button

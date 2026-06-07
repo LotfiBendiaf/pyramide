@@ -1,22 +1,22 @@
 import { z } from "zod";
 
+const negotiationDocumentSchema = z.object({
+  publicId: z.string().min(1),
+  url: z.string().url(),
+  secureUrl: z.string().url().optional(),
+  originalFilename: z.string().trim().optional(),
+  format: z.string().trim().optional(),
+  resourceType: z.string().trim().optional(),
+  bytes: z.number().int().positive().optional(),
+});
+
 export const openNegotiationSchema = z.object({
   listingId: z.string().min(1, "Annonce requise"),
   clientId: z.string().min(1, "Client requis"),
   visitId: z.string().optional(),
   blockHours: z.number().int().min(24).max(2160).optional(),
   notes: z.string().trim().optional(),
-  document: z
-    .object({
-      publicId: z.string().min(1),
-      url: z.string().url(),
-      secureUrl: z.string().url().optional(),
-      originalFilename: z.string().trim().optional(),
-      format: z.string().trim().optional(),
-      resourceType: z.string().trim().optional(),
-      bytes: z.number().int().positive().optional(),
-    })
-    .optional(),
+  document: negotiationDocumentSchema.optional(),
 });
 
 export const requestBlockSchema = z.object({
@@ -55,6 +55,7 @@ export const confirmDepositSchema = z.object({
   }),
   proofNotes: z.string().trim().optional(),
   notes: z.string().trim().optional(),
+  document: negotiationDocumentSchema.optional(),
 });
 
 export const closeDealSchema = z.object({
@@ -65,6 +66,7 @@ export const closeDealSchema = z.object({
     .min(0, "Minimum 0%")
     .max(100, "Maximum 100%"),
   notes: z.string().trim().optional(),
+  document: negotiationDocumentSchema.optional(),
 });
 
 export const cancelNegotiationSchema = z.object({

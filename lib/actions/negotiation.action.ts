@@ -900,6 +900,7 @@ export async function confirmDeposit(
     paymentMethod,
     proofNotes,
     notes,
+    document,
   } = validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
@@ -946,16 +947,35 @@ export async function confirmDeposit(
 
     await Promise.all([
       Negotiation.findByIdAndUpdate(negotiationId, {
-        status: "CLOSING_FINALISATION",
-        closingDetails: {
-          ...negotiation.closingDetails,
-          depositAmount,
-          depositAt: new Date(),
-          depositPaymentDate: paymentDate,
-          depositPaymentMethod: paymentMethod,
-          depositProofNotes: proofNotes,
-          notes,
+        $set: {
+          status: "CLOSING_FINALISATION",
+          closingDetails: {
+            ...negotiation.closingDetails,
+            depositAmount,
+            depositAt: new Date(),
+            depositPaymentDate: paymentDate,
+            depositPaymentMethod: paymentMethod,
+            depositProofNotes: proofNotes,
+            notes,
+          },
         },
+        ...(document
+          ? {
+              $push: {
+                documents: {
+                  publicId: document.publicId,
+                  url: document.url,
+                  secureUrl: document.secureUrl,
+                  originalFilename: document.originalFilename,
+                  format: document.format,
+                  resourceType: document.resourceType,
+                  bytes: document.bytes,
+                  uploadedBy: user.data._id,
+                  uploadedAt: new Date(),
+                },
+              },
+            }
+          : {}),
       }),
       Listing.findByIdAndUpdate(negotiation.listing, {
         pipelineStatus: "CLOSING",
@@ -1001,7 +1021,7 @@ export async function closeDeal(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { negotiationId, finalPrice, commissionPercentage, notes } =
+  const { negotiationId, finalPrice, commissionPercentage, notes, document } =
     validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
@@ -1067,12 +1087,31 @@ export async function closeDeal(
 
     await Promise.all([
       Negotiation.findByIdAndUpdate(negotiationId, {
-        status: "DEAL_DONE",
-        closedAt: now,
-        "closingDetails.finalPrice": finalPrice,
-        "closingDetails.commissionPercentage": commissionPercentage,
-        "closingDetails.commissionAmount": commissionAmount,
-        ...(notes ? { "closingDetails.notes": notes } : {}),
+        $set: {
+          status: "DEAL_DONE",
+          closedAt: now,
+          "closingDetails.finalPrice": finalPrice,
+          "closingDetails.commissionPercentage": commissionPercentage,
+          "closingDetails.commissionAmount": commissionAmount,
+          ...(notes ? { "closingDetails.notes": notes } : {}),
+        },
+        ...(document
+          ? {
+              $push: {
+                documents: {
+                  publicId: document.publicId,
+                  url: document.url,
+                  secureUrl: document.secureUrl,
+                  originalFilename: document.originalFilename,
+                  format: document.format,
+                  resourceType: document.resourceType,
+                  bytes: document.bytes,
+                  uploadedBy: user.data._id,
+                  uploadedAt: now,
+                },
+              },
+            }
+          : {}),
       }),
       Listing.findByIdAndUpdate(negotiation.listing, {
         pipelineStatus: "SOLD",
