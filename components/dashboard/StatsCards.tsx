@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle2,
   DollarSign,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -34,33 +35,56 @@ function StatCard({
   variant = "default",
 }: StatCardProps) {
   const variantStyles = {
-    default: "border-border",
-    success: "border-green-200",
-    warning: "border-orange-200 bg-orange-50/50",
-    danger: "border-red-200 bg-red-50/50",
+    default: "border-border bg-card",
+    success:
+      "border-emerald-200 bg-emerald-50/40 dark:border-emerald-500/25 dark:bg-emerald-950/20",
+    warning:
+      "border-amber-200 bg-amber-50/40 dark:border-amber-500/25 dark:bg-amber-950/20",
+    danger:
+      "border-red-200 bg-red-50/40 dark:border-red-500/25 dark:bg-red-950/20",
   };
 
   const iconStyles = {
     default: "bg-primary/10 text-primary",
-    success: "bg-green-500/10 text-green-600",
-    warning: "bg-orange-500/10 text-orange-600",
-    danger: "bg-red-500/10 text-red-600",
+    success:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    warning:
+      "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    danger:
+      "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  };
+
+  const accentStyles = {
+    default: "bg-primary/70",
+    success: "bg-emerald-500 dark:bg-emerald-400",
+    warning: "bg-amber-500 dark:bg-amber-400",
+    danger: "bg-red-500 dark:bg-red-400",
   };
 
   return (
-    <Card className={cn("relative overflow-hidden", variantStyles[variant])}>
-      <CardContent className="p-6">
+    <Card
+      className={cn(
+        "relative overflow-hidden rounded-lg py-0 shadow-sm transition-colors hover:border-primary/30 dark:shadow-none",
+        variantStyles[variant]
+      )}
+    >
+      <div className={cn("absolute inset-y-0 left-0 w-1", accentStyles[variant])} />
+      <CardContent className="p-5 pl-6">
         <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-3xl font-bold tracking-tight">{value}</h3>
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="truncate text-sm font-medium text-muted-foreground">
+              {title}
+            </p>
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <h3 className="text-2xl font-semibold leading-tight tracking-tight tabular-nums">
+                {value}
+              </h3>
               {change !== undefined && (
                 <span
                   className={cn(
-                    "text-sm font-medium flex items-center gap-1",
-                    trend === "up" && "text-green-600",
-                    trend === "down" && "text-red-600",
+                    "flex items-center gap-1 rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium dark:bg-white/5",
+                    trend === "up" && "text-emerald-700 dark:text-emerald-300",
+                    trend === "down" && "text-red-600 dark:text-red-300",
                     trend === "neutral" && "text-muted-foreground"
                   )}
                 >
@@ -72,26 +96,16 @@ function StatCard({
               )}
             </div>
             {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {description}
+              </p>
             )}
           </div>
-          <div className={cn("rounded-full p-3", iconStyles[variant])}>
+          <div className={cn("ml-3 rounded-lg p-2.5", iconStyles[variant])}>
             <Icon className="h-5 w-5" />
           </div>
         </div>
       </CardContent>
-      <div
-        className={cn(
-          "absolute bottom-0 left-0 right-0 h-1",
-          variant === "default" &&
-            "bg-gradient-to-r from-primary/50 to-primary",
-          variant === "success" &&
-            "bg-gradient-to-r from-green-500/50 to-green-500",
-          variant === "warning" &&
-            "bg-gradient-to-r from-orange-500/50 to-orange-500",
-          variant === "danger" && "bg-gradient-to-r from-red-500/50 to-red-500"
-        )}
-      />
     </Card>
   );
 }
@@ -109,6 +123,8 @@ interface DashboardStatsProps {
     todayFollowUps: number;
     totalRevenue: number;
     monthlyRevenue: number;
+    totalGainedAmount: number;
+    monthlyGainedAmount: number;
     completedFollowUpsThisMonth: number;
     listingsChange?: number;
     clientsChange?: number;
@@ -117,7 +133,7 @@ interface DashboardStatsProps {
 
 export function DashboardStatsCards({ stats }: DashboardStatsProps) {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {/* Active Listings */}
       <StatCard
         title="Annonces Actives"
@@ -175,6 +191,15 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
         variant="success"
       />
 
+      {/* Monthly Gain */}
+      <StatCard
+        title="Gain Agence du Mois"
+        value={`${formatPriceAlgeria(stats.monthlyGainedAmount)} DA`}
+        icon={Wallet}
+        description="Commissions des négociations conclues"
+        variant="success"
+      />
+
       {/* Qualified Clients */}
       <StatCard
         title="Clients Qualifiés"
@@ -204,10 +229,19 @@ export function DashboardStatsCards({ stats }: DashboardStatsProps) {
 
       {/* Total Revenue */}
       <StatCard
-        title="Revenu Total"
+        title="Gain Agence Total"
+        value={`${formatPriceAlgeria(stats.totalGainedAmount)} DA`}
+        icon={Wallet}
+        description="Commissions conclues tous les temps"
+        variant="default"
+      />
+
+      {/* Total Revenue */}
+      <StatCard
+        title="Transactions Totales"
         value={`${formatPriceAlgeria(stats.totalRevenue)} DA`}
         icon={DollarSign}
-        description="Tous les temps"
+        description="Valeur des biens vendus/loués"
         variant="default"
       />
     </div>

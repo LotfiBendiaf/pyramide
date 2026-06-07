@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -9,13 +10,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TrendingDown, TrendingUp, Minus } from "lucide-react";
-import { formatPriceAlgeria } from "@/lib/utils";
+import {
+  BadgeDollarSign,
+  FileSignature,
+  Minus,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import { cn, formatPriceAlgeria } from "@/lib/utils";
 
 interface SectionCardsProps {
   stats: {
     totalRevenue: number;
     monthlyRevenue: number;
+    totalGainedAmount: number;
+    monthlyGainedAmount: number;
     soldListings: number;
     totalListings: number;
     listingsThisMonth: number;
@@ -28,6 +40,107 @@ interface SectionCardsProps {
     clientsThisMonth: number;
     clientsLastMonth: number;
   };
+}
+
+type KpiVariant = "blue" | "green" | "amber" | "violet";
+
+function ExecutiveKpiCard({
+  title,
+  value,
+  badge,
+  badgePositive = true,
+  badgeIcon: BadgeIcon,
+  icon: Icon,
+  variant,
+  footerLead,
+  footerMuted,
+}: {
+  title: string;
+  value: string;
+  badge: string;
+  badgePositive?: boolean;
+  badgeIcon: LucideIcon;
+  icon: LucideIcon;
+  variant: KpiVariant;
+  footerLead: ReactNode;
+  footerMuted: string;
+}) {
+  const styles: Record<
+    KpiVariant,
+    { card: string; icon: string; rail: string }
+  > = {
+    blue: {
+      card:
+        "border-sky-200/80 bg-sky-50/35 dark:border-sky-500/25 dark:bg-sky-950/20",
+      icon: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+      rail: "bg-sky-500 dark:bg-sky-400",
+    },
+    green: {
+      card:
+        "border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-500/25 dark:bg-emerald-950/20",
+      icon:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+      rail: "bg-emerald-500 dark:bg-emerald-400",
+    },
+    amber: {
+      card:
+        "border-amber-200/80 bg-amber-50/40 dark:border-amber-500/25 dark:bg-amber-950/20",
+      icon:
+        "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+      rail: "bg-amber-500 dark:bg-amber-400",
+    },
+    violet: {
+      card:
+        "border-violet-200/80 bg-violet-50/30 dark:border-violet-500/25 dark:bg-violet-950/20",
+      icon:
+        "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+      rail: "bg-violet-500 dark:bg-violet-400",
+    },
+  };
+
+  return (
+    <Card className={cn("relative overflow-hidden py-5", styles[variant].card)}>
+      <div className={cn("absolute inset-y-0 left-0 w-1", styles[variant].rail)} />
+      <CardHeader className="gap-3 pl-7">
+        <div className="flex items-center gap-3">
+          <div className={cn("rounded-lg p-2.5", styles[variant].icon)}>
+            <Icon className="size-5" />
+          </div>
+          <CardDescription className="font-medium">{title}</CardDescription>
+        </div>
+        <CardTitle className="text-2xl font-semibold leading-tight tabular-nums @[250px]/card:text-3xl">
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge
+            variant="outline"
+            className={cn(
+              "gap-1 border-background bg-background/80 shadow-sm dark:border-white/10 dark:bg-white/5",
+              badgePositive
+                ? "text-emerald-700 dark:text-emerald-300"
+                : "text-muted-foreground"
+            )}
+          >
+            <BadgeIcon className="size-3.5" />
+            {badge}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 pl-7 text-sm">
+        <div
+          className={cn(
+            "line-clamp-1 flex items-center gap-2 font-medium",
+            badgePositive
+              ? "text-emerald-700 dark:text-emerald-300"
+              : "text-muted-foreground"
+          )}
+        >
+          {footerLead}
+        </div>
+        <div className="text-muted-foreground">{footerMuted}</div>
+      </CardFooter>
+    </Card>
+  );
 }
 
 export function SectionCards({ stats }: SectionCardsProps) {
@@ -59,149 +172,93 @@ export function SectionCards({ stats }: SectionCardsProps) {
     parseFloat(conversionRate) - parseFloat(previousConversionRate)
   ).toFixed(1);
 
-  // Format revenue
-  const formattedRevenue = formatPriceAlgeria(stats.totalRevenue);
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-      {/* 1. Valeur Totale des Transactions (Total Revenue) */}
-      <Card>
-        <CardHeader>
-          <CardDescription>
-            Valeur Totale des Transactions (YTD)
-          </CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums">
-            {formattedRevenue} DA
-          </CardTitle>
-          <CardAction>
-            <Badge
-              variant="outline"
-              className={
-                stats.monthlyRevenue > 0
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-700"
-              }
-            >
-              {stats.monthlyRevenue > 0 ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <Minus className="w-4 h-4" />
-              )}
-              {stats.soldListings} ventes
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div
-            className={`line-clamp-1 flex gap-2 font-medium ${stats.monthlyRevenue > 0 ? "text-green-600" : "text-muted-foreground"}`}
-          >
-            {stats.monthlyRevenue > 0 ? (
-              <>
-                {formatPriceAlgeria(stats.monthlyRevenue)} DA ce mois
-                <TrendingUp className="size-4" />
-              </>
-            ) : (
-              "Aucune transaction ce mois"
-            )}
-          </div>
-          <div className="text-muted-foreground">
-            Montant total des ventes et locations finalisées.
-          </div>
-        </CardFooter>
-      </Card>
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <ExecutiveKpiCard
+        title="Valeur des transactions"
+        value={`${formatPriceAlgeria(stats.totalRevenue)} DA`}
+        badge={`${stats.soldListings} ventes`}
+        badgeIcon={stats.monthlyRevenue > 0 ? TrendingUp : Minus}
+        icon={BadgeDollarSign}
+        variant="blue"
+        badgePositive={stats.monthlyRevenue > 0}
+        footerLead={
+          stats.monthlyRevenue > 0 ? (
+            <>
+              {formatPriceAlgeria(stats.monthlyRevenue)} DA ce mois
+              <TrendingUp className="size-4" />
+            </>
+          ) : (
+            "Aucune transaction ce mois"
+          )
+        }
+        footerMuted="Montant des ventes et locations finalisées."
+      />
 
-      {/* 2. Nouveaux Mandats Signés */}
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Nouveaux Mandats ce Mois</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {stats.listingsThisMonth}
-          </CardTitle>
-          <CardAction>
-            <Badge
-              variant="outline"
-              className={
-                listingsChange >= 0
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }
-            >
-              {listingsChange >= 0 ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <TrendingDown className="w-4 h-4" />
-              )}
-              {listingsChange >= 0 ? "+" : ""}
-              {listingsChange}%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div
-            className={`line-clamp-1 flex gap-2 font-medium ${listingsChange >= 0 ? "text-green-600" : "text-red-600"}`}
-          >
-            {listingsChange >= 0 ? (
-              <>
-                Progression des acquisitions <TrendingUp className="size-4" />
-              </>
-            ) : (
-              <>
-                Baisse des acquisitions <TrendingDown className="size-4" />
-              </>
-            )}
-          </div>
-          <div className="text-muted-foreground">
-            {stats.totalListings} propriétés au total en portefeuille.
-          </div>
-        </CardFooter>
-      </Card>
+      <ExecutiveKpiCard
+        title="Gain agence"
+        value={`${formatPriceAlgeria(stats.totalGainedAmount)} DA`}
+        badge={`${formatPriceAlgeria(stats.monthlyGainedAmount)} DA`}
+        badgeIcon={stats.monthlyGainedAmount > 0 ? TrendingUp : Minus}
+        icon={Wallet}
+        variant="green"
+        badgePositive={stats.monthlyGainedAmount > 0}
+        footerLead={
+          stats.monthlyGainedAmount > 0 ? (
+            <>
+              Commissions encaissées ce mois
+              <TrendingUp className="size-4" />
+            </>
+          ) : (
+            "Aucune commission ce mois"
+          )
+        }
+        footerMuted="Calculé depuis les commissions des négociations conclues."
+      />
 
-      {/* 3. Taux de Conversion Client */}
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Taux de Qualification Client</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {conversionRate}%
-          </CardTitle>
-          <CardAction>
-            <Badge
-              variant="outline"
-              className={
-                parseFloat(conversionChange) >= 0
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }
-            >
-              {parseFloat(conversionChange) >= 0 ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <TrendingDown className="w-4 h-4" />
-              )}
-              {parseFloat(conversionChange) >= 0 ? "+" : ""}
-              {conversionChange}%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div
-            className={`line-clamp-1 flex gap-2 font-medium ${parseFloat(conversionChange) >= 0 ? "text-green-600" : "text-red-600"}`}
-          >
-            {parseFloat(conversionChange) >= 0 ? (
-              <>
-                Performance soutenue <TrendingUp className="size-4" />
-              </>
-            ) : (
-              <>
-                Performance en baisse <TrendingDown className="size-4" />
-              </>
-            )}
-          </div>
-          <div className="text-muted-foreground">
-            {stats.qualifiedClients} qualifiés sur {stats.totalBuyerRenterClients}{" "}
-            acheteurs/locataires évalués.
-          </div>
-        </CardFooter>
-      </Card>
+      <ExecutiveKpiCard
+        title="Nouveaux mandats"
+        value={`${stats.listingsThisMonth}`}
+        badge={`${listingsChange >= 0 ? "+" : ""}${listingsChange}%`}
+        badgeIcon={listingsChange >= 0 ? TrendingUp : TrendingDown}
+        icon={FileSignature}
+        variant="amber"
+        badgePositive={listingsChange >= 0}
+        footerLead={
+          listingsChange >= 0 ? (
+            <>
+              Progression des acquisitions <TrendingUp className="size-4" />
+            </>
+          ) : (
+            <>
+              Baisse des acquisitions <TrendingDown className="size-4" />
+            </>
+          )
+        }
+        footerMuted={`${stats.totalListings} propriétés au total en portefeuille.`}
+      />
+
+      <ExecutiveKpiCard
+        title="Qualification client"
+        value={`${conversionRate}%`}
+        badge={`${parseFloat(conversionChange) >= 0 ? "+" : ""}${conversionChange}%`}
+        badgeIcon={parseFloat(conversionChange) >= 0 ? TrendingUp : TrendingDown}
+        icon={Target}
+        variant="violet"
+        badgePositive={parseFloat(conversionChange) >= 0}
+        footerLead={
+          parseFloat(conversionChange) >= 0 ? (
+            <>
+              Performance soutenue <TrendingUp className="size-4" />
+            </>
+          ) : (
+            <>
+              Performance en baisse <TrendingDown className="size-4" />
+            </>
+          )
+        }
+        footerMuted={`${stats.qualifiedClients} qualifiés sur ${stats.totalBuyerRenterClients} acheteurs/locataires évalués.`}
+      />
     </div>
   );
 }

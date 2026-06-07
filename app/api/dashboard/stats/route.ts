@@ -1,8 +1,9 @@
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import dbConnect from "@/lib/mongoose";
-import { Listing, Client, FollowUp, User } from "@/models";
+import { Listing, Client, FollowUp, User, Negotiation } from "@/models";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +12,10 @@ export async function GET(request: NextRequest) {
     // 1. Extract role / userId from query params
     const role = request.nextUrl.searchParams.get("role") || "";
     const userId = request.nextUrl.searchParams.get("userId") || "";
-    const isAdmin = role === "ADMIN" || role === "MANAGER";
+    const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
+    const userObjectId = Types.ObjectId.isValid(userId)
+      ? new Types.ObjectId(userId)
+      : null;
 
     // Base filters scoped to the current user when not admin
     const listingFilter = isAdmin ? {} : { agent: userId };
@@ -25,6 +29,9 @@ export async function GET(request: NextRequest) {
       ? {}
       : { $or: [{ assignedAgent: userId }, { createdBy: userId }] };
     const followUpFilter = isAdmin ? {} : { agent: userId };
+    const negotiationFilter = isAdmin
+      ? {}
+      : { agent: userObjectId ?? new Types.ObjectId() };
 
     // 2. Calculate date ranges
     const now = new Date();
@@ -61,6 +68,8 @@ export async function GET(request: NextRequest) {
 
       // Revenue
       soldListingsForRevenue,
+      totalGainAggregation,
+      monthlyGainAggregation,
 
       // For charts
       allListings,
@@ -137,6 +146,79 @@ export async function GET(request: NextRequest) {
       Listing.find({ ...listingFilter, status: { $in: ["Vendu", "Loué"] } })
         .select("price status updatedAt")
         .lean(),
+      Negotiation.aggregate([
+        {
+          $match: {
+            ...negotiationFilter,
+            status: "DEAL_DONE",
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            amount: {
+              $sum: {
+                $ifNull: [
+                  "$closingDetails.commissionAmount",
+                  {
+                    $divide: [
+                      {
+                        $multiply: [
+                          { $ifNull: ["$closingDetails.finalPrice", 0] },
+                          {
+                            $ifNull: [
+                              "$closingDetails.commissionPercentage",
+                              0,
+                            ],
+                          },
+                        ],
+                      },
+                      100,
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ]),
+      Negotiation.aggregate([
+        {
+          $match: {
+            ...negotiationFilter,
+            status: "DEAL_DONE",
+            closedAt: { $gte: startOfMonth },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            amount: {
+              $sum: {
+                $ifNull: [
+                  "$closingDetails.commissionAmount",
+                  {
+                    $divide: [
+                      {
+                        $multiply: [
+                          { $ifNull: ["$closingDetails.finalPrice", 0] },
+                          {
+                            $ifNull: [
+                              "$closingDetails.commissionPercentage",
+                              0,
+                            ],
+                          },
+                        ],
+                      },
+                      100,
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ]),
 
       // For charts
       Listing.find(listingFilter)
@@ -156,6 +238,8 @@ export async function GET(request: NextRequest) {
     const monthlyRevenue = soldListingsForRevenue
       .filter((l) => new Date(l.updatedAt) >= startOfMonth)
       .reduce((sum, listing) => sum + (listing.price || 0), 0);
+    const totalGainedAmount = totalGainAggregation[0]?.amount ?? 0;
+    const monthlyGainedAmount = monthlyGainAggregation[0]?.amount ?? 0;
 
     // 5. Calculate percentage changes
     const calculateChange = (current: number, previous: number) => {
@@ -445,6 +529,8 @@ export async function GET(request: NextRequest) {
           todayFollowUps,
           totalRevenue,
           monthlyRevenue,
+          totalGainedAmount,
+          monthlyGainedAmount,
           completedFollowUpsThisMonth,
           listingsChange,
           clientsChange,
