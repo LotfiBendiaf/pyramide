@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -28,6 +28,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { NegotiationStatusBadge } from "@/components/pipeline/PipelineBadges";
 import {
   requestBlockSchema,
@@ -54,9 +61,12 @@ import {
   Banknote,
   Trophy,
   FileText,
+  ArrowRight,
+  MoveRight,
 } from "lucide-react";
 import Link from "next/link";
 import ROUTES from "@/constants/routes";
+import { formatPriceAlgeria } from "@/lib/utils";
 
 interface NegotiationDocument {
   _id?: string;
@@ -102,6 +112,8 @@ export interface NegotiationDetailProps {
       depositPaymentMethod?: string;
       depositProofNotes?: string;
       finalPrice?: number;
+      commissionPercentage?: number;
+      commissionAmount?: number;
       notes?: string;
     };
     listing?: {
@@ -209,7 +221,7 @@ export function NegotiationDetail({
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
             <p>
-              Montant:{" "}
+              Montant versé:{" "}
               <strong>
                 {negotiation.closingDetails.depositAmount.toLocaleString(
                   "fr-DZ"
@@ -224,6 +236,18 @@ export function NegotiationDetail({
                   {negotiation.closingDetails.finalPrice.toLocaleString(
                     "fr-DZ"
                   )}{" "}
+                  DZD
+                </strong>
+              </p>
+            )}
+            {negotiation.closingDetails.commissionPercentage !== undefined && (
+              <p>
+                Commission agence:{" "}
+                <strong>
+                  {negotiation.closingDetails.commissionPercentage}% ·{" "}
+                  {(
+                    negotiation.closingDetails.commissionAmount ?? 0
+                  ).toLocaleString("fr-DZ")}{" "}
                   DZD
                 </strong>
               </p>
@@ -374,11 +398,11 @@ export function NegotiationDetail({
 
       {/* Deal done */}
       {negotiation.status === "DEAL_DONE" && (
-        <Card className="border-green-200 bg-green-50/50">
+        <Card className="border-green-200">
           <CardContent className="p-4 flex items-center gap-3">
             <Trophy className="h-5 w-5 text-green-600" />
             <div>
-              <p className="font-medium text-green-700">Affaire conclue !</p>
+              <p className="font-medium">Affaire conclue !</p>
               {negotiation.closedAt && (
                 <p className="text-xs text-green-600">
                   Le{" "}
@@ -485,32 +509,32 @@ export function NegotiationDetail({
           "CLOSING_DEPOSIT",
           "CLOSING_FINALISATION",
         ].includes(negotiation.status) && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {negotiation.status === "ACTIVE" && (
-              <BeginClosingDialog negotiationId={negotiation._id} />
-            )}
-            {negotiation.status === "CLOSING_DEPOSIT" && (
-              <ConfirmDepositDialog negotiationId={negotiation._id} />
-            )}
-            {["CLOSING", "CLOSING_FINALISATION"].includes(
-              negotiation.status
-            ) && (
-              <CloseDealDialog
-                negotiationId={negotiation._id}
-                closingDetails={negotiation.closingDetails}
-              />
-            )}
-            <Button size="sm" variant="outline" asChild>
-              <Link href={ROUTES.DOCUMENTS}>Ajouter un document</Link>
-            </Button>
-            <CancelNegotiationDialog negotiationId={negotiation._id} />
-          </CardContent>
-        </Card>
-      )}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              {negotiation.status === "ACTIVE" && (
+                <BeginClosingDialog negotiationId={negotiation._id} />
+              )}
+              {negotiation.status === "CLOSING_DEPOSIT" && (
+                <ConfirmDepositDialog negotiationId={negotiation._id} />
+              )}
+              {["CLOSING", "CLOSING_FINALISATION"].includes(
+                negotiation.status
+              ) && (
+                <CloseDealDialog
+                  negotiationId={negotiation._id}
+                  closingDetails={negotiation.closingDetails}
+                />
+              )}
+              <Button size="sm" variant="outline" asChild>
+                <Link href={ROUTES.DOCUMENTS}>Ajouter un document</Link>
+              </Button>
+              <CancelNegotiationDialog negotiationId={negotiation._id} />
+            </CardContent>
+          </Card>
+        )}
     </div>
   );
 }
@@ -729,7 +753,11 @@ function BeginClosingDialog({ negotiationId }: { negotiationId: string }) {
           Le dossier passera à la phase Closing — Dépôt & confirmation.
         </p>
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+          >
             Annuler
           </Button>
           <Button onClick={onConfirm}>Continuer</Button>
@@ -749,7 +777,7 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
       negotiationId,
       depositAmount: 0,
       paymentDate: new Date(),
-      paymentMethod: "",
+      paymentMethod: undefined,
       proofNotes: "",
       notes: "",
     },
@@ -791,6 +819,10 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
                       onChange={(e) => field.onChange(Number(e.target.value))}
                     />
                   </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    <MoveRight className="h-4 w-4 inline mr-1" />
+                    {formatPriceAlgeria(Number(field.value) || 0)}
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -822,9 +854,18 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Méthode de paiement</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Espèces, virement, chèque..." {...field} />
-                  </FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une méthode" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Espèces">Espèces</SelectItem>
+                      <SelectItem value="Versement">Versement</SelectItem>
+                      <SelectItem value="Chèque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -887,8 +928,21 @@ function CloseDealDialog({
   type Values = z.infer<typeof closeDealSchema>;
   const form = useForm<Values>({
     resolver: zodResolver(closeDealSchema),
-    defaultValues: { negotiationId, finalPrice: 0, notes: "" },
+    defaultValues: {
+      negotiationId,
+      finalPrice: closingDetails?.finalPrice ?? 0,
+      commissionPercentage: closingDetails?.commissionPercentage ?? 0,
+      notes: "",
+    },
   });
+  const finalPrice = useWatch({ control: form.control, name: "finalPrice" });
+  const commissionPercentage = useWatch({
+    control: form.control,
+    name: "commissionPercentage",
+  });
+  const commissionAmount =
+    ((Number(finalPrice) || 0) * (Number(commissionPercentage) || 0)) / 100;
+
   async function onSubmit(values: Values) {
     const result = await closeDeal(values);
     if (!result.success) {
@@ -910,7 +964,7 @@ function CloseDealDialog({
           Clôturer l&apos;affaire
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Clôturer l&apos;affaire</DialogTitle>
         </DialogHeader>
@@ -937,6 +991,32 @@ function CloseDealDialog({
                   <FormControl>
                     <Input
                       type="number"
+                      min={0}
+                      step={1000}
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    <ArrowRight className="h-4 w-4 inline mr-1" />
+                    {formatPriceAlgeria(Number(field.value) || 0)}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="commissionPercentage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Commission agence (%)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
                       {...field}
                       onChange={(e) => field.onChange(Number(e.target.value))}
                     />
@@ -945,6 +1025,19 @@ function CloseDealDialog({
                 </FormItem>
               )}
             />
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <p className="text-muted-foreground">Gain estimé agence</p>
+              <p className="mt-1 text-lg font-semibold">
+                {commissionAmount.toLocaleString("fr-DZ", {
+                  maximumFractionDigits: 0,
+                })}{" "}
+                DZD
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <ArrowRight className="h-4 w-4 inline mr-1" />
+                {formatPriceAlgeria(commissionAmount)}
+              </p>
+            </div>
             <FormField
               control={form.control}
               name="notes"

@@ -45,6 +45,8 @@ export interface Negotiation {
   closingDetails?: {
     depositAmount?: number;
     finalPrice?: number;
+    commissionPercentage?: number;
+    commissionAmount?: number;
   };
 }
 
@@ -162,6 +164,16 @@ export function NegotiationsList({
                       <span>
                         ·{" "}
                         {neg.closingDetails.finalPrice.toLocaleString("fr-DZ")}{" "}
+                        DZD
+                      </span>
+                    )}
+                    {neg.closingDetails?.commissionAmount !== undefined && (
+                      <span>
+                        · Gain{" "}
+                        {neg.closingDetails.commissionAmount.toLocaleString(
+                          "fr-DZ",
+                          { maximumFractionDigits: 0 }
+                        )}{" "}
                         DZD
                       </span>
                     )}

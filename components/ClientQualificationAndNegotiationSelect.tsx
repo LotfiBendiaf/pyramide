@@ -308,23 +308,62 @@ export default function ClientQualificationAndNegotiationSelect({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
+      toast.error("Configuration Cloudinary manquante");
+      return;
+    }
+
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+      toast.error("Configuration Cloudinary manquante");
+      return;
+    }
+
     setUploadingDocument(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    setUploadedDocument(null);
 
     try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      );
+      formData.append("folder", "pyramide/negotiations");
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error?.message ||
+            "Erreur lors du téléchargement du document"
+        );
+      }
+
+      const result = await response.json();
+      setUploadedDocument({
+        publicId: result.public_id,
+        url: result.url,
+        secureUrl: result.secure_url,
+        originalFilename: result.original_filename ?? file.name,
+        format: result.format,
+        resourceType: result.resource_type,
+        bytes: result.bytes,
       });
-
-      if (!response.ok) throw new Error("Upload failed");
-
-      const data = await response.json();
-      setUploadedDocument(data.document);
-      toast.success("Document uploadé");
-    } catch {
-      toast.error("Erreur lors de l'upload");
+      toast.success("Document téléchargé");
+    } catch (error) {
+      toast.error("Échec du téléchargement", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Erreur lors de l'upload",
+      });
     } finally {
       setUploadingDocument(false);
     }

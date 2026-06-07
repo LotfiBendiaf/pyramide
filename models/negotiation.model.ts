@@ -57,6 +57,8 @@ export interface INegotiation {
     depositPaymentMethod?: string;
     depositProofNotes?: string;
     finalPrice?: number;
+    commissionPercentage?: number;
+    commissionAmount?: number;
     notes?: string;
   };
 
@@ -136,6 +138,8 @@ const negotiationSchema = new Schema<INegotiation>(
       depositPaymentMethod: { type: String, trim: true },
       depositProofNotes: { type: String, trim: true },
       finalPrice: Number,
+      commissionPercentage: Number,
+      commissionAmount: Number,
       notes: { type: String, trim: true },
     },
 

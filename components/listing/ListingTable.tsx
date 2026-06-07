@@ -318,9 +318,9 @@ export function ListingTable({ listings }: ListingTableProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                       {listing.pipelineStatus !== "PHOTO_VISIT_PENDING" && (
-                        <Badge variant="orange" className="text-xs">
+                        <Badge variant="purple" className="text-xs">
                           <Radio />
-                          Actuellement en visite
+                          En Négociation
                         </Badge>
                       )}
                     </div>

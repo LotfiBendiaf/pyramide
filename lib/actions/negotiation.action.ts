@@ -1001,7 +1001,8 @@ export async function closeDeal(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { negotiationId, finalPrice, notes } = validationResult.params;
+  const { negotiationId, finalPrice, commissionPercentage, notes } =
+    validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
     return {
@@ -1062,12 +1063,15 @@ export async function closeDeal(
     }
 
     const now = new Date();
+    const commissionAmount = (finalPrice * commissionPercentage) / 100;
 
     await Promise.all([
       Negotiation.findByIdAndUpdate(negotiationId, {
         status: "DEAL_DONE",
         closedAt: now,
         "closingDetails.finalPrice": finalPrice,
+        "closingDetails.commissionPercentage": commissionPercentage,
+        "closingDetails.commissionAmount": commissionAmount,
         ...(notes ? { "closingDetails.notes": notes } : {}),
       }),
       Listing.findByIdAndUpdate(negotiation.listing, {

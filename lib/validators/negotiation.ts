@@ -50,7 +50,9 @@ export const confirmDepositSchema = z.object({
     .number({ required_error: "Montant du dépôt requis" })
     .positive(),
   paymentDate: z.coerce.date({ required_error: "Date de paiement requise" }),
-  paymentMethod: z.string().min(1, "Méthode de paiement requise").trim(),
+  paymentMethod: z.enum(["Espèces", "Versement", "Chèque"], {
+    required_error: "Méthode de paiement requise",
+  }),
   proofNotes: z.string().trim().optional(),
   notes: z.string().trim().optional(),
 });
@@ -58,6 +60,10 @@ export const confirmDepositSchema = z.object({
 export const closeDealSchema = z.object({
   negotiationId: z.string().min(1),
   finalPrice: z.number({ required_error: "Prix final requis" }).positive(),
+  commissionPercentage: z
+    .number({ required_error: "Commission requise" })
+    .min(0, "Minimum 0%")
+    .max(100, "Maximum 100%"),
   notes: z.string().trim().optional(),
 });
 

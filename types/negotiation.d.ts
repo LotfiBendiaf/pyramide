@@ -45,6 +45,7 @@ export type ConfirmDepositInput = {
 export type CloseDealInput = {
   negotiationId: string;
   finalPrice: number;
+  commissionPercentage: number;
   notes?: string;
 };
 
