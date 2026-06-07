@@ -65,6 +65,9 @@ export async function GET(request: NextRequest) {
       overdueFollowUps,
       todayFollowUps,
       completedFollowUpsThisMonth,
+      activeNegotiations,
+      closedDeals,
+      closedDealsThisMonth,
 
       // Revenue
       soldListingsForRevenue,
@@ -140,6 +143,26 @@ export async function GET(request: NextRequest) {
         ...followUpFilter,
         status: "DONE",
         updatedAt: { $gte: startOfMonth },
+      }),
+      Negotiation.countDocuments({
+        ...negotiationFilter,
+        status: {
+          $in: [
+            "ACTIVE",
+            "CLOSING",
+            "CLOSING_DEPOSIT",
+            "CLOSING_FINALISATION",
+          ],
+        },
+      }),
+      Negotiation.countDocuments({
+        ...negotiationFilter,
+        status: "DEAL_DONE",
+      }),
+      Negotiation.countDocuments({
+        ...negotiationFilter,
+        status: "DEAL_DONE",
+        closedAt: { $gte: startOfMonth },
       }),
 
       // Revenue (always global for admin, scoped for agent)
@@ -547,6 +570,11 @@ export async function GET(request: NextRequest) {
           myFollowUps: pendingFollowUps,
           completedToday,
           pendingToday: todayFollowUps,
+          activeNegotiations,
+          closedDeals,
+          closedDealsThisMonth,
+          totalGainedAmount,
+          monthlyGainedAmount,
         },
         todayEvents: formattedTodayEvents,
         agentPerformance,

@@ -16,10 +16,14 @@ import {
   AlertCircle,
   ArrowRight,
   Sparkles,
+  Handshake,
+  CircleDollarSign,
+  Trophy,
 } from "lucide-react";
 import ROUTES from "@/constants/routes";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatPriceAlgeria } from "@/lib/utils";
 
 interface AgentDashboardProps {
   userName: string;
@@ -29,6 +33,11 @@ interface AgentDashboardProps {
     myFollowUps: number;
     completedToday: number;
     pendingToday: number;
+    activeNegotiations?: number;
+    closedDeals?: number;
+    closedDealsThisMonth?: number;
+    totalGainedAmount?: number;
+    monthlyGainedAmount?: number;
   };
   todayEvents: Array<{
     id: string;
@@ -96,50 +105,100 @@ export function AgentDashboard({
 }: AgentDashboardProps) {
   const greeting = getGreeting();
   const today = format(new Date(), "EEEE d MMMM", { locale: fr });
+  const totalCommission = stats.totalGainedAmount ?? 0;
+  const monthlyCommission = stats.monthlyGainedAmount ?? 0;
+  const closedDeals = stats.closedDeals ?? 0;
+  const closedDealsThisMonth = stats.closedDealsThisMonth ?? 0;
+  const activeNegotiations = stats.activeNegotiations ?? 0;
+
+  const performanceCards = [
+    {
+      label: "Deals conclus",
+      value: closedDeals.toString(),
+      helper: `${closedDealsThisMonth} ce mois`,
+      icon: Trophy,
+      className:
+        "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300",
+    },
+    {
+      label: "Commissions gagnées",
+      value: `${formatPriceAlgeria(totalCommission)} DA`,
+      helper: `${formatPriceAlgeria(monthlyCommission)} DA ce mois`,
+      icon: CircleDollarSign,
+      className:
+        "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-300",
+    },
+    {
+      label: "Négociations actives",
+      value: activeNegotiations.toString(),
+      helper: "Dossiers en cours",
+      icon: Handshake,
+      className:
+        "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/30 dark:text-violet-300",
+    },
+  ];
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/90 to-primary p-8 text-primary-foreground">
-        <div className="absolute right-0 top-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute left-1/2 bottom-0 -mb-8 h-24 w-24 rounded-full bg-white/5 blur-xl" />
-
-        <div className="relative">
-          <div className="flex items-center gap-2 text-primary-foreground/80 mb-2">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-sm font-medium capitalize">{today}</span>
+      <div className="rounded-lg border bg-card p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium capitalize">{today}</span>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {greeting}, {userName}!
+            </h1>
+            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+              {todayEvents.length > 0
+                ? `Vous avez ${todayEvents.length} événement${todayEvents.length > 1 ? "s" : ""} prévu${todayEvents.length > 1 ? "s" : ""} aujourd'hui.`
+                : "Votre journée est libre. Profitez-en pour prospecter!"}
+            </p>
           </div>
-          <h1 className="text-3xl font-bold mb-2">
-            {greeting}, {userName}!
-          </h1>
-          <p className="text-primary-foreground/80 max-w-lg">
-            {todayEvents.length > 0
-              ? `Vous avez ${todayEvents.length} événement${todayEvents.length > 1 ? "s" : ""} prévu${todayEvents.length > 1 ? "s" : ""} aujourd'hui.`
-              : "Votre journée est libre. Profitez-en pour prospecter!"}
-          </p>
-        </div>
 
-        {/* Mini stats row */}
-        <div className="relative mt-6 flex flex-wrap gap-6">
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-white/20 p-2">
-              <CheckCircle2 className="h-4 w-4" />
+          <div className="grid grid-cols-2 gap-3 sm:min-w-[320px]">
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+              <p className="text-2xl font-semibold">{stats.completedToday}</p>
+              <p className="text-xs text-muted-foreground">Terminés</p>
             </div>
-            <div>
-              <p className="text-2xl font-bold">{stats.completedToday}</p>
-              <p className="text-xs text-primary-foreground/70">Terminés</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-white/20 p-2">
-              <AlertCircle className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{stats.pendingToday}</p>
-              <p className="text-xs text-primary-foreground/70">En attente</p>
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                <AlertCircle className="h-4 w-4" />
+              </div>
+              <p className="text-2xl font-semibold">{stats.pendingToday}</p>
+              <p className="text-xs text-muted-foreground">En attente</p>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Performance metrics */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {performanceCards.map((metric) => (
+          <Card key={metric.label} className={`border ${metric.className}`}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium opacity-80">
+                    {metric.label}
+                  </p>
+                  <p className="mt-2 break-words text-2xl font-semibold tracking-tight">
+                    {metric.value}
+                  </p>
+                  <p className="mt-1 text-xs opacity-70">{metric.helper}</p>
+                </div>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-background/70">
+                  <metric.icon className="h-5 w-5" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Quick Actions */}
@@ -148,7 +207,7 @@ export function AgentDashboard({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {QUICK_ACTIONS.map((action) => (
             <Link key={action.href} href={action.href}>
-              <Card className="group hover:shadow-md transition-all cursor-pointer border-2 hover:border-primary/20">
+              <Card className="group cursor-pointer border transition-all hover:border-primary/30 hover:shadow-sm">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className={`rounded-lg p-2.5 ${action.color}`}>
@@ -267,6 +326,16 @@ export function AgentDashboard({
               </div>
               <span className="text-2xl font-bold text-orange-600">
                 {stats.myFollowUps}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-violet-50 dark:bg-violet-950/30">
+              <div className="flex items-center gap-3">
+                <Handshake className="h-5 w-5 text-violet-600" />
+                <span className="text-sm font-medium">Négociations</span>
+              </div>
+              <span className="text-2xl font-bold text-violet-600">
+                {activeNegotiations}
               </span>
             </div>
           </CardContent>

@@ -116,6 +116,11 @@ async function DashboardContent() {
             myFollowUps: 0,
             completedToday: 0,
             pendingToday: 0,
+            activeNegotiations: 0,
+            closedDeals: 0,
+            closedDealsThisMonth: 0,
+            totalGainedAmount: 0,
+            monthlyGainedAmount: 0,
           }
         }
         todayEvents={todayEvents || []}
