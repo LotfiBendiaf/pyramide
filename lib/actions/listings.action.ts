@@ -235,6 +235,11 @@ export async function createListing(
       throw new Error("Échec de la création de l'annonce");
     }
 
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    if (parsedParams.isPublished) {
+      revalidatePath(ROUTES.LISTINGS);
+    }
+
     return {
       success: true,
       data: JSON.parse(JSON.stringify(listing)),

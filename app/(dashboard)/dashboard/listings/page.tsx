@@ -40,8 +40,9 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   const isNeutreView = params?.view === "neutre";
   const isActiveView = !isArchiveView && !isNeutreView;
 
-  // Annonces validées: always filter isValidated=true and default sort by referenceCode asc
-  const sortBy = params?.sortBy ?? (isActiveView ? "referenceCode" : undefined);
+  // Keep rent and sale listings mixed by recency. Sorting by referenceCode groups
+  // all V-* before L-* and hides rentals behind pagination.
+  const sortBy = params?.sortBy ?? (isActiveView ? "validatedAt" : undefined);
   const sortOrder =
     (params?.sortOrder as "asc" | "desc" | undefined) ??
     (isActiveView ? "desc" : undefined);

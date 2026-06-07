@@ -195,9 +195,13 @@ export default function ListingForm({
         toast.success(
           isEditMode
             ? "Annonce mise à jour avec succès"
-            : "Annonce publiée avec succès"
+            : "Annonce créée avec succès"
         );
-        router.push(ROUTES.LISTINGS_DASHBOARD);
+        router.push(
+          isEditMode
+            ? ROUTES.LISTINGS_DASHBOARD
+            : `${ROUTES.LISTINGS_DASHBOARD}?view=neutre`
+        );
       } catch (error) {
         form.setError("root", {
           type: "server",
