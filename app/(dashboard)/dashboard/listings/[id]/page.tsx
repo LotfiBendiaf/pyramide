@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import ROUTES from "@/constants/routes";
 import { DeleteListingButton } from "@/components/listing/DeleteListingButton";
+import { CopyClientListingLinkButton } from "@/components/listing/CopyClientListingLinkButton";
 import { SetBreadcrumbTitle } from "@/components/navigation/BreadcrumbTitleContext";
 
 export default async function ListingDetailsPage({
@@ -27,11 +28,14 @@ export default async function ListingDetailsPage({
 
   return (
     <section className="container">
-      <SetBreadcrumbTitle title={listing.referenceCode ?? listing.title ?? "Annonce"} />
+      <SetBreadcrumbTitle
+        title={listing.referenceCode ?? listing.title ?? "Annonce"}
+      />
       {/* Gallery - Staff can see all images */}
       <ListingGallery images={listing.images} isStaff={true} />
 
       <div className="flex justify-end gap-2 mt-4">
+        <CopyClientListingLinkButton listingId={id} />
         <Button asChild variant="outline">
           <Link href={ROUTES.LISTING_EDIT(id)}>
             <Pencil className="h-4 w-4 mr-2" />
