@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
+import { cn, formatPriceAlgeria } from "@/lib/utils";
 import { useState } from "react";
 
 import { createClient } from "@/lib/actions/client.action";
@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -151,10 +152,14 @@ export default function ClientCreateForm() {
                         <Select
                           value={countryId}
                           onValueChange={(val) => {
-                            const next = COUNTRY_CODES.find((c) => c.id === val)!;
+                            const next = COUNTRY_CODES.find(
+                              (c) => c.id === val
+                            )!;
                             setCountryId(val as CountryId);
                             const digits = field.value.replace(/^\+\d+/, "");
-                            field.onChange(digits ? `${next.code}${digits}` : "");
+                            field.onChange(
+                              digits ? `${next.code}${digits}` : ""
+                            );
                           }}
                         >
                           <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
@@ -171,7 +176,9 @@ export default function ClientCreateForm() {
                                 <span className="flex items-center gap-2">
                                   <span>{c.flag}</span>
                                   <span>{c.label}</span>
-                                  <span className="text-muted-foreground text-xs ml-auto">{c.code}</span>
+                                  <span className="text-muted-foreground text-xs ml-auto">
+                                    {c.code}
+                                  </span>
                                 </span>
                               </SelectItem>
                             ))}
@@ -183,8 +190,12 @@ export default function ClientCreateForm() {
                           value={localValue}
                           onChange={(e) => {
                             const raw = e.target.value.replace(/\D/g, "");
-                            const local = raw.startsWith("0") ? raw.slice(1) : raw;
-                            field.onChange(local ? `${selected.code}${local}` : "");
+                            const local = raw.startsWith("0")
+                              ? raw.slice(1)
+                              : raw;
+                            field.onChange(
+                              local ? `${selected.code}${local}` : ""
+                            );
                           }}
                         />
                       </div>
@@ -200,29 +211,47 @@ export default function ClientCreateForm() {
               control={form.control}
               name="phone2"
               render={({ field }) => {
-                const selected2 = COUNTRY_CODES.find((c) => c.id === countryId2)!;
-                const localValue2 = (field.value ?? "").startsWith(selected2.code)
+                const selected2 = COUNTRY_CODES.find(
+                  (c) => c.id === countryId2
+                )!;
+                const localValue2 = (field.value ?? "").startsWith(
+                  selected2.code
+                )
                   ? field.value!.slice(selected2.code.length)
                   : (field.value ?? "").replace(/^\+\d+/, "");
                 return (
                   <FormItem>
-                    <FormLabel>Téléphone 2 <span className="text-muted-foreground text-xs">(optionnel)</span></FormLabel>
+                    <FormLabel>
+                      Téléphone 2{" "}
+                      <span className="text-muted-foreground text-xs">
+                        (optionnel)
+                      </span>
+                    </FormLabel>
                     <FormControl>
                       <div className="flex">
                         <Select
                           value={countryId2}
                           onValueChange={(val) => {
-                            const next = COUNTRY_CODES.find((c) => c.id === val)!;
+                            const next = COUNTRY_CODES.find(
+                              (c) => c.id === val
+                            )!;
                             setCountryId2(val as CountryId);
-                            const digits = (field.value ?? "").replace(/^\+\d+/, "");
-                            field.onChange(digits ? `${next.code}${digits}` : "");
+                            const digits = (field.value ?? "").replace(
+                              /^\+\d+/,
+                              ""
+                            );
+                            field.onChange(
+                              digits ? `${next.code}${digits}` : ""
+                            );
                           }}
                         >
                           <SelectTrigger className="w-[110px] rounded-r-none border-r-0 focus:ring-0 focus:ring-offset-0">
                             <SelectValue>
                               <span className="flex items-center gap-1.5">
                                 <span>{selected2.flag}</span>
-                                <span className="text-xs">{selected2.code}</span>
+                                <span className="text-xs">
+                                  {selected2.code}
+                                </span>
                               </span>
                             </SelectValue>
                           </SelectTrigger>
@@ -232,7 +261,9 @@ export default function ClientCreateForm() {
                                 <span className="flex items-center gap-2">
                                   <span>{c.flag}</span>
                                   <span>{c.label}</span>
-                                  <span className="text-muted-foreground text-xs ml-auto">{c.code}</span>
+                                  <span className="text-muted-foreground text-xs ml-auto">
+                                    {c.code}
+                                  </span>
                                 </span>
                               </SelectItem>
                             ))}
@@ -244,8 +275,12 @@ export default function ClientCreateForm() {
                           value={localValue2}
                           onChange={(e) => {
                             const raw = e.target.value.replace(/\D/g, "");
-                            const local = raw.startsWith("0") ? raw.slice(1) : raw;
-                            field.onChange(local ? `${selected2.code}${local}` : "");
+                            const local = raw.startsWith("0")
+                              ? raw.slice(1)
+                              : raw;
+                            field.onChange(
+                              local ? `${selected2.code}${local}` : ""
+                            );
                           }}
                         />
                       </div>
@@ -344,6 +379,11 @@ export default function ClientCreateForm() {
                         }
                       />
                     </FormControl>
+                    {field.value !== undefined && (
+                      <FormDescription>
+                        {formatPriceAlgeria(field.value)} DZD
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -367,6 +407,11 @@ export default function ClientCreateForm() {
                         }
                       />
                     </FormControl>
+                    {field.value !== undefined && (
+                      <FormDescription>
+                        {formatPriceAlgeria(field.value)} DZD
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
