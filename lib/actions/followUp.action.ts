@@ -1,14 +1,19 @@
 "use server";
 
 import dbConnect from "../mongoose";
-import { FollowUp } from "@/models";
+import { Client, FollowUp, Visit } from "@/models";
 import action from "../handlers/action";
 import { FollowUpSchema, fetchFollowUpsSchema } from "../validators/followUp";
 import handleError from "../handlers/error";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import { FollowUpInput, FollowUpFilters } from "@/types/followUp";
 import { FilterQuery } from "mongoose";
-import { createCalendarEventFromFollowUp } from "@/lib/googleCalendar/syncService";
+import {
+  createCalendarEventFromFollowUp,
+  createCalendarEventFromVisit,
+} from "@/lib/googleCalendar/syncService";
+import { revalidatePath } from "next/cache";
+import ROUTES from "@/constants/routes";
 
 export async function createFollowUp(
   params: FollowUpInput
@@ -66,8 +71,48 @@ export async function createFollowUp(
       agent: followUp.agent,
     });
 
+    if (followUp.channel === "VISIT") {
+      const scheduledAt =
+        followUp.startTime ||
+        followUp.reminderAt ||
+        followUp.createdAt ||
+        new Date();
+      const visitStatus =
+        followUp.status === "PENDING" || followUp.status === "OVERDUE"
+          ? "SCHEDULED"
+          : "COMPLETED";
+
+      const visit = await Visit.create({
+        listing: followUp.listing,
+        client: followUp.client,
+        agent: followUp.agent,
+        isExternalListing: !followUp.listing,
+        externalListingRef: !followUp.listing
+          ? followUp.title || "Autre"
+          : undefined,
+        scheduledAt,
+        notes: followUp.note,
+        status: visitStatus,
+        completedAt: visitStatus === "COMPLETED" ? new Date() : undefined,
+      });
+
+      await Client.findByIdAndUpdate(followUp.client, {
+        lastContactedAt: new Date(),
+      });
+
+      try {
+        await createCalendarEventFromVisit(visit._id.toString());
+      } catch (err) {
+        console.error("Failed to sync visit follow-up to Google Calendar:", err);
+      }
+
+      revalidatePath(ROUTES.VISITS);
+      revalidatePath(ROUTES.CLIENT_DETAIL(followUp.client.toString()));
+    }
+
     // Sync to Google Calendar if the follow-up has a scheduled time
     if (
+      followUp.channel !== "VISIT" &&
       (followUp.status === "PENDING" || followUp.status === "OVERDUE") &&
       (followUp.reminderAt || followUp.startTime)
     ) {
