@@ -40,10 +40,11 @@ const CHANNEL_ICONS: Record<string, LucideIcon> = {
 
 interface FollowUpFeedProps {
   followUps: FollowUp[];
+  total?: number;
   userRole?: string;
 }
 
-export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
+export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) {
   const router = useRouter();
 
   const handleCancel = async (id: string) => {
@@ -59,8 +60,9 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
     <div className="space-y-6">
       {/* Results count */}
       <p className="text-sm text-muted-foreground">
-        {followUps.length} suivi{followUps.length !== 1 && "s"} trouvé
-        {followUps.length !== 1 && "s"}
+        {total ?? followUps.length} suivi
+        {(total ?? followUps.length) !== 1 && "s"} trouvé
+        {(total ?? followUps.length) !== 1 && "s"}
         {isAdmin && <span className="ml-1">(tous les agents)</span>}
       </p>
 

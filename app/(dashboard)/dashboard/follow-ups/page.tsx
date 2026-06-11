@@ -12,7 +12,10 @@ import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { fetchAgents } from "@/lib/actions/users.action";
 import { FollowUpFeed } from "@/components/followUp/FollowUpFeed";
 import FollowUpsFilter from "@/components/FollowUpsFilter";
+import { PaginationControls } from "@/components/PaginationControls";
 import { FollowUpFilters } from "@/types/followUp";
+
+const FOLLOW_UPS_PER_PAGE = 10;
 
 type SearchParams = {
   agentId?: string;
@@ -20,6 +23,7 @@ type SearchParams = {
   status?: string;
   channel?: string;
   search?: string;
+  page?: string;
 };
 
 async function FollowUpsContent({
@@ -28,9 +32,14 @@ async function FollowUpsContent({
   searchParams: SearchParams;
 }) {
   const currentUser = await getUserBySessionEmail();
+  const pageParam = Number(searchParams.page ?? 1);
+  const page = Number.isFinite(pageParam) ? Math.max(1, pageParam) : 1;
 
   // Build filter params, excluding "__all__" values
-  const filterParams: FollowUpFilters = {};
+  const filterParams: FollowUpFilters = {
+    page,
+    limit: FOLLOW_UPS_PER_PAGE,
+  };
 
   if (searchParams.agentId && searchParams.agentId !== "__all__") {
     filterParams.agentId = searchParams.agentId;
@@ -58,9 +67,11 @@ async function FollowUpsContent({
     );
   }
 
-  const followUps = result.data;
+  const followUps = result.data?.followUps;
+  const total = result.data?.total ?? 0;
+  const totalPages = Math.ceil(total / FOLLOW_UPS_PER_PAGE);
 
-  if (!followUps || followUps.length === 0) {
+  if (!followUps || total === 0) {
     return (
       <div className="text-center text-muted-foreground py-20">
         Aucun suivi trouvé.
@@ -69,7 +80,14 @@ async function FollowUpsContent({
   }
 
   return (
-    <FollowUpFeed followUps={followUps} userRole={currentUser.data?.role} />
+    <>
+      <FollowUpFeed
+        followUps={followUps}
+        total={total}
+        userRole={currentUser.data?.role}
+      />
+      <PaginationControls currentPage={page} totalPages={totalPages} />
+    </>
   );
 }
 

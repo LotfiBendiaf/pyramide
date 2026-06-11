@@ -820,7 +820,13 @@ export async function setListingNeutre(
     await Listing.findByIdAndUpdate(listingId, {
       isValidated: false,
       archived: false,
-      $unset: { validatedAt: 1, validatedBy: 1, archivedAt: 1 },
+      $unset: {
+        validatedAt: 1,
+        validatedBy: 1,
+        archivedAt: 1,
+        blockedUntil: 1,
+        blockedForClient: 1,
+      },
     });
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);

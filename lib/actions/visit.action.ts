@@ -78,11 +78,13 @@ export async function scheduleVisit(
     // Hard block check — only applies to internal listings
     if (!isExternalListing && listingId) {
       const listing = await Listing.findById(listingId)
-        .select("pipelineStatus blockedUntil keyAvailable")
+        .select("pipelineStatus blockedUntil keyAvailable isValidated archived")
         .lean<{
           pipelineStatus: string;
           blockedUntil?: Date;
           keyAvailable: boolean;
+          isValidated?: boolean;
+          archived?: boolean;
         }>();
 
       if (!listing) {
@@ -93,34 +95,38 @@ export async function scheduleVisit(
         };
       }
 
-      if (listing.pipelineStatus === "UNDER_NEGOTIATION") {
-        return {
-          success: false,
-          error: {
-            message:
-              "Ce bien est en cours de négociation et ne peut pas être visité",
-          },
-          status: 409,
-        };
-      }
+      const isNeutreListing = !listing.isValidated && !listing.archived;
 
-      if (listing.blockedUntil && listing.blockedUntil > new Date()) {
-        return {
-          success: false,
-          error: { message: "Ce bien est temporairement bloqué" },
-          status: 409,
-        };
-      }
+      if (!isNeutreListing) {
+        if (listing.pipelineStatus === "UNDER_NEGOTIATION") {
+          return {
+            success: false,
+            error: {
+              message:
+                "Ce bien est en cours de négociation et ne peut pas être visité",
+            },
+            status: 409,
+          };
+        }
 
-      if (
-        listing.pipelineStatus !== "ACTIVE" &&
-        listing.pipelineStatus !== "PHOTO_VISIT_PENDING"
-      ) {
-        return {
-          success: false,
-          error: { message: "Ce bien n'est pas disponible pour les visites" },
-          status: 409,
-        };
+        if (listing.blockedUntil && listing.blockedUntil > new Date()) {
+          return {
+            success: false,
+            error: { message: "Ce bien est temporairement bloqué" },
+            status: 409,
+          };
+        }
+
+        if (
+          listing.pipelineStatus !== "ACTIVE" &&
+          listing.pipelineStatus !== "PHOTO_VISIT_PENDING"
+        ) {
+          return {
+            success: false,
+            error: { message: "Ce bien n'est pas disponible pour les visites" },
+            status: 409,
+          };
+        }
       }
     }
 

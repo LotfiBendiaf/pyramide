@@ -169,7 +169,7 @@ export async function cancelFollowUp(id: string) {
 
 export async function fetchAllFollowUps(
   params: FollowUpFilters = {}
-): Promise<ActionResponse<FollowUp[]>> {
+): Promise<ActionResponse<{ followUps: FollowUp[]; total: number }>> {
   const validationResult = await action({
     params,
     schema: fetchFollowUpsSchema,
@@ -234,18 +234,25 @@ export async function fetchAllFollowUps(
 
     const skip = (page - 1) * limit;
 
-    const followUps = await FollowUp.find(query)
-      .populate("agent", "firstname lastname name")
-      .populate("client", "firstName lastName referenceCode phone")
-      .populate("listing", "title description price images")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    const [followUps, total] = await Promise.all([
+      FollowUp.find(query)
+        .populate("agent", "firstname lastname name")
+        .populate("client", "firstName lastName referenceCode phone")
+        .populate("listing", "title description price images")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      FollowUp.countDocuments(query),
+    ]);
 
     return {
       success: true,
-      data: JSON.parse(JSON.stringify(followUps)),
+      data: {
+        followUps: JSON.parse(JSON.stringify(followUps)),
+        total,
+      },
+      status: 200,
     };
   } catch (error) {
     return handleError(error) as ErrorResponse;
