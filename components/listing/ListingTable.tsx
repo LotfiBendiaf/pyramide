@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -44,9 +44,7 @@ import {
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
-import { StatusAction } from "./StatusButton";
 import {
-  updateListingStatus,
   toggleListingPublished,
   toggleListingValidation,
   setListingNeutre,
@@ -86,6 +84,10 @@ function ValidationBadge({ state }: { state: ValidationState }) {
       Neutre
     </Badge>
   );
+}
+
+function hasNegotiationPipeline(listing: Listing) {
+  return listing.pipelineStatus === "UNDER_NEGOTIATION";
 }
 
 export function ListingTable({ listings }: ListingTableProps) {
@@ -195,33 +197,26 @@ export function ListingTable({ listings }: ListingTableProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Liste des annonces</CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <Table>
+      <CardContent className="overflow-x-auto">
+        <Table className="min-w-[1180px]">
           <TableHeader>
             <TableRow>
-              <TableHead>
+              <TableHead className="w-[150px]">
                 <button
                   onClick={handleSortByRef}
-                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 transition-colors hover:text-foreground"
                 >
                   Référence
                   <RefSortIcon className="h-3 w-3" />
                 </button>
               </TableHead>
-              <TableHead>Image</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Ville & Quartier</TableHead>
+              <TableHead>Bien</TableHead>
+              <TableHead>Localisation</TableHead>
               <TableHead>Prix</TableHead>
-              <TableHead>Superficie & Specifications</TableHead>
+              <TableHead>Specs</TableHead>
               <TableHead>Agent</TableHead>
-              <TableHead>Publication</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Date d&apos;ajout</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[170px]">État</TableHead>
+              <TableHead className="w-[140px]">Ajout</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -246,17 +241,17 @@ export function ListingTable({ listings }: ListingTableProps) {
                       "_blank"
                     )
                   }
-                  className="cursor-pointer hover:bg-muted"
+                  className="cursor-pointer hover:bg-muted/50"
                 >
                   <TableCell
                     className="font-medium"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex flex-col gap-2 items-start">
+                    <div className="flex flex-col items-start gap-2">
                       {listing.referenceCode && (
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <Badge variant="outline" className="font-mono">
                           {listing.referenceCode}
-                        </span>
+                        </Badge>
                       )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -317,9 +312,9 @@ export function ListingTable({ listings }: ListingTableProps) {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      {listing.pipelineStatus !== "PHOTO_VISIT_PENDING" && (
+                      {hasNegotiationPipeline(listing) && (
                         <Badge variant="purple" className="text-xs">
-                          <Radio />
+                          <Radio className="h-3 w-3" />
                           En Négociation
                         </Badge>
                       )}
@@ -327,45 +322,50 @@ export function ListingTable({ listings }: ListingTableProps) {
                   </TableCell>
 
                   <TableCell>
-                    <Image
-                      src={listing?.images?.[0]?.url || "/placeholder.png"}
-                      alt={listing.title || "Image de l'annonce"}
-                      width={64}
-                      height={48}
-                      className="h-12 w-16 object-cover rounded-md"
-                    />
-                  </TableCell>
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src={listing?.images?.[0]?.url || "/placeholder.png"}
+                        alt={listing.title || "Image de l'annonce"}
+                        width={64}
+                        height={48}
+                        className="h-12 w-16 rounded-md object-cover"
+                      />
+                      <div className="min-w-0 space-y-1">
+                        <Badge variant="default">
+                          {listing.propertyTypeCustom || listing.propertyType}
+                        </Badge>
 
-                  <TableCell>
-                    <div className="space-y-1">
-                      <Badge variant="default">
-                        {listing.propertyTypeCustom || listing.propertyType}
-                      </Badge>
-
-                      {listing.propertyType === "Appartement" && (
-                        <div className="flex gap-1 items-center">
-                          <Badge variant="success">
-                            F
-                            {listing.features.bedrooms
-                              ? listing.features.bedrooms
-                              : "?"}
-                          </Badge>
-                          <p className="text-muted-foreground text-xs">
-                            {listing.features.etage &&
-                              `${listing.features.etage}ème étage`}
+                        {listing.propertyType === "Appartement" && (
+                          <div className="flex items-center gap-1">
+                            <Badge variant="success">
+                              F
+                              {listing.features.bedrooms
+                                ? listing.features.bedrooms
+                                : "?"}
+                            </Badge>
+                            {listing.features.etage && (
+                              <p className="text-xs text-muted-foreground">
+                                {listing.features.etage}ème étage
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {listing.title && (
+                          <p className="max-w-[210px] truncate text-xs text-muted-foreground">
+                            {listing.title}
                           </p>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </TableCell>
 
                   <TableCell>
                     <div className="space-y-1">
                       <p className="text-sm font-medium">
-                        {listing.location.city}
+                        {listing.location.city || "-"}
                       </p>
                       {listing.location.address && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="max-w-[220px] truncate text-xs text-muted-foreground">
                           {listing.location.address}
                         </p>
                       )}
@@ -373,11 +373,11 @@ export function ListingTable({ listings }: ListingTableProps) {
                   </TableCell>
 
                   <TableCell>
-                    <div>
+                    <div className="text-sm font-medium">
                       {listing.price ? (
                         <>
                           {formatPriceAlgeria(listing.price)}
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-xs font-normal text-muted-foreground">
                             {formatPrice(listing.price)}
                           </p>
                         </>
@@ -388,86 +388,92 @@ export function ListingTable({ listings }: ListingTableProps) {
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant="outline">{listing.features.area} m²</Badge>
-                    <div className="flex gap-2 items-center mt-2">
-                      <div className="flex gap-2 items-center">
-                        {listing.features.bedrooms}{" "}
-                        <Bed className="inline h-4 w-4" />
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        {listing.features.bathrooms}
-                        <ShowerHead className="inline h-4 w-4" />
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        {listing.features.parking
-                          ? "Parking"
-                          : "Pas de Parking"}
-                        <Car className="inline h-4 w-4" />
+                    <div className="space-y-2">
+                      <Badge variant="outline">
+                        {listing.features.area} m²
+                      </Badge>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          {listing.features.bedrooms || 0}
+                          <Bed className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="flex items-center gap-1">
+                          {listing.features.bathrooms || 0}
+                          <ShowerHead className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="flex items-center gap-1">
+                          {listing.features.parking ? (
+                            "Parking"
+                          ) : (
+                            <span className="text-muted-foreground/70">
+                              Sans parking
+                            </span>
+                          )}
+                          <Car className="h-3.5 w-3.5" />
+                        </span>
                       </div>
                     </div>
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant="outline">
-                      {listing.agent
-                        ? `${listing.agent.firstname ?? ""} ${listing.agent.lastname ?? ""}`.trim()
-                        : "-"}
-                    </Badge>
+                    {listing.agent ? (
+                      <Badge variant="outline">
+                        {`${listing.agent.firstname ?? ""} ${
+                          listing.agent.lastname ?? ""
+                        }`.trim()}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
                   </TableCell>
 
-                  <TableCell>
-                    <div
-                      className="flex items-center gap-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Switch
-                        checked={listing.isPublished}
-                        onCheckedChange={() => {
-                          openConfirmDialog(listing._id, listing.isPublished);
-                        }}
-                        disabled={publishingStates[listing._id]}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {listing.isPublished ? (
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            Publié
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <EyeOff className="h-3 w-3" />
-                            Non publié
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    {listing.isPublished ? (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <div className="flex flex-col items-start gap-2">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={listing.isPublished}
+                          onCheckedChange={() => {
+                            openConfirmDialog(
+                              listing._id,
+                              listing.isPublished
+                            );
+                          }}
+                          disabled={publishingStates[listing._id]}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {listing.isPublished ? (
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              Publié
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <EyeOff className="h-3 w-3" />
+                              Non publié
+                            </span>
+                          )}
+                        </span>
+                      </div>
                       <Badge
                         variant="outline"
                         className={STATUS_COLORS[listing.status]}
                       >
                         {listing.status}
                       </Badge>
-                    ) : (
-                      <Badge variant="secondary">-</Badge>
-                    )}
+                    </div>
                   </TableCell>
 
-                  <TableCell>{formatDate(listing.createdAt || "-")}</TableCell>
-
-                  <TableCell
-                    className="text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <StatusAction
-                      status={listing.status}
-                      onChange={(newStatus) => {
-                        updateListingStatus(listing._id, newStatus);
-                      }}
-                    />
+                  <TableCell>
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium">
+                        {listing.createdAt ? formatDate(listing.createdAt) : "-"}
+                      </p>
+                      {listing.validatedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          Validé {formatDate(listing.validatedAt)}
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );

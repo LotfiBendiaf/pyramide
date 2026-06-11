@@ -1084,6 +1084,24 @@ export async function closeDeal(
 
     const now = new Date();
     const commissionAmount = (finalPrice * commissionPercentage) / 100;
+    const listing = await Listing.findById(negotiation.listing)
+      .select("status")
+      .lean<{
+        status?: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
+      }>();
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Bien introuvable" },
+        status: 404,
+      };
+    }
+
+    const closedListingStatus =
+      listing.status === "En Location" || listing.status === "Loué"
+        ? "Loué"
+        : "Vendu";
 
     await Promise.all([
       Negotiation.findByIdAndUpdate(negotiationId, {
@@ -1115,7 +1133,7 @@ export async function closeDeal(
       }),
       Listing.findByIdAndUpdate(negotiation.listing, {
         pipelineStatus: "SOLD",
-        status: "Vendu",
+        status: closedListingStatus,
         offeredPrice: finalPrice,
         isPublished: false,
         archived: true,
