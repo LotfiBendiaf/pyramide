@@ -22,6 +22,10 @@ import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
 import { notify } from "../notifications/notify";
+import {
+  createCalendarEventFromVisit,
+  deleteEventFromGoogle,
+} from "../googleCalendar/syncService";
 
 /* ─────────────────────── Schedule Visit ─────────────────────── */
 
@@ -134,6 +138,14 @@ export async function scheduleVisit(
     });
 
     await Client.findByIdAndUpdate(clientId, { lastContactedAt: new Date() });
+
+    if (visitStatus !== "CANCELLED") {
+      try {
+        await createCalendarEventFromVisit(visit._id.toString());
+      } catch (err) {
+        console.error("Failed to sync visit to Google Calendar:", err);
+      }
+    }
 
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
@@ -318,6 +330,10 @@ export async function cancelVisit(
       notes,
       cancelledAt: new Date(),
     });
+
+    if (visit.calendarEventId) {
+      await deleteEventFromGoogle(visit.calendarEventId.toString());
+    }
 
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(visit.client.toString()));

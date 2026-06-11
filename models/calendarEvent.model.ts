@@ -1,6 +1,11 @@
 import { model, models, Schema, Types } from "mongoose";
 
-export const EVENT_SOURCE_TYPES = ["FOLLOWUP", "TASK", "MANUAL"] as const;
+export const EVENT_SOURCE_TYPES = [
+  "FOLLOWUP",
+  "TASK",
+  "VISIT",
+  "MANUAL",
+] as const;
 export type EventSourceType = (typeof EVENT_SOURCE_TYPES)[number];
 
 export const SYNC_STATUSES = [

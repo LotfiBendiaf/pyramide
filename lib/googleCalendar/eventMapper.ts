@@ -59,6 +59,13 @@ interface FollowUpData {
   duration?: number;
 }
 
+interface VisitData {
+  scheduledAt: Date;
+  notes?: string;
+  isExternalListing?: boolean;
+  externalListingRef?: string;
+}
+
 interface TaskData {
   title: string;
   description?: string;
@@ -66,6 +73,65 @@ interface TaskData {
   scheduledTime?: Date;
   dueDate?: Date;
   estimatedDuration?: number;
+}
+
+/**
+ * Map a Visit to a Google Calendar event
+ */
+export function visitToGoogleEvent(
+  visit: VisitData,
+  client: ClientInfo,
+  listing: ListingInfo,
+  timezone: string = "Africa/Algiers"
+): GoogleCalendarEvent {
+  const clientName = `${client.firstName} ${client.lastName}`.trim();
+  const startTime = visit.scheduledAt;
+  const endTime = addMinutes(startTime, DEFAULT_DURATIONS.VISIT);
+  const listingTitle =
+    listing.title ||
+    (visit.isExternalListing ? visit.externalListingRef : undefined);
+
+  const descriptionParts = [];
+  if (visit.notes) {
+    descriptionParts.push(visit.notes);
+  }
+  descriptionParts.push("");
+  descriptionParts.push(`Client: ${clientName}`);
+  if (client.phone) {
+    descriptionParts.push(`Téléphone: ${client.phone}`);
+  }
+  if (client.email) {
+    descriptionParts.push(`Email: ${client.email}`);
+  }
+  if (listingTitle) {
+    descriptionParts.push(`Bien: ${listingTitle}`);
+  }
+  descriptionParts.push("");
+  descriptionParts.push("---");
+  descriptionParts.push("Créé via Pyramide CRM");
+
+  return {
+    summary: `Visite - ${clientName || "Client"}`,
+    description: descriptionParts.join("\n"),
+    location: listing.location?.address || listing.location?.city,
+    start: {
+      dateTime: formatInTimeZone(
+        startTime,
+        timezone,
+        "yyyy-MM-dd'T'HH:mm:ssXXX"
+      ),
+      timeZone: timezone,
+    },
+    end: {
+      dateTime: formatInTimeZone(endTime, timezone, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+      timeZone: timezone,
+    },
+    reminders: {
+      useDefault: false,
+      overrides: [{ method: "popup", minutes: 30 }],
+    },
+    colorId: "10",
+  };
 }
 
 /**

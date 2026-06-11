@@ -1,7 +1,15 @@
 "use server";
 
 import dbConnect from "@/lib/mongoose";
-import { CalendarEvent, FollowUp, Task, Client, Listing, User } from "@/models";
+import {
+  CalendarEvent,
+  FollowUp,
+  Task,
+  Visit,
+  Client,
+  Listing,
+  User,
+} from "@/models";
 import {
   createGoogleCalendarEvent,
   updateGoogleCalendarEvent,
@@ -10,6 +18,7 @@ import {
 import {
   followUpToGoogleEvent,
   taskToGoogleEvent,
+  visitToGoogleEvent,
   manualEventToGoogleEvent,
 } from "./eventMapper";
 import { hasGoogleCalendarConnected } from "./tokenManager";
@@ -88,6 +97,36 @@ export async function syncEventToGoogle(
                 location: listing.location,
               }
             : undefined,
+          timezone
+        );
+      }
+    } else if (event.sourceType === "VISIT" && event.sourceId) {
+      const visit = await Visit.findById(event.sourceId);
+      const client = event.client ? await Client.findById(event.client) : null;
+      const listing = event.listing
+        ? await Listing.findById(event.listing)
+        : null;
+
+      if (visit && client) {
+        googleEvent = visitToGoogleEvent(
+          {
+            scheduledAt: visit.scheduledAt,
+            notes: visit.notes,
+            isExternalListing: visit.isExternalListing,
+            externalListingRef: visit.externalListingRef,
+          },
+          {
+            firstName: client.firstName,
+            lastName: client.lastName,
+            phone: client.phone,
+            email: client.email,
+          },
+          listing
+            ? {
+                title: listing.title,
+                location: listing.location,
+              }
+            : {},
           timezone
         );
       }
@@ -323,6 +362,67 @@ export async function createCalendarEventFromTask(
   // Sync to Google Calendar if connected
   const hasCalendar = await hasGoogleCalendarConnected(task.agent.toString());
   if (hasCalendar && user?.calendarSettings?.googleCalendarEnabled) {
+    await syncEventToGoogle(calendarEvent._id.toString());
+  }
+
+  return { success: true, eventId: calendarEvent._id.toString() };
+}
+
+/**
+ * Create a calendar event from a Visit
+ */
+export async function createCalendarEventFromVisit(
+  visitId: string
+): Promise<{ success: boolean; eventId?: string; error?: string }> {
+  await dbConnect();
+
+  const visit = await Visit.findById(visitId);
+  if (!visit) {
+    return { success: false, error: "Visit not found" };
+  }
+
+  if (visit.status === "CANCELLED" || visit.status === "NO_SHOW") {
+    return { success: true };
+  }
+
+  const user = await User.findById(visit.agent);
+  if (!user) {
+    return { success: false, error: "User not found" };
+  }
+
+  const client = await Client.findById(visit.client);
+  const listing = visit.listing ? await Listing.findById(visit.listing) : null;
+  const clientName = client
+    ? `${client.firstName} ${client.lastName}`.trim()
+    : "Client";
+  const listingLabel =
+    listing?.title || (visit.isExternalListing ? visit.externalListingRef : "");
+  const startTime = visit.scheduledAt;
+  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+
+  const calendarEvent = await CalendarEvent.create({
+    agent: visit.agent,
+    title: listingLabel
+      ? `Visite - ${clientName} (${listingLabel})`
+      : `Visite - ${clientName}`,
+    description: visit.notes,
+    location: listing?.location?.address || listing?.location?.city,
+    startTime,
+    endTime,
+    sourceType: "VISIT",
+    sourceId: visit._id,
+    client: visit.client,
+    listing: visit.listing,
+    syncStatus: "PENDING",
+  });
+
+  await Visit.updateOne(
+    { _id: visit._id },
+    { $set: { calendarEventId: calendarEvent._id } }
+  );
+
+  const hasCalendar = await hasGoogleCalendarConnected(visit.agent.toString());
+  if (hasCalendar && user.calendarSettings?.googleCalendarEnabled) {
     await syncEventToGoogle(calendarEvent._id.toString());
   }
 

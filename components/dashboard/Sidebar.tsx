@@ -129,12 +129,17 @@ const sidebarConfig: SidebarGroup[] = [
     ],
   },
   {
-    label: "Suivis",
+    label: "Suivis / Visites",
     items: [
       {
         title: "Tous les suivis",
         url: ROUTES.FOLLOWUPS,
         icon: ClipboardList,
+      },
+      {
+        title: "Visites",
+        url: ROUTES.VISITS,
+        icon: CalendarCheck,
       },
       {
         title: "Nouveau suivi",
@@ -152,11 +157,6 @@ const sidebarConfig: SidebarGroup[] = [
         url: ROUTES.MES_BIENS,
         icon: BriefcaseBusiness,
         roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
-      },
-      {
-        title: "Visites",
-        url: ROUTES.VISITS,
-        icon: CalendarCheck,
       },
       {
         title: "Négociations",
