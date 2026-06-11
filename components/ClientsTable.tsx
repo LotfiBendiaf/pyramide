@@ -107,7 +107,9 @@ export default function ClientsTable({
               {/* <TableHead>Ville</TableHead> */}
               <TableHead>Contact</TableHead>
               <TableHead>Créé le</TableHead>
-              {canAssignAgent && <TableHead>Agent</TableHead>}
+              {canAssignAgent && (
+                <TableHead className="w-[190px] text-center">Agent</TableHead>
+              )}
               <TableHead>Pipeline status</TableHead>
               <TableHead>C.R.</TableHead>
               <TableHead>Suivi</TableHead>
@@ -164,7 +166,10 @@ export default function ClientsTable({
 
                 {/* Agent */}
                 {canAssignAgent && (
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                  <TableCell
+                    className="w-[190px] text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <ClientAgentSelect
                       clientId={client._id}
                       agents={agents}

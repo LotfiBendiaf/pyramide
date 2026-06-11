@@ -57,6 +57,8 @@ const OPTIONS: {
   label: string;
   icon: typeof Circle;
   className: string;
+  triggerClassName: string;
+  selectedClassName: string;
   category: "qualification" | "negotiation";
 }[] = [
   {
@@ -64,6 +66,8 @@ const OPTIONS: {
     label: "Neutre",
     icon: Circle,
     className: "text-slate-500",
+    triggerClassName: "border-slate-200 bg-slate-50 text-slate-700",
+    selectedClassName: "bg-slate-50 text-slate-700 focus:bg-slate-100",
     category: "qualification",
   },
   {
@@ -71,6 +75,8 @@ const OPTIONS: {
     label: "Nouveau",
     icon: Circle,
     className: "text-blue-500",
+    triggerClassName: "border-blue-200 bg-blue-50 text-blue-700",
+    selectedClassName: "bg-blue-50 text-blue-700 focus:bg-blue-100",
     category: "qualification",
   },
   {
@@ -78,6 +84,8 @@ const OPTIONS: {
     label: "Qualifié",
     icon: Circle,
     className: "text-green-500",
+    triggerClassName: "border-green-200 bg-green-50 text-green-700",
+    selectedClassName: "bg-green-50 text-green-700 focus:bg-green-100",
     category: "qualification",
   },
   {
@@ -85,6 +93,8 @@ const OPTIONS: {
     label: "Chaud",
     icon: Circle,
     className: "text-orange-500",
+    triggerClassName: "border-orange-200 bg-orange-50 text-orange-700",
+    selectedClassName: "bg-orange-50 text-orange-700 focus:bg-orange-100",
     category: "qualification",
   },
   {
@@ -92,6 +102,8 @@ const OPTIONS: {
     label: "Froid",
     icon: Circle,
     className: "text-blue-400",
+    triggerClassName: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    selectedClassName: "bg-cyan-50 text-cyan-700 focus:bg-cyan-100",
     category: "qualification",
   },
   {
@@ -99,6 +111,8 @@ const OPTIONS: {
     label: "N'a pas répondu",
     icon: Circle,
     className: "text-red-500",
+    triggerClassName: "border-red-200 bg-red-50 text-red-700",
+    selectedClassName: "bg-red-50 text-red-700 focus:bg-red-100",
     category: "qualification",
   },
   {
@@ -106,6 +120,8 @@ const OPTIONS: {
     label: "Non pertinent",
     icon: Circle,
     className: "text-yellow-500",
+    triggerClassName: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    selectedClassName: "bg-yellow-50 text-yellow-700 focus:bg-yellow-100",
     category: "qualification",
   },
   {
@@ -113,6 +129,8 @@ const OPTIONS: {
     label: "Archivé",
     icon: Circle,
     className: "text-gray-300",
+    triggerClassName: "border-gray-200 bg-gray-50 text-gray-700",
+    selectedClassName: "bg-gray-50 text-gray-700 focus:bg-gray-100",
     category: "qualification",
   },
   {
@@ -120,6 +138,8 @@ const OPTIONS: {
     label: "En négociation",
     icon: Handshake,
     className: "text-purple-600",
+    triggerClassName: "border-purple-200 bg-purple-50 text-purple-700",
+    selectedClassName: "bg-purple-50 text-purple-700 focus:bg-purple-100",
     category: "negotiation",
   },
   {
@@ -127,6 +147,8 @@ const OPTIONS: {
     label: "Closing",
     icon: Trophy,
     className: "text-green-600",
+    triggerClassName: "border-green-200 bg-green-50 text-green-700",
+    selectedClassName: "bg-green-50 text-green-700 focus:bg-green-100",
     category: "negotiation",
   },
 ];
@@ -163,6 +185,9 @@ export default function ClientQualificationAndNegotiationSelect({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentValue = getCurrentValue(qualificationStatus, pipelineStage);
+  const currentOption =
+    OPTIONS.find((option) => option.value === currentValue) ?? OPTIONS[0];
+  const CurrentIcon = currentOption.icon;
   const archiveReasonId = `archiveReason-${clientId}`;
 
   const filteredListings = listings.filter((listing) => {
@@ -376,17 +401,38 @@ export default function ClientQualificationAndNegotiationSelect({
         onValueChange={handleChange}
         disabled={loading}
       >
-        <SelectTrigger className="h-8">
-          <SelectValue />
+        <SelectTrigger
+          className={cn(
+            "h-8 w-[155px] justify-between rounded-md px-2.5 text-xs font-medium hover:bg-muted/70",
+            currentOption.triggerClassName
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-1.5">
+            {loading ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <CurrentIcon
+                className={cn("size-3.5", currentOption.className)}
+                aria-hidden="true"
+              />
+            )}
+            <span className="truncate">{currentOption.label}</span>
+          </span>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-[190px]">
           {/* Qualification section */}
           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
             Qualification
           </div>
           {OPTIONS.filter((opt) => opt.category === "qualification").map(
             (option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <SelectItem
+                key={option.value}
+                value={option.value}
+                className={cn(
+                  option.value === currentValue && option.selectedClassName
+                )}
+              >
                 <span className="flex items-center gap-2">
                   <option.icon className={cn("h-3 w-3", option.className)} />
                   {option.label}
@@ -404,7 +450,13 @@ export default function ClientQualificationAndNegotiationSelect({
           </div>
           {OPTIONS.filter((opt) => opt.category === "negotiation").map(
             (option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <SelectItem
+                key={option.value}
+                value={option.value}
+                className={cn(
+                  option.value === currentValue && option.selectedClassName
+                )}
+              >
                 <span className="flex items-center gap-2">
                   <option.icon className={cn("h-3 w-3", option.className)} />
                   {option.label}
