@@ -279,6 +279,16 @@ type PriceFilter = {
   $lte?: number;
 };
 
+export type ListingDocumentInput = {
+  publicId: string;
+  url: string;
+  secureUrl?: string;
+  originalFilename?: string;
+  format?: string;
+  resourceType?: string;
+  bytes?: number;
+};
+
 function buildPriceFilter(minPrice?: number, maxPrice?: number): PriceFilter {
   const price: PriceFilter = {};
 
@@ -490,6 +500,134 @@ export async function fetchListingById(
     }
 
     // 4️⃣ Return serialized data
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(listing)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function addListingDocuments(
+  listingId: string,
+  documents: ListingDocumentInput[]
+): Promise<ActionResponse<Listing>> {
+  try {
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d'annonce invalide" },
+        status: 400,
+      };
+    }
+
+    if (!documents.length) {
+      return {
+        success: false,
+        error: { message: "Aucun document à ajouter" },
+        status: 400,
+      };
+    }
+
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    const uploadedBy = user.data._id;
+
+    await dbConnect();
+
+    const documentsToAdd = documents.map((document) => ({
+      publicId: document.publicId,
+      url: document.url,
+      secureUrl: document.secureUrl,
+      originalFilename: document.originalFilename,
+      format: document.format,
+      resourceType: document.resourceType,
+      bytes: document.bytes,
+      uploadedBy,
+      uploadedAt: new Date(),
+    }));
+
+    const listing = await Listing.findByIdAndUpdate(
+      listingId,
+      { $push: { documents: { $each: documentsToAdd } } },
+      { new: true }
+    )
+      .populate("agent", "firstname lastname email phone")
+      .populate("sellerClient", "firstName lastName phone email")
+      .lean();
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(listing)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function removeListingDocument(
+  listingId: string,
+  documentId: string
+): Promise<ActionResponse<Listing>> {
+  try {
+    if (!Types.ObjectId.isValid(listingId) || !Types.ObjectId.isValid(documentId)) {
+      return {
+        success: false,
+        error: { message: "ID invalide" },
+        status: 400,
+      };
+    }
+
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const listing = await Listing.findByIdAndUpdate(
+      listingId,
+      { $pull: { documents: { _id: new Types.ObjectId(documentId) } } },
+      { new: true }
+    )
+      .populate("agent", "firstname lastname email phone")
+      .populate("sellerClient", "firstName lastName phone email")
+      .lean();
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
     return {
       success: true,
       data: JSON.parse(JSON.stringify(listing)),

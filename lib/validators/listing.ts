@@ -90,6 +90,21 @@ export const listingSchema = z
       )
       .optional(),
 
+    documents: z
+      .array(
+        z.object({
+          publicId: z.string().min(1),
+          url: z.string().url("URL document invalide"),
+          secureUrl: z.string().url().optional(),
+          originalFilename: z.string().optional(),
+          format: z.string().optional(),
+          resourceType: z.string().optional(),
+          bytes: z.number().optional(),
+          uploadedAt: z.union([z.string(), z.date()]).optional(),
+        })
+      )
+      .optional(),
+
     coverImage: z.string().url().optional(),
 
     isPublished: z.boolean(),

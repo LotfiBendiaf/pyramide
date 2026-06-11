@@ -39,6 +39,7 @@ import {
 // Schema
 import { listingSchema } from "@/lib/validators/listing";
 import ImageUpload from "../listing/ImageUpload";
+import { ListingDocumentUpload } from "../listing/ListingDocumentUpload";
 import { createListing, updateListing } from "@/lib/actions/listings.action";
 import { useRouter } from "next/navigation";
 import { PROPERTY_TYPES, WILAYAS } from "@/constants/values";
@@ -70,7 +71,9 @@ export default function ListingForm({
   const [isPending, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<CountryId>("DZ");
   const [countryId2, setCountryId2] = useState<CountryId>("DZ");
+  const [documentFolderKey] = useState(() => listingId ?? `draft-${Date.now()}`);
   const isEditMode = !!listingId;
+  const documentUploadFolder = `pyramide/listings/documents/${documentFolderKey}`;
 
   const router = useRouter();
 
@@ -122,6 +125,7 @@ export default function ListingForm({
             evaluatedAt: new Date(),
           },
           images: initialData.images ?? [],
+          documents: initialData.documents ?? [],
           coverImage: initialData.coverImage || undefined,
           isFeatured: initialData.isFeatured,
           isPremium: initialData.isPremium,
@@ -165,6 +169,7 @@ export default function ListingForm({
             evaluatedAt: new Date(),
           },
           images: [],
+          documents: [],
           isFeatured: false,
           isPublished: false,
           sellerFirstName: "",
@@ -706,6 +711,35 @@ export default function ListingForm({
                               )
                             )
                           }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Documents */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Documents</CardTitle>
+                <CardDescription>
+                  Ajoutez les contrats, pièces justificatives ou fichiers liés
+                  à cette annonce
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="documents"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ListingDocumentUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          folder={documentUploadFolder}
                         />
                       </FormControl>
                       <FormMessage />

@@ -121,6 +121,18 @@ interface Listing {
     url: string;
     isPublic: boolean;
   }>;
+  documents?: Array<{
+    _id?: string;
+    publicId: string;
+    url: string;
+    secureUrl?: string;
+    originalFilename?: string;
+    format?: string;
+    resourceType?: string;
+    bytes?: number;
+    uploadedBy?: string;
+    uploadedAt?: string | Date;
+  }>;
   coverImage?: string;
 
   sellerClient: {

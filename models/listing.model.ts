@@ -15,6 +15,18 @@ export type ListingPipelineStatus =
 
 export type SellerMotivation = "LOW" | "MEDIUM" | "HIGH";
 
+export interface IListingDocument {
+  publicId: string;
+  url: string;
+  secureUrl?: string;
+  originalFilename?: string;
+  format?: string;
+  resourceType?: string;
+  bytes?: number;
+  uploadedBy?: Schema.Types.ObjectId;
+  uploadedAt?: Date;
+}
+
 export interface IListing {
   referenceCode?: string; // V-0000001 (vente), L-0000001 (location) — assigned on validation
   title?: string;
@@ -101,6 +113,7 @@ export interface IListing {
     url: string;
     isPublic: boolean;
   }>;
+  documents?: IListingDocument[];
   coverImage?: string;
 
   owner: string; // admin or agent
@@ -246,6 +259,19 @@ const listingSchema = new Schema<IListing>(
       {
         url: { type: String, required: true },
         isPublic: { type: Boolean, default: true },
+      },
+    ],
+    documents: [
+      {
+        publicId: { type: String, required: true },
+        url: { type: String, required: true },
+        secureUrl: { type: String },
+        originalFilename: { type: String },
+        format: { type: String },
+        resourceType: { type: String },
+        bytes: { type: Number },
+        uploadedBy: { type: Schema.Types.ObjectId, ref: "User" },
+        uploadedAt: { type: Date, default: Date.now },
       },
     ],
     coverImage: { type: String, trim: true },
