@@ -1,6 +1,6 @@
 "use server";
 
-import { ArchiveRequest, Client } from "@/models";
+import { ArchiveRequest, Client, User } from "@/models";
 import {
   IClient,
   PipelineStage,
@@ -612,6 +612,30 @@ export async function updateClientAssignedAgent(
     await dbConnect();
 
     const normalizedAgentId = agentId?.trim();
+
+    if (normalizedAgentId) {
+      if (!Types.ObjectId.isValid(normalizedAgentId)) {
+        return {
+          success: false,
+          error: { message: "ID agent invalide" },
+          status: 400,
+        };
+      }
+
+      const agent = await User.findOne({
+        _id: normalizedAgentId,
+        role: "AGENT",
+      }).select("_id");
+
+      if (!agent) {
+        return {
+          success: false,
+          error: { message: "Veuillez sélectionner un agent valide" },
+          status: 400,
+        };
+      }
+    }
+
     const update = {
       assignedAgent: normalizedAgentId ? normalizedAgentId : null,
     };

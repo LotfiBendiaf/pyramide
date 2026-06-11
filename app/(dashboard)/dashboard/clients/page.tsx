@@ -9,7 +9,7 @@ import {
   fetchNegotiationListingOptions,
   fetchPendingNegotiationVerificationCount,
 } from "@/lib/actions/negotiation.action";
-import { fetchTeamMembers } from "@/lib/actions/users.action";
+import { fetchAgents } from "@/lib/actions/users.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import ClientsTable from "@/components/ClientsTable";
@@ -79,7 +79,7 @@ async function ClientsContent({
 
   const [result, agentsResult, listingsResult] = await Promise.all([
     fetchClients(filterParams),
-    isAdmin ? fetchTeamMembers() : Promise.resolve({ success: true, data: [] }),
+    isAdmin ? fetchAgents() : Promise.resolve({ success: true, data: [] }),
     fetchNegotiationListingOptions(),
   ]);
 
@@ -131,7 +131,7 @@ export default async function ClientPage({
   const [agentsResult, countsResult, pendingNegotiationVerificationResult] =
     await Promise.all([
       isAdmin
-        ? fetchTeamMembers()
+        ? fetchAgents()
         : Promise.resolve({ success: true, data: [] }),
       canUsePipeline && !isArchiveView
         ? fetchClientPipelineCounts()

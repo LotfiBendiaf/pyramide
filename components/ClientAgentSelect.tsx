@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { updateClientAssignedAgent } from "@/lib/actions/client.action";
 import { Badge } from "./ui/badge";
+import { UserRound } from "lucide-react";
 
 const UNASSIGNED_VALUE = "__none__";
 
@@ -36,19 +37,21 @@ export default function ClientAgentSelect({ clientId, agents, value }: Props) {
   };
 
   const currentValue = value || UNASSIGNED_VALUE;
+  const selectedAgent = agents.find((agent) => agent._id === currentValue);
+  const selectedAgentName = selectedAgent
+    ? `${selectedAgent.firstname} ${selectedAgent.lastname}`
+    : null;
 
   return (
     <div className="flex items-center justify-center space-x-2 gap-3 w-full">
       <Badge
+        className="gap-1.5"
         variant={currentValue === UNASSIGNED_VALUE ? "destructive" : "outline"}
       >
+        {selectedAgent && <UserRound className="size-3" aria-hidden="true" />}
         {currentValue === UNASSIGNED_VALUE
           ? "Non assigné"
-          : agents.find((a) => a._id === currentValue)
-            ? `${agents.find((a) => a._id === currentValue)?.firstname} ${
-                agents.find((a) => a._id === currentValue)?.lastname
-              }`
-            : "Inconnu"}
+          : selectedAgentName || "Inconnu"}
       </Badge>
       <Select value={currentValue} onValueChange={handleChange}>
         <SelectTrigger className=" h-8">
@@ -58,6 +61,7 @@ export default function ClientAgentSelect({ clientId, agents, value }: Props) {
           <SelectItem value={UNASSIGNED_VALUE}>Non assigné</SelectItem>
           {agents.map((agent) => (
             <SelectItem key={agent._id} value={agent._id}>
+              <UserRound className="size-4" aria-hidden="true" />
               {agent.firstname} {agent.lastname}
             </SelectItem>
           ))}
