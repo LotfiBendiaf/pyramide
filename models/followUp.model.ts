@@ -11,7 +11,9 @@ export interface IFollowUp {
   note?: string;
   reminderAt?: Date;
   channel?: "CALL" | "WHATSAPP" | "EMAIL" | "VISIT";
-  status?: "PENDING" | "DONE" | "OVERDUE";
+  status?: "PENDING" | "DONE" | "OVERDUE" | "CANCELLED";
+  completedAt?: Date;
+  cancelledAt?: Date;
   // Calendar sync fields
   calendarEventId?: Schema.Types.ObjectId;
   duration?: number; // Duration in minutes
@@ -55,9 +57,11 @@ const FollowUpSchema = new Schema<IFollowUp>(
 
     status: {
       type: String,
-      enum: ["PENDING", "DONE", "OVERDUE"],
+      enum: ["PENDING", "DONE", "OVERDUE", "CANCELLED"],
       default: "PENDING",
     },
+    completedAt: Date,
+    cancelledAt: Date,
     // Calendar sync fields
     calendarEventId: {
       type: Schema.Types.ObjectId,

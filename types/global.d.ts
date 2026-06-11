@@ -219,7 +219,9 @@ interface FollowUp {
   note?: string;
   reminderAt?: Date;
   channel?: "CALL" | "WHATSAPP" | "EMAIL" | "VISIT";
-  status?: "PENDING" | "DONE" | "OVERDUE";
+  status?: "PENDING" | "DONE" | "OVERDUE" | "CANCELLED";
+  completedAt?: Date;
+  cancelledAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

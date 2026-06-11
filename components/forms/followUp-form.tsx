@@ -62,7 +62,7 @@ export function FollowUpForm({
     defaultValues: {
       type: "COLD",
       channel: "CALL",
-      status: "PENDING",
+      status: "DONE",
       title: "",
       note: "",
       reminderAt: undefined,
@@ -88,7 +88,7 @@ export function FollowUpForm({
           return;
         }
 
-        toast.success("Suivi créé avec succès");
+        toast.success("Suivi ajouté comme terminé");
         router.push(ROUTES.FOLLOWUPS);
       } catch (error) {
         form.setError("root", {
@@ -333,7 +333,7 @@ export function FollowUpForm({
               Création du suivi…
             </>
           ) : (
-            "Créer le suivi"
+            "Enregistrer le suivi"
           )}
         </Button>
       </form>

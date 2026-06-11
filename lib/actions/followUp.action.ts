@@ -45,6 +45,7 @@ export async function createFollowUp(
       isAdmin && validationResult.params && validationResult.params.agent
         ? validationResult.params.agent
         : user.data._id;
+    const followUpStatus = validationResult.params?.status ?? "DONE";
 
     console.log("Creating follow-up with data:", {
       ...validationResult.params,
@@ -54,6 +55,8 @@ export async function createFollowUp(
     const followUp = await FollowUp.create({
       ...validationResult.params,
       agent: assignedAgent,
+      status: followUpStatus,
+      completedAt: followUpStatus === "DONE" ? new Date() : undefined,
     });
 
     console.log("Created follow-up:", {
@@ -64,7 +67,10 @@ export async function createFollowUp(
     });
 
     // Sync to Google Calendar if the follow-up has a scheduled time
-    if (followUp.reminderAt || followUp.startTime) {
+    if (
+      (followUp.status === "PENDING" || followUp.status === "OVERDUE") &&
+      (followUp.reminderAt || followUp.startTime)
+    ) {
       try {
         await createCalendarEventFromFollowUp(followUp._id.toString());
       } catch (err) {
@@ -130,11 +136,31 @@ export async function markFollowUpDone(id: string) {
     id,
     {
       status: "DONE",
+      completedAt: new Date(),
     },
     { new: true, timestamps: true }
   );
 
   console.log("markFollowUpDone result:", {
+    id,
+    status: result?.status,
+    updatedAt: result?.updatedAt,
+  });
+}
+
+export async function cancelFollowUp(id: string) {
+  await dbConnect();
+
+  const result = await FollowUp.findByIdAndUpdate(
+    id,
+    {
+      status: "CANCELLED",
+      cancelledAt: new Date(),
+    },
+    { new: true, timestamps: true }
+  );
+
+  console.log("cancelFollowUp result:", {
     id,
     status: result?.status,
     updatedAt: result?.updatedAt,

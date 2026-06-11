@@ -30,6 +30,7 @@ const STATUS_OPTIONS = [
   { value: "__all__", label: "Tous les statuts" },
   { value: "PENDING", label: "En attente" },
   { value: "DONE", label: "Terminé" },
+  { value: "CANCELLED", label: "Annulé" },
   { value: "OVERDUE", label: "En retard" },
 ];
 

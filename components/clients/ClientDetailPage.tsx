@@ -45,6 +45,7 @@ const FOLLOWUP_TYPE_COLORS: Record<string, string> = {
 const FOLLOWUP_STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-orange-100 text-orange-800",
   DONE: "bg-green-100 text-green-800",
+  CANCELLED: "bg-red-100 text-red-800",
   OVERDUE: "bg-red-100 text-red-800",
 };
 

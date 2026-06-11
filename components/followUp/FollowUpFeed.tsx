@@ -12,9 +12,10 @@ import {
   Calendar,
   LucideIcon,
   CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { markFollowUpDone } from "@/lib/actions/followUp.action";
+import { cancelFollowUp } from "@/lib/actions/followUp.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -45,9 +46,9 @@ interface FollowUpFeedProps {
 export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
   const router = useRouter();
 
-  const handleMarkDone = async (id: string) => {
-    await markFollowUpDone(id);
-    toast.success("Suivi marqué comme terminé");
+  const handleCancel = async (id: string) => {
+    await cancelFollowUp(id);
+    toast.success("Suivi annulé");
     router.refresh();
   };
 
@@ -80,6 +81,7 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
               const typeStyle = TYPE_STYLES[f.type] || TYPE_STYLES.CUSTOM;
               const isOverdue = f.status === "OVERDUE";
               const isDone = f.status === "DONE";
+              const isCancelled = f.status === "CANCELLED";
 
               return (
                 <div key={f._id} className="relative pl-14 group">
@@ -88,11 +90,17 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
                     <span
                       className={cn(
                         "flex h-6 w-6 rounded-full items-center justify-center ring-4 ring-background transition-all duration-300",
-                        isDone ? "bg-green-500" : typeStyle.bg,
+                        isCancelled
+                          ? "bg-red-500"
+                          : isDone
+                            ? "bg-green-500"
+                            : typeStyle.bg,
                         "group-hover:scale-110"
                       )}
                     >
-                      {isDone ? (
+                      {isCancelled ? (
+                        <XCircle className="h-3 w-3 text-white" />
+                      ) : isDone ? (
                         <CheckCircle2 className="h-3 w-3 text-white" />
                       ) : Icon ? (
                         <Icon className="h-3 w-3 text-white" />
@@ -106,7 +114,7 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
                       "rounded-xl border bg-card transition-all duration-300",
                       "hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5",
                       isOverdue && "border-destructive/30 bg-destructive/5",
-                      isDone && "opacity-70"
+                      (isDone || isCancelled) && "opacity-70"
                     )}
                   >
                     {/* Header */}
@@ -128,6 +136,8 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
                               variant={
                                 isDone
                                   ? "default"
+                                  : isCancelled
+                                    ? "destructive"
                                   : isOverdue
                                     ? "destructive"
                                     : "outline"
@@ -136,6 +146,7 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
                             >
                               {f.status === "PENDING" && "En attente"}
                               {f.status === "DONE" && "Terminé"}
+                              {f.status === "CANCELLED" && "Annulé"}
                               {f.status === "OVERDUE" && "En retard"}
                             </Badge>
                           )}
@@ -211,15 +222,15 @@ export function FollowUpFeed({ followUps, userRole }: FollowUpFeedProps) {
                           </div>
                         </div>
 
-                        {f.status === "PENDING" && f._id && (
+                        {f.status !== "CANCELLED" && f._id && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => handleMarkDone(f._id!)}
+                            className="h-7 text-xs text-destructive hover:text-destructive"
+                            onClick={() => handleCancel(f._id!)}
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                            Marquer terminé
+                            <XCircle className="h-3.5 w-3.5 mr-1" />
+                            Annuler
                           </Button>
                         )}
                       </div>
