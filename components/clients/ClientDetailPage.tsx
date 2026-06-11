@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  Plus,
+} from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -25,6 +31,7 @@ import {
 import ROUTES from "@/constants/routes";
 import { CLIENT_QUALIFICATIONS } from "@/constants/values";
 import { archiveClient, restoreClient } from "@/lib/actions/client.action";
+import type { ClientDealDoneSummary } from "@/lib/actions/negotiation.action";
 import { SetBreadcrumbTitle } from "@/components/navigation/BreadcrumbTitleContext";
 import ClientEditForm from "./ClientEditForm";
 
@@ -59,11 +66,13 @@ const CHANNEL_LABELS: Record<string, string> = {
 interface ClientDetailPageProps {
   client: Client;
   followUps: FollowUp[];
+  dealDone?: ClientDealDoneSummary | null;
 }
 
 export default function ClientDetailPage({
   client,
   followUps,
+  dealDone,
 }: ClientDetailPageProps) {
   const router = useRouter();
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -74,6 +83,21 @@ export default function ClientDetailPage({
     CLIENT_QUALIFICATIONS.find((q) => q.value === client.qualificationStatus)
       ?.label ?? client.qualificationStatus;
   const archiveReasonId = `archiveReason-${client._id}`;
+  const dealDoneListingLabel = dealDone?.listing
+    ? [dealDone.listing.referenceCode, dealDone.listing.title]
+        .filter(Boolean)
+        .join(" - ") || "Bien conclu"
+    : "Bien conclu";
+  const dealDoneListingAddress = dealDone?.listing?.location
+    ? [
+        dealDone.listing.location.address,
+        dealDone.listing.location.district,
+        dealDone.listing.location.city,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+  const dealDoneHref = `${ROUTES.DEAL_DONE_NEGOTIATIONS}&clientId=${client._id}`;
 
   const handleArchive = async () => {
     const trimmedReason = archiveReason.trim();
@@ -166,6 +190,64 @@ export default function ClientDetailPage({
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
           Ce client est actuellement archivé. Utilisez le bouton
           &quot;Restaurer&quot; pour le rendre actif.
+        </div>
+      )}
+
+      {dealDone && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-green-950 shadow-sm dark:border-green-900/50 dark:bg-green-950/25 dark:text-green-50">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="success" className="gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Deal done
+                </Badge>
+                <span className="text-sm font-medium">
+                  Ce client est lié à un bien conclu.
+                </span>
+              </div>
+
+              <div className="space-y-1 text-sm">
+                <div className="inline-flex max-w-full items-center gap-1.5 font-medium">
+                  <Building2 className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{dealDoneListingLabel}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-green-800 dark:text-green-200">
+                  {dealDoneListingAddress && (
+                    <span>{dealDoneListingAddress}</span>
+                  )}
+                  {dealDone.closingDetails?.finalPrice !== undefined && (
+                    <span>
+                      {dealDone.closingDetails.finalPrice.toLocaleString(
+                        "fr-DZ"
+                      )}{" "}
+                      DZD
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {dealDone.listing?._id && (
+                <Button asChild variant="outline" className="bg-background">
+                  <Link
+                    href={ROUTES.LISTING_DETAIL_DASHBOARD(
+                      dealDone.listing._id
+                    )}
+                  >
+                    Voir le bien
+                  </Link>
+                </Button>
+              )}
+              <Button asChild variant="outline" className="bg-background">
+                <Link href={dealDoneHref}>
+                  Voir deals done
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

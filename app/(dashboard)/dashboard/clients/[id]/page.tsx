@@ -1,6 +1,7 @@
 import { fetchClientById } from "@/lib/actions/client.action";
 import { fetchFollowUpsByClient } from "@/lib/actions/followUp.action";
 import { fetchListingsBySellerClient } from "@/lib/actions/listings.action";
+import { fetchClientDealDone } from "@/lib/actions/negotiation.action";
 import { fetchVisitsByClient } from "@/lib/actions/visit.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { isElevatedRole } from "@/constants/values";
@@ -20,12 +21,14 @@ export default async function ClientDetailRoute({
 }) {
   const { id } = await params;
 
-  const [clientResult, followUpsResult, visitsResult, user] = await Promise.all([
-    fetchClientById(id),
-    fetchFollowUpsByClient(id),
-    fetchVisitsByClient(id, 1, 50),
-    getUserBySessionEmail(),
-  ]);
+  const [clientResult, followUpsResult, visitsResult, dealDoneResult, user] =
+    await Promise.all([
+      fetchClientById(id),
+      fetchFollowUpsByClient(id),
+      fetchVisitsByClient(id, 1, 50),
+      fetchClientDealDone(id),
+      getUserBySessionEmail(),
+    ]);
 
   if (!clientResult.success || !clientResult.data) {
     notFound();
@@ -55,6 +58,7 @@ export default async function ClientDetailRoute({
       <ClientDetailPage
         client={client}
         followUps={followUpsResult.data ?? []}
+        dealDone={dealDoneResult.success ? dealDoneResult.data : null}
       />
 
       {/* Visit history */}

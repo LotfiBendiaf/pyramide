@@ -56,6 +56,25 @@ export type ListingDealDoneSummary = {
   };
 };
 
+export type ClientDealDoneSummary = {
+  _id: string;
+  closedAt?: string | Date;
+  closingDetails?: {
+    finalPrice?: number;
+  };
+  listing?: {
+    _id: string;
+    referenceCode?: string;
+    title?: string;
+    status?: string;
+    location?: {
+      city?: string;
+      district?: string;
+      address?: string;
+    };
+  };
+};
+
 function canReviewNegotiations(role: string): boolean {
   return role === "ADMIN" || role === "MANAGER";
 }
@@ -151,6 +170,52 @@ export async function fetchListingDealDone(
       success: true,
       data: deal
         ? (JSON.parse(JSON.stringify(deal)) as ListingDealDoneSummary)
+        : null,
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function fetchClientDealDone(
+  clientId: string
+): Promise<ActionResponse<ClientDealDoneSummary | null>> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!Types.ObjectId.isValid(clientId)) {
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
+  }
+
+  try {
+    await dbConnect();
+
+    const filter: Record<string, unknown> = {
+      client: clientId,
+      status: "DEAL_DONE",
+    };
+
+    if (!isElevatedRole(user.data.role)) {
+      filter.agent = user.data._id;
+    }
+
+    const deal = await Negotiation.findOne(filter)
+      .select("listing closedAt closingDetails.finalPrice")
+      .populate("listing", "referenceCode title status location")
+      .sort({ closedAt: -1, updatedAt: -1 })
+      .lean();
+
+    return {
+      success: true,
+      data: deal
+        ? (JSON.parse(JSON.stringify(deal)) as ClientDealDoneSummary)
         : null,
       status: 200,
     };

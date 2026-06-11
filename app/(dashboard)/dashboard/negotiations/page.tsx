@@ -34,6 +34,7 @@ type SearchParams = {
   status?: string;
   agentId?: string;
   listingId?: string;
+  clientId?: string;
   dateFrom?: string;
   dateTo?: string;
   minPrice?: string;
@@ -71,6 +72,9 @@ async function NegotiationsContent({
   }
   if (searchParams.listingId) {
     filters.listingId = searchParams.listingId;
+  }
+  if (searchParams.clientId) {
+    filters.clientId = searchParams.clientId;
   }
   if (searchParams.dateFrom) {
     filters.dateFrom = searchParams.dateFrom;
