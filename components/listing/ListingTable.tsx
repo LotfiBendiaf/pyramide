@@ -47,6 +47,7 @@ import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
 import {
   toggleListingPublished,
   toggleListingValidation,
+  approveListingWithoutReference,
   setListingNeutre,
 } from "@/lib/actions/listings.action";
 import { STATUS_COLORS } from "@/constants/values";
@@ -58,10 +59,11 @@ interface ListingTableProps {
   listings: Listing[];
 }
 
-type ValidationState = "validé" | "neutre" | "archivé";
+type ValidationState = "validé" | "approuvé" | "neutre" | "archivé";
 
 function getValidationState(listing: Listing): ValidationState {
   if (listing.archived) return "archivé";
+  if (listing.isValidated && !listing.referenceCode) return "approuvé";
   if (listing.isValidated) return "validé";
   return "neutre";
 }
@@ -71,6 +73,12 @@ function ValidationBadge({ state }: { state: ValidationState }) {
     return (
       <Badge variant="success" className="text-xs">
         Validé
+      </Badge>
+    );
+  if (state === "approuvé")
+    return (
+      <Badge variant="blue" className="text-xs">
+        Approuvé
       </Badge>
     );
   if (state === "archivé")
@@ -166,6 +174,17 @@ export function ListingTable({ listings }: ListingTableProps) {
       toast.success(`Annonce validée — Réf : ${result.data?.referenceCode}`);
     } else {
       toast.error(result.error?.message || "Erreur lors de la validation");
+    }
+    setValidatingStates((prev) => ({ ...prev, [listingId]: false }));
+  };
+
+  const handleApprove = async (listingId: string) => {
+    setValidatingStates((prev) => ({ ...prev, [listingId]: true }));
+    const result = await approveListingWithoutReference(listingId);
+    if (result.success) {
+      toast.success("Annonce approuvée sans référence");
+    } else {
+      toast.error(result.error?.message || "Erreur lors de l'approbation");
     }
     setValidatingStates((prev) => ({ ...prev, [listingId]: false }));
   };
@@ -282,6 +301,17 @@ export function ListingTable({ listings }: ListingTableProps) {
                               Validé
                             </Badge>
                             Valider
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={
+                              vState === "validé" || vState === "approuvé"
+                            }
+                            onClick={() => handleApprove(listing._id)}
+                          >
+                            <Badge variant="blue" className="text-xs mr-2">
+                              Approuvé
+                            </Badge>
+                            Approuver
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={vState === "neutre"}

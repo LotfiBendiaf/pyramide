@@ -794,6 +794,62 @@ export async function toggleListingValidation(
   }
 }
 
+export async function approveListingWithoutReference(
+  listingId: string
+): Promise<ActionResponse<{ isValidated: boolean }>> {
+  try {
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d'annonce invalide" },
+        status: 400,
+      };
+    }
+
+    const user = await getUserBySessionEmail();
+    if (!user?.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    await dbConnect();
+
+    const listing = await Listing.findById(listingId).select("_id");
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    await Listing.findByIdAndUpdate(listingId, {
+      isValidated: true,
+      validatedAt: new Date(),
+      validatedBy: user.data._id,
+      archived: false,
+      pipelineStatus: "PHOTO_VISIT_PENDING",
+      $unset: {
+        archivedAt: 1,
+      },
+    });
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return {
+      success: true,
+      data: { isValidated: true },
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function setListingNeutre(
   listingId: string
 ): Promise<ActionResponse<null>> {
