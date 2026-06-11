@@ -33,6 +33,7 @@ const STATUS_TABS = [
 type SearchParams = {
   status?: string;
   agentId?: string;
+  listingId?: string;
   dateFrom?: string;
   dateTo?: string;
   minPrice?: string;
@@ -67,6 +68,9 @@ async function NegotiationsContent({
 
   if (searchParams.agentId && searchParams.agentId !== "__all__") {
     filters.agentId = searchParams.agentId;
+  }
+  if (searchParams.listingId) {
+    filters.listingId = searchParams.listingId;
   }
   if (searchParams.dateFrom) {
     filters.dateFrom = searchParams.dateFrom;

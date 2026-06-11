@@ -41,6 +41,21 @@ export type NegotiationListingOption = {
   address?: string;
 };
 
+export type ListingDealDoneSummary = {
+  _id: string;
+  closedAt?: string | Date;
+  closingDetails?: {
+    finalPrice?: number;
+  };
+  client?: {
+    _id: string;
+    referenceCode?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  };
+};
+
 function canReviewNegotiations(role: string): boolean {
   return role === "ADMIN" || role === "MANAGER";
 }
@@ -91,6 +106,52 @@ export async function fetchNegotiationListingOptions(options?: {
             .filter(Boolean)
             .join(", "),
       })),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function fetchListingDealDone(
+  listingId: string
+): Promise<ActionResponse<ListingDealDoneSummary | null>> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!Types.ObjectId.isValid(listingId)) {
+    return {
+      success: false,
+      error: { message: "ID annonce invalide" },
+      status: 400,
+    };
+  }
+
+  try {
+    await dbConnect();
+
+    const filter: Record<string, unknown> = {
+      listing: listingId,
+      status: "DEAL_DONE",
+    };
+
+    if (!isElevatedRole(user.data.role)) {
+      filter.agent = user.data._id;
+    }
+
+    const deal = await Negotiation.findOne(filter)
+      .select("client closedAt closingDetails.finalPrice")
+      .populate("client", "referenceCode firstName lastName phone")
+      .sort({ closedAt: -1, updatedAt: -1 })
+      .lean();
+
+    return {
+      success: true,
+      data: deal
+        ? (JSON.parse(JSON.stringify(deal)) as ListingDealDoneSummary)
+        : null,
       status: 200,
     };
   } catch (error) {
