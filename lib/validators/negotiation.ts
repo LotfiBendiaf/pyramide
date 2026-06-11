@@ -90,6 +90,10 @@ export const negotiationFiltersSchema = z.object({
   agentId: z.string().optional(),
   listingId: z.string().optional(),
   clientId: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  minPrice: z.number().min(0).optional(),
+  maxPrice: z.number().min(0).optional(),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),
 });

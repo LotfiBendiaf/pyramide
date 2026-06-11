@@ -59,6 +59,10 @@ export type NegotiationFilters = {
   agentId?: string;
   listingId?: string;
   clientId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minPrice?: number;
+  maxPrice?: number;
   page?: number;
   limit?: number;
 };

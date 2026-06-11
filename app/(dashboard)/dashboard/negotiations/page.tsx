@@ -9,9 +9,11 @@ import {
   NegotiationsList,
   Negotiation,
 } from "@/components/negotiations/NegotiationsList";
+import { NegotiationsFilter } from "@/components/negotiations/NegotiationsFilter";
 import { PaginationControls } from "@/components/PaginationControls";
 import { NegotiationFilters } from "@/types/negotiation";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
+import { fetchAgents } from "@/lib/actions/users.action";
 import { isElevatedRole } from "@/constants/values";
 import Link from "next/link";
 import ROUTES from "@/constants/routes";
@@ -28,7 +30,22 @@ const STATUS_TABS = [
   { value: "REJECTED", label: "Refusées" },
 ] as const;
 
-type SearchParams = { status?: string; page?: string };
+type SearchParams = {
+  status?: string;
+  agentId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  page?: string;
+};
+
+function getNumberParam(value?: string) {
+  if (!value) return undefined;
+
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : undefined;
+}
 
 async function NegotiationsContent({
   searchParams,
@@ -38,7 +55,8 @@ async function NegotiationsContent({
   const user = await getUserBySessionEmail();
   const isManager = isElevatedRole(user.data?.role ?? "");
 
-  const page = Math.max(1, Number(searchParams.page ?? 1));
+  const pageParam = Number(searchParams.page ?? 1);
+  const page = Number.isFinite(pageParam) ? Math.max(1, pageParam) : 1;
   const filters: NegotiationFilters = {
     page,
     limit: PER_PAGE,
@@ -46,6 +64,26 @@ async function NegotiationsContent({
       ? { status: searchParams.status as NegotiationFilters["status"] }
       : {}),
   };
+
+  if (searchParams.agentId && searchParams.agentId !== "__all__") {
+    filters.agentId = searchParams.agentId;
+  }
+  if (searchParams.dateFrom) {
+    filters.dateFrom = searchParams.dateFrom;
+  }
+  if (searchParams.dateTo) {
+    filters.dateTo = searchParams.dateTo;
+  }
+
+  const minPrice = getNumberParam(searchParams.minPrice);
+  const maxPrice = getNumberParam(searchParams.maxPrice);
+
+  if (minPrice !== undefined) {
+    filters.minPrice = minPrice;
+  }
+  if (maxPrice !== undefined) {
+    filters.maxPrice = maxPrice;
+  }
 
   const result = await fetchNegotiations(filters);
   const negotiations = result.data?.negotiations ?? [];
@@ -74,9 +112,30 @@ export default async function NegotiationsPage({
 }) {
   const params = await searchParams;
   const activeStatus = params.status;
+  const user = await getUserBySessionEmail();
+  const canFilterByAgent = isElevatedRole(user.data?.role ?? "");
+  const agentsResult = canFilterByAgent
+    ? await fetchAgents()
+    : { success: true, data: [] };
   const pendingVerificationResult =
     await fetchPendingNegotiationVerificationCount();
   const pendingVerificationCount = pendingVerificationResult.data ?? 0;
+
+  const getStatusHref = (status?: string) => {
+    const tabParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (!value || key === "status" || key === "page") return;
+      tabParams.set(key, value);
+    });
+
+    if (status) {
+      tabParams.set("status", status);
+    }
+
+    const query = tabParams.toString();
+    return query ? `${ROUTES.NEGOTIATIONS}?${query}` : ROUTES.NEGOTIATIONS;
+  };
 
   return (
     <section className="container py-6 space-y-6">
@@ -90,9 +149,7 @@ export default async function NegotiationsPage({
         {STATUS_TABS.map((tab) => {
           const isActive =
             activeStatus === tab.value || (!activeStatus && !tab.value);
-          const href = tab.value
-            ? `${ROUTES.NEGOTIATIONS}?status=${tab.value}`
-            : ROUTES.NEGOTIATIONS;
+          const href = getStatusHref(tab.value);
           const showPendingCount =
             tab.value === "PENDING_VERIFICATION" &&
             pendingVerificationCount > 0;
@@ -117,6 +174,11 @@ export default async function NegotiationsPage({
           );
         })}
       </div>
+
+      <NegotiationsFilter
+        agents={agentsResult.data ?? []}
+        canFilterByAgent={canFilterByAgent}
+      />
 
       <Suspense fallback={<ListingsSkeleton />}>
         <NegotiationsContent searchParams={params} />

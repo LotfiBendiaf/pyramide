@@ -1304,11 +1304,17 @@ export async function fetchNegotiations(
     agentId,
     listingId,
     clientId,
+    dateFrom,
+    dateTo,
+    minPrice,
+    maxPrice,
     page = 1,
     limit = 20,
   } = validationResult.params as NegotiationFilters;
 
   try {
+    await dbConnect();
+
     const filter: Record<string, unknown> = {};
 
     if (!isElevatedRole(user.data.role)) {
@@ -1320,6 +1326,44 @@ export async function fetchNegotiations(
     if (status) filter.status = status;
     if (listingId) filter.listing = listingId;
     if (clientId) filter.client = clientId;
+
+    if (dateFrom || dateTo) {
+      const createdAt: Record<string, Date> = {};
+
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        if (!Number.isNaN(from.getTime())) {
+          from.setHours(0, 0, 0, 0);
+          createdAt.$gte = from;
+        }
+      }
+
+      if (dateTo) {
+        const to = new Date(dateTo);
+        if (!Number.isNaN(to.getTime())) {
+          to.setHours(23, 59, 59, 999);
+          createdAt.$lte = to;
+        }
+      }
+
+      if (Object.keys(createdAt).length > 0) {
+        filter.createdAt = createdAt;
+      }
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      const finalPrice: Record<string, number> = {};
+
+      if (minPrice !== undefined) {
+        finalPrice.$gte = minPrice;
+      }
+
+      if (maxPrice !== undefined) {
+        finalPrice.$lte = maxPrice;
+      }
+
+      filter["closingDetails.finalPrice"] = finalPrice;
+    }
 
     const skip = (page - 1) * limit;
 
