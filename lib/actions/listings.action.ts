@@ -254,7 +254,7 @@ interface FetchListingsParams {
   isPublished?: boolean;
   isValidated?: boolean;
   archived?: boolean;
-  status?: "En Vente" | "En Location";
+  status?: ListingInput["status"];
   city?: string;
   propertyType?: string;
   minPrice?: number;

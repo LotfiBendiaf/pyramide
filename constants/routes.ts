@@ -16,6 +16,7 @@ const ROUTES = {
   CLIENT_ADD: "/dashboard/clients/add",
   CLIENT_DETAIL: (id: string) => `/dashboard/clients/${id}`,
   LISTINGS_DASHBOARD: "/dashboard/listings",
+  SOLD_LISTINGS_DASHBOARD: "/dashboard/listings?status=Vendu",
   LISTING_ADD: "/dashboard/listings/add",
   MATCHING: "/dashboard/matching",
   FOLLOWUPS: "/dashboard/follow-ups",
@@ -43,6 +44,7 @@ const ROUTES = {
   VISIT_DETAIL: (id: string) => `/dashboard/visits/${id}`,
   // Negotiations
   NEGOTIATIONS: "/dashboard/negotiations",
+  DEAL_DONE_NEGOTIATIONS: "/dashboard/negotiations?status=DEAL_DONE",
   NEGOTIATION_DETAIL: (id: string) => `/dashboard/negotiations/${id}`,
   DEMANDES: "/dashboard/demandes",
   // Mes biens

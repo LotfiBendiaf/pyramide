@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -20,6 +21,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import ROUTES from "@/constants/routes";
 import { cn, formatPriceAlgeria } from "@/lib/utils";
 
 interface SectionCardsProps {
@@ -54,6 +56,7 @@ function ExecutiveKpiCard({
   variant,
   footerLead,
   footerMuted,
+  href,
 }: {
   title: string;
   value: string;
@@ -64,6 +67,7 @@ function ExecutiveKpiCard({
   variant: KpiVariant;
   footerLead: ReactNode;
   footerMuted: string;
+  href?: string;
 }) {
   const styles: Record<
     KpiVariant,
@@ -98,7 +102,7 @@ function ExecutiveKpiCard({
     },
   };
 
-  return (
+  const card = (
     <Card className={cn("relative overflow-hidden py-5", styles[variant].card)}>
       <div className={cn("absolute inset-y-0 left-0 w-1", styles[variant].rail)} />
       <CardHeader className="gap-3 pl-7">
@@ -141,6 +145,19 @@ function ExecutiveKpiCard({
       </CardFooter>
     </Card>
   );
+
+  if (!href) {
+    return card;
+  }
+
+  return (
+    <Link
+      href={href}
+      className="block rounded-lg transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:-translate-y-0.5"
+    >
+      {card}
+    </Link>
+  );
 }
 
 export function SectionCards({ stats }: SectionCardsProps) {
@@ -177,6 +194,7 @@ export function SectionCards({ stats }: SectionCardsProps) {
       <ExecutiveKpiCard
         title="Valeur des transactions"
         value={`${formatPriceAlgeria(stats.totalRevenue)} DA`}
+        href={ROUTES.SOLD_LISTINGS_DASHBOARD}
         badge={`${stats.soldListings} ventes`}
         badgeIcon={stats.monthlyRevenue > 0 ? TrendingUp : Minus}
         icon={BadgeDollarSign}
@@ -198,6 +216,7 @@ export function SectionCards({ stats }: SectionCardsProps) {
       <ExecutiveKpiCard
         title="Gain agence"
         value={`${formatPriceAlgeria(stats.totalGainedAmount)} DA`}
+        href={ROUTES.DEAL_DONE_NEGOTIATIONS}
         badge={`${formatPriceAlgeria(stats.monthlyGainedAmount)} DA`}
         badgeIcon={stats.monthlyGainedAmount > 0 ? TrendingUp : Minus}
         icon={Wallet}

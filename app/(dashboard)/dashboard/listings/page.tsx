@@ -50,7 +50,7 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   const result = await fetchListings({
     search: params?.search,
     city: params?.city,
-    status: params?.status as "En Vente" | "En Location" | undefined,
+    status: params?.status as ListingInput["status"] | undefined,
     minPrice: params?.minPrice ? Number(params.minPrice) : undefined,
     maxPrice: params?.maxPrice ? Number(params.maxPrice) : undefined,
     rentMinPrice: params?.rentMinPrice

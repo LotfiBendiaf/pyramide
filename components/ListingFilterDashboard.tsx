@@ -309,6 +309,9 @@ export default function ListingFilterDashboard() {
                 <SelectContent>
                   <SelectItem value="En Vente">À vendre</SelectItem>
                   <SelectItem value="En Location">À louer</SelectItem>
+                  <SelectItem value="Vendu">Vendu</SelectItem>
+                  <SelectItem value="Loué">Loué</SelectItem>
+                  <SelectItem value="Retiré">Retiré</SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex min-w-0 flex-1 flex-wrap gap-2">
