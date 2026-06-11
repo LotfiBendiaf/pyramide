@@ -4,14 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  CalendarIcon,
-  CalendarPlus,
-  CheckCircle2,
-  Clock,
-  Loader2,
-  XCircle,
-} from "lucide-react";
+import { CalendarIcon, CalendarPlus, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,6 +21,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
   FormField,
@@ -38,7 +38,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { scheduleVisitSchema } from "@/lib/validators/visit";
 import { scheduleVisit } from "@/lib/actions/visit.action";
@@ -50,6 +49,24 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 type FormValues = z.infer<typeof scheduleVisitSchema>;
+
+const generateTimeOptions = () => {
+  const times: string[] = [];
+
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      times.push(
+        `${hour.toString().padStart(2, "0")}:${minute
+          .toString()
+          .padStart(2, "0")}`
+      );
+    }
+  }
+
+  return times;
+};
+
+const TIME_OPTIONS = generateTimeOptions();
 
 interface Props {
   prefilledClientId?: string;
@@ -109,52 +126,58 @@ export function ScheduleVisitDialog({
   const clientTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const searchClients = useCallback(async (query: string) => {
-    setClientLoading(true);
-    try {
-      const result = await fetchClients({
-        search: query || undefined,
-        limit: 50,
-      });
-      const clients = result.data?.clients ?? [];
-      const options = clients.map((c) => ({
-        value: String(c._id),
-        label: [c.firstName, c.lastName].filter(Boolean).join(" ") || c.phone,
-        searchableText: `${c.referenceCode} ${c.firstName ?? ""} ${
-          c.lastName ?? ""
-        } ${c.phone}`,
-        metadata: c.referenceCode,
-        description:
-          [c.firstName, c.lastName].filter(Boolean).join(" ") && c.phone
-            ? c.phone
-            : undefined,
-      }));
-      setClientOptions(mergeOption(options, prefilledClientOption));
-    } finally {
-      setClientLoading(false);
-    }
-  }, [prefilledClientOption]);
+  const searchClients = useCallback(
+    async (query: string) => {
+      setClientLoading(true);
+      try {
+        const result = await fetchClients({
+          search: query || undefined,
+          limit: 50,
+        });
+        const clients = result.data?.clients ?? [];
+        const options = clients.map((c) => ({
+          value: String(c._id),
+          label: [c.firstName, c.lastName].filter(Boolean).join(" ") || c.phone,
+          searchableText: `${c.referenceCode} ${c.firstName ?? ""} ${
+            c.lastName ?? ""
+          } ${c.phone}`,
+          metadata: c.referenceCode,
+          description:
+            [c.firstName, c.lastName].filter(Boolean).join(" ") && c.phone
+              ? c.phone
+              : undefined,
+        }));
+        setClientOptions(mergeOption(options, prefilledClientOption));
+      } finally {
+        setClientLoading(false);
+      }
+    },
+    [prefilledClientOption]
+  );
 
-  const searchListings = useCallback(async (query: string) => {
-    setListingLoading(true);
-    try {
-      const result = await fetchListings({
-        referenceCodeSearch: query || undefined,
-        isValidated: true,
-        limit: 20,
-      });
-      const listings = result.data ?? [];
-      const options = listings.map((l) => ({
-        value: String(l._id),
-        label: l.title ?? "Sans titre",
-        searchableText: `${l.referenceCode ?? ""} ${l.title ?? ""}`,
-        metadata: l.referenceCode,
-      }));
-      setListingOptions(mergeOption(options, prefilledListingOption));
-    } finally {
-      setListingLoading(false);
-    }
-  }, [prefilledListingOption]);
+  const searchListings = useCallback(
+    async (query: string) => {
+      setListingLoading(true);
+      try {
+        const result = await fetchListings({
+          referenceCodeSearch: query || undefined,
+          isValidated: true,
+          limit: 20,
+        });
+        const listings = result.data ?? [];
+        const options = listings.map((l) => ({
+          value: String(l._id),
+          label: l.title ?? "Sans titre",
+          searchableText: `${l.referenceCode ?? ""} ${l.title ?? ""}`,
+          metadata: l.referenceCode,
+        }));
+        setListingOptions(mergeOption(options, prefilledListingOption));
+      } finally {
+        setListingLoading(false);
+      }
+    },
+    [prefilledListingOption]
+  );
 
   useEffect(() => {
     if (open) {
@@ -180,7 +203,7 @@ export function ScheduleVisitDialog({
       listingId: prefilledListingId ?? "",
       isExternalListing: false,
       externalListingRef: "",
-      scheduledAt: new Date(),
+      scheduledAt: applyTimePart(new Date(), "09:00"),
       status: "COMPLETED",
       notes: "",
     },
@@ -194,11 +217,7 @@ export function ScheduleVisitDialog({
       toast.error("Erreur", { description: result.error?.message });
       return;
     }
-    toast.success(
-      values.status === "CANCELLED"
-        ? "Visite annulée enregistrée"
-        : "Visite ajoutée comme terminée"
-    );
+    toast.success("Visite ajoutée comme terminée");
     form.reset();
     setOpen(false);
     router.refresh();
@@ -210,53 +229,16 @@ export function ScheduleVisitDialog({
         {trigger ?? (
           <Button>
             <CalendarPlus className="mr-2 h-4 w-4" />
-            Ajouter une visite
+            Planifier une visite
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Ajouter une visite</DialogTitle>
+          <DialogTitle>Planifier une visite</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Statut</FormLabel>
-                  <FormControl>
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      className="grid w-full grid-cols-2"
-                      value={field.value}
-                      onValueChange={(value) => {
-                        if (value) field.onChange(value);
-                      }}
-                    >
-                      <ToggleGroupItem
-                        value="COMPLETED"
-                        className="gap-2 data-[state=on]:border-green-200 data-[state=on]:bg-green-50 data-[state=on]:text-green-700"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Terminée
-                      </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value="CANCELLED"
-                        className="gap-2 data-[state=on]:border-red-200 data-[state=on]:bg-red-50 data-[state=on]:text-red-700"
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Annulée
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* External listing toggle */}
             <FormField
               control={form.control}
@@ -367,9 +349,13 @@ export function ScheduleVisitDialog({
                           >
                             <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                             {field.value
-                              ? format(new Date(field.value), "EEEE dd MMM yyyy", {
-                                  locale: fr,
-                                })
+                              ? format(
+                                  new Date(field.value),
+                                  "EEEE dd MMM yyyy",
+                                  {
+                                    locale: fr,
+                                  }
+                                )
                               : "Choisir une date"}
                           </Button>
                         </FormControl>
@@ -389,25 +375,30 @@ export function ScheduleVisitDialog({
                       </PopoverContent>
                     </Popover>
 
-                    <FormControl>
-                      <div className="relative">
-                        <Clock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          type="time"
-                          className="pl-9"
-                          value={
-                            field.value
-                              ? format(new Date(field.value), "HH:mm")
-                              : "09:00"
-                          }
-                          onChange={(e) =>
-                            field.onChange(
-                              applyTimePart(field.value, e.target.value)
-                            )
-                          }
-                        />
-                      </div>
-                    </FormControl>
+                    <Select
+                      value={
+                        field.value
+                          ? format(new Date(field.value), "HH:mm")
+                          : "09:00"
+                      }
+                      onValueChange={(time) =>
+                        field.onChange(applyTimePart(field.value, time))
+                      }
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder="Heure" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-[220px]">
+                        {TIME_OPTIONS.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {["09:00", "11:00", "14:00", "16:00"].map((time) => (
@@ -461,7 +452,7 @@ export function ScheduleVisitDialog({
                 {form.formState.isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Enregistrer
+                Planifier la visite
               </Button>
             </div>
           </form>

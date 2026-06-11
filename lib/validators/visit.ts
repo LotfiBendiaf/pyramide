@@ -7,7 +7,7 @@ export const scheduleVisitSchema = z
     isExternalListing: z.boolean().default(false),
     externalListingRef: z.string().trim().optional(),
     scheduledAt: z.coerce.date({ required_error: "Date de visite requise" }),
-    status: z.enum(["COMPLETED", "CANCELLED"]).default("COMPLETED"),
+    status: z.literal("COMPLETED").default("COMPLETED"),
     notes: z.string().optional(),
   })
   .superRefine((data, ctx) => {

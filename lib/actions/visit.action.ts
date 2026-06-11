@@ -140,17 +140,14 @@ export async function scheduleVisit(
       notes,
       status: visitStatus,
       completedAt: visitStatus === "COMPLETED" ? new Date() : undefined,
-      cancelledAt: visitStatus === "CANCELLED" ? new Date() : undefined,
     });
 
     await Client.findByIdAndUpdate(clientId, { lastContactedAt: new Date() });
 
-    if (visitStatus !== "CANCELLED") {
-      try {
-        await createCalendarEventFromVisit(visit._id.toString());
-      } catch (err) {
-        console.error("Failed to sync visit to Google Calendar:", err);
-      }
+    try {
+      await createCalendarEventFromVisit(visit._id.toString());
+    } catch (err) {
+      console.error("Failed to sync visit to Google Calendar:", err);
     }
 
     revalidatePath(ROUTES.VISITS);
@@ -308,11 +305,12 @@ export async function cancelVisit(
       };
     }
 
-    if (visit.status !== "SCHEDULED") {
+    if (visit.status !== "SCHEDULED" && visit.status !== "COMPLETED") {
       return {
         success: false,
         error: {
-          message: "Seules les visites planifiées peuvent être annulées",
+          message:
+            "Seules les visites planifiées ou complétées peuvent être annulées",
         },
         status: 409,
       };

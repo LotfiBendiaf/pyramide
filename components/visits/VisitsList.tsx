@@ -128,11 +128,16 @@ export function VisitsList({ visits, showAgent = false, showClient = true }: Pro
                 )}
               </TableCell>
               <TableCell>
-                {visit.status === "SCHEDULED" && (
+                {(visit.status === "SCHEDULED" ||
+                  visit.status === "COMPLETED") && (
                   <div className="flex justify-end gap-1">
-                    <CompleteVisitDialog visitId={visit._id} />
+                    {visit.status === "SCHEDULED" && (
+                      <CompleteVisitDialog visitId={visit._id} />
+                    )}
                     <CancelVisitDialog visitId={visit._id} />
-                    <NoShowButton visitId={visit._id} />
+                    {visit.status === "SCHEDULED" && (
+                      <NoShowButton visitId={visit._id} />
+                    )}
                   </div>
                 )}
               </TableCell>

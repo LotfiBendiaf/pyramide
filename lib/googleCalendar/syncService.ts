@@ -381,7 +381,7 @@ export async function createCalendarEventFromVisit(
     return { success: false, error: "Visit not found" };
   }
 
-  if (visit.status === "CANCELLED" || visit.status === "NO_SHOW") {
+  if (visit.status !== "SCHEDULED") {
     return { success: true };
   }
 

@@ -132,7 +132,7 @@ const sidebarConfig: SidebarGroup[] = [
     label: "Suivis / Visites",
     items: [
       {
-        title: "Tous les suivis",
+        title: "Suivis",
         url: ROUTES.FOLLOWUPS,
         icon: ClipboardList,
       },
