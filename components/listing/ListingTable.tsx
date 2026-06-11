@@ -13,6 +13,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -37,6 +42,7 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
+  FileText,
   Loader2,
   ShowerHead,
   Radio,
@@ -243,6 +249,7 @@ export function ListingTable({ listings }: ListingTableProps) {
             {listings.map((listing) => {
               const vState = getValidationState(listing);
               const isLoading = validatingStates[listing._id];
+              const documentsCount = listing.documents?.length ?? 0;
 
               return (
                 <TableRow
@@ -347,6 +354,24 @@ export function ListingTable({ listings }: ListingTableProps) {
                           <Radio className="h-3 w-3" />
                           En Négociation
                         </Badge>
+                      )}
+                      {documentsCount > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge
+                              variant="outline"
+                              className="gap-1 border-blue-200 bg-blue-50 text-xs text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300"
+                            >
+                              <FileText className="h-3 w-3" />
+                              {documentsCount}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {documentsCount > 1
+                              ? `${documentsCount} documents uploadés`
+                              : "1 document uploadé"}
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </TableCell>
@@ -463,10 +488,7 @@ export function ListingTable({ listings }: ListingTableProps) {
                         <Switch
                           checked={listing.isPublished}
                           onCheckedChange={() => {
-                            openConfirmDialog(
-                              listing._id,
-                              listing.isPublished
-                            );
+                            openConfirmDialog(listing._id, listing.isPublished);
                           }}
                           disabled={publishingStates[listing._id]}
                         />
@@ -496,7 +518,9 @@ export function ListingTable({ listings }: ListingTableProps) {
                   <TableCell>
                     <div className="space-y-1 text-sm">
                       <p className="font-medium">
-                        {listing.createdAt ? formatDate(listing.createdAt) : "-"}
+                        {listing.createdAt
+                          ? formatDate(listing.createdAt)
+                          : "-"}
                       </p>
                       {listing.validatedAt && (
                         <p className="text-xs text-muted-foreground">
