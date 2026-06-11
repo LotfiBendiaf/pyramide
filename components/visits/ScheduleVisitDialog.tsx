@@ -4,7 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarIcon, CalendarPlus, Clock, Loader2 } from "lucide-react";
+import {
+  CalendarIcon,
+  CalendarPlus,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -31,6 +38,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { scheduleVisitSchema } from "@/lib/validators/visit";
 import { scheduleVisit } from "@/lib/actions/visit.action";
@@ -173,6 +181,7 @@ export function ScheduleVisitDialog({
       isExternalListing: false,
       externalListingRef: "",
       scheduledAt: new Date(),
+      status: "COMPLETED",
       notes: "",
     },
   });
@@ -185,7 +194,11 @@ export function ScheduleVisitDialog({
       toast.error("Erreur", { description: result.error?.message });
       return;
     }
-    toast.success("Visite planifiée avec succès");
+    toast.success(
+      values.status === "CANCELLED"
+        ? "Visite annulée enregistrée"
+        : "Visite ajoutée comme terminée"
+    );
     form.reset();
     setOpen(false);
     router.refresh();
@@ -197,16 +210,53 @@ export function ScheduleVisitDialog({
         {trigger ?? (
           <Button>
             <CalendarPlus className="mr-2 h-4 w-4" />
-            Planifier une visite
+            Ajouter une visite
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Planifier une visite</DialogTitle>
+          <DialogTitle>Ajouter une visite</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Statut</FormLabel>
+                  <FormControl>
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      className="grid w-full grid-cols-2"
+                      value={field.value}
+                      onValueChange={(value) => {
+                        if (value) field.onChange(value);
+                      }}
+                    >
+                      <ToggleGroupItem
+                        value="COMPLETED"
+                        className="gap-2 data-[state=on]:border-green-200 data-[state=on]:bg-green-50 data-[state=on]:text-green-700"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Terminée
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="CANCELLED"
+                        className="gap-2 data-[state=on]:border-red-200 data-[state=on]:bg-red-50 data-[state=on]:text-red-700"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Annulée
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* External listing toggle */}
             <FormField
               control={form.control}
@@ -405,13 +455,13 @@ export function ScheduleVisitDialog({
                 variant="outline"
                 onClick={() => setOpen(false)}
               >
-                Annuler
+                Fermer
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Planifier
+                Enregistrer
               </Button>
             </div>
           </form>

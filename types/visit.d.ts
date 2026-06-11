@@ -42,6 +42,7 @@ export type ScheduleVisitInput = {
   isExternalListing?: boolean;
   externalListingRef?: string;
   scheduledAt: Date;
+  status?: "COMPLETED" | "CANCELLED";
   notes?: string;
 };
 

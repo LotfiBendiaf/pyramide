@@ -49,8 +49,10 @@ export async function scheduleVisit(
     isExternalListing,
     externalListingRef,
     scheduledAt,
+    status,
     notes,
   } = validationResult.params;
+  const visitStatus = status ?? "COMPLETED";
 
   if (!Types.ObjectId.isValid(clientId)) {
     return {
@@ -126,7 +128,9 @@ export async function scheduleVisit(
       externalListingRef: isExternalListing ? externalListingRef : undefined,
       scheduledAt,
       notes,
-      status: "SCHEDULED",
+      status: visitStatus,
+      completedAt: visitStatus === "COMPLETED" ? new Date() : undefined,
+      cancelledAt: visitStatus === "CANCELLED" ? new Date() : undefined,
     });
 
     await Client.findByIdAndUpdate(clientId, { lastContactedAt: new Date() });
