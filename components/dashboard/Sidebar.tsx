@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 
 import {
   Sidebar,
@@ -14,8 +14,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +39,7 @@ import LogoutButton from "../LogoutButton";
 import Link from "next/link";
 import ChangePasswordDialog from "../forms/change-password-form";
 import {
+  ChevronRight,
   ChevronUp,
   PlusCircle,
   Users,
@@ -65,6 +74,7 @@ type SidebarItem = {
 
 type SidebarGroup = {
   label: string;
+  icon: React.ComponentType<{ className?: string }>;
   roles?: Role[];
   items: SidebarItem[];
 };
@@ -72,6 +82,7 @@ type SidebarGroup = {
 const sidebarConfig: SidebarGroup[] = [
   {
     label: "Menu Principal",
+    icon: LayoutDashboard,
     items: [
       {
         title: "Tableau de bord",
@@ -82,6 +93,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Planning",
+    icon: CalendarDays,
     items: [
       {
         title: "Mon planning",
@@ -93,6 +105,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Biens Immobiliers",
+    icon: Building2,
     items: [
       {
         title: "Liste des biens",
@@ -109,6 +122,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Gestion Clients",
+    icon: Users,
     items: [
       {
         title: "Tous les clients",
@@ -130,6 +144,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Suivis / Visites",
+    icon: CalendarCheck,
     items: [
       {
         title: "Suivis",
@@ -151,6 +166,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Pipeline",
+    icon: Handshake,
     items: [
       {
         title: "Mes biens",
@@ -173,6 +189,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Documents",
+    icon: FileText,
     items: [
       {
         title: "Générer un document",
@@ -184,6 +201,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Rapports",
+    icon: ClipboardList,
     items: [
       {
         title: "Mon rapport quotidien",
@@ -201,6 +219,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Administration",
+    icon: UserCog,
     roles: ["ADMIN", "MANAGER"],
     items: [
       {
@@ -237,13 +256,30 @@ export function AppSidebar() {
   const userRole = user?.role as Role | undefined;
   const pathname = usePathname();
   const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
+
+  const isItemActive = useCallback(
+    (url: string) =>
+      pathname === url ||
+      (url !== ROUTES.DASHBOARD && pathname.startsWith(url)),
+    [pathname]
+  );
 
   // Reset loading state when pathname changes (navigation complete)
   useEffect(() => {
     setLoadingUrl(null);
-  }, [pathname]);
+    setOpenGroups((current) => {
+      const next = { ...current };
+      sidebarConfig.forEach((group) => {
+        if (group.items.some((item) => isItemActive(item.url))) {
+          next[group.label] = true;
+        }
+      });
+      return next;
+    });
+  }, [isItemActive, pathname]);
 
   const handleNavClick = (url: string) => {
     if (url !== pathname) {
@@ -259,53 +295,90 @@ export function AppSidebar() {
       <SidebarHeader>
         <Logo />
       </SidebarHeader>
-      <SidebarContent>
-        {sidebarConfig.map((group) => {
-          // Filter items based on user role
-          const visibleItems = group.items.filter((item) =>
-            canAccess(userRole, item.roles)
-          );
+      <SidebarContent className="px-2 py-2">
+        <SidebarGroup className="px-0">
+          <SidebarGroupLabel className="px-2">Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {sidebarConfig.map((group) => {
+                // Filter items based on user role
+                const visibleItems = group.items.filter((item) =>
+                  canAccess(userRole, item.roles)
+                );
 
-          // Skip rendering group if no items are visible
-          if (visibleItems.length === 0) return null;
+                // Skip rendering group if no items are visible
+                if (visibleItems.length === 0) return null;
 
-          // Skip rendering group if group-level role check fails
-          if (!canAccess(userRole, group.roles)) return null;
+                // Skip rendering group if group-level role check fails
+                if (!canAccess(userRole, group.roles)) return null;
 
-          return (
-            <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {visibleItems.map((item) => {
-                    const isActive =
-                      pathname === item.url ||
-                      (item.url !== ROUTES.DASHBOARD &&
-                        pathname.startsWith(item.url));
-                    const isLoading = loadingUrl === item.url;
-                    return (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={isActive}>
-                          <Link
-                            href={item.url}
-                            onClick={() => handleNavClick(item.url)}
-                          >
-                            {isLoading ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <item.icon className="w-4 h-4" />
-                            )}
-                            <span>{item.title}</span>
-                          </Link>
+                const hasActiveItem = visibleItems.some((item) =>
+                  isItemActive(item.url)
+                );
+                const isOpen = openGroups[group.label] ?? hasActiveItem;
+                const GroupIcon = group.icon;
+
+                return (
+                  <Collapsible
+                    key={group.label}
+                    asChild
+                    open={isOpen}
+                    onOpenChange={(open) =>
+                      setOpenGroups((current) => ({
+                        ...current,
+                        [group.label]: open,
+                      }))
+                    }
+                    className="group/collapsible"
+                  >
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton
+                          isActive={hasActiveItem}
+                          className="h-9"
+                        >
+                          <GroupIcon className="h-4 w-4" />
+                          <span>{group.label}</span>
+                          <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          );
-        })}
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub className="mb-2 mt-1">
+                          {visibleItems.map((item) => {
+                            const isActive = isItemActive(item.url);
+                            const isLoading = loadingUrl === item.url;
+
+                            return (
+                              <SidebarMenuSubItem key={item.title}>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={isActive}
+                                  className="data-[active=true]:bg-blue-500/5 data-[active=true]:font-medium data-[active=true]:text-blue-700 dark:data-[active=true]:text-blue-300"
+                                >
+                                  <Link
+                                    href={item.url}
+                                    onClick={() => handleNavClick(item.url)}
+                                  >
+                                    {isLoading ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <item.icon className="h-4 w-4" />
+                                    )}
+                                    <span>{item.title}</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            );
+                          })}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-3">
         <SidebarMenu>
