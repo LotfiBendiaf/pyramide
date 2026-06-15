@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { fetchListings } from "@/lib/actions/listings.action";
+import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ListingTable } from "@/components/listing/ListingTable";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
@@ -9,6 +11,10 @@ import { PaginationControls } from "@/components/PaginationControls";
 import ROUTES from "@/constants/routes";
 
 const LISTINGS_PER_PAGE = 15;
+
+function canAccessNewListings(role?: string) {
+  return role === "ADMIN" || role === "MANAGER";
+}
 
 type ListingsSectionProps = {
   searchParams?: {
@@ -38,7 +44,8 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
   const isArchiveView = params?.view === "archives";
   const isNeutreView = params?.view === "neutre";
-  const isActiveView = !isArchiveView && !isNeutreView;
+  const isApprovedView = params?.view === "approved";
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView;
 
   // Keep rent and sale listings mixed by recency. Sorting by referenceCode groups
   // all V-* before L-* and hides rentals behind pagination.
@@ -69,7 +76,9 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
-    isValidated: isActiveView ? true : isNeutreView ? false : undefined,
+    isValidated:
+      isActiveView || isApprovedView ? true : isNeutreView ? false : undefined,
+    hasReferenceCode: isActiveView ? true : isApprovedView ? false : undefined,
     archived: isArchiveView ? true : undefined,
     page,
     limit: LISTINGS_PER_PAGE,
@@ -92,6 +101,8 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
       <div className="text-center text-muted-foreground py-20">
         {isArchiveView
           ? "Aucune annonce archivée."
+          : isApprovedView
+            ? "Aucune annonce approuvée."
           : isNeutreView
             ? "Aucune nouvelle annonce en attente."
             : "Aucune annonce trouvée."}
@@ -113,9 +124,16 @@ export default async function ListingsPage({
   searchParams,
 }: ListingsSectionProps) {
   const params = await searchParams;
+  const user = await getUserBySessionEmail();
+  const canViewNewListings = canAccessNewListings(user.data?.role);
   const isArchiveView = params?.view === "archives";
-  const isNeutreView = params?.view === "neutre";
-  const isActiveView = !isArchiveView && !isNeutreView;
+  const isNeutreView = canViewNewListings && params?.view === "neutre";
+  const isApprovedView = params?.view === "approved";
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView;
+
+  if (params?.view === "neutre" && !canViewNewListings) {
+    redirect(ROUTES.LISTINGS_DASHBOARD);
+  }
 
   const tabClass = (active: boolean) =>
     `px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
@@ -140,11 +158,19 @@ export default async function ListingsPage({
           Annonces validées
         </Link>
         <Link
-          href={`${ROUTES.LISTINGS_DASHBOARD}?view=neutre`}
-          className={tabClass(isNeutreView)}
+          href={`${ROUTES.LISTINGS_DASHBOARD}?view=approved`}
+          className={tabClass(isApprovedView)}
         >
-          Nouvelles annonces
+          Annonces approuvées
         </Link>
+        {canViewNewListings && (
+          <Link
+            href={`${ROUTES.LISTINGS_DASHBOARD}?view=neutre`}
+            className={tabClass(isNeutreView)}
+          >
+            Nouvelles annonces
+          </Link>
+        )}
         <Link
           href={`${ROUTES.LISTINGS_DASHBOARD}?view=archives`}
           className={tabClass(isArchiveView)}

@@ -253,6 +253,7 @@ export async function createListing(
 interface FetchListingsParams {
   isPublished?: boolean;
   isValidated?: boolean;
+  hasReferenceCode?: boolean;
   archived?: boolean;
   status?: ListingInput["status"];
   city?: string;
@@ -305,6 +306,7 @@ export async function fetchListings(
     const {
       isPublished,
       isValidated,
+      hasReferenceCode,
       archived,
       status,
       city,
@@ -341,6 +343,21 @@ export async function fetchListings(
     } else if (isValidated === false) {
       // Catch both explicit false and documents where the field is not set
       query.isValidated = { $ne: true };
+    }
+
+    if (hasReferenceCode === true) {
+      query.referenceCode = { $exists: true, $nin: [null, ""] };
+    } else if (hasReferenceCode === false) {
+      query.$and = [
+        ...(query.$and ?? []),
+        {
+          $or: [
+            { referenceCode: { $exists: false } },
+            { referenceCode: null },
+            { referenceCode: "" },
+          ],
+        },
+      ];
     }
 
     // By default exclude archived listings; pass archived: true to fetch only archived
