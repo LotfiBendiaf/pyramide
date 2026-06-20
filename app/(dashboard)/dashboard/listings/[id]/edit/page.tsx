@@ -23,10 +23,10 @@ export default async function EditListingPage({
   }
 
   const listing = result.data;
-  const clientId = listing.sellerClient._id;
+  const clientId = listing.sellerClient?._id;
 
   const [clientResult, dealDoneResult] = await Promise.all([
-    fetchClientById(clientId),
+    clientId ? fetchClientById(clientId) : Promise.resolve(null),
     fetchListingDealDone(id),
   ]);
   const dealDone = dealDoneResult.success ? dealDoneResult.data : null;
@@ -94,7 +94,7 @@ export default async function EditListingPage({
       <ListingForm
         initialData={listing}
         listingId={id}
-        client={clientResult.data}
+        client={clientResult?.success ? clientResult.data : undefined}
       />
     </div>
   );

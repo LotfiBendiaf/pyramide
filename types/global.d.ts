@@ -135,13 +135,13 @@ interface Listing {
   }>;
   coverImage?: string;
 
-  sellerClient: {
+  sellerClient?: {
     _id: string;
     firstName?: string;
     lastName?: string;
     phone?: string;
     email?: string;
-  };
+  } | null;
   agent?: {
     _id: string;
     firstname: string;

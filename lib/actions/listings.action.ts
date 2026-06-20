@@ -6,6 +6,7 @@ import action from "../handlers/action";
 import handleError from "../handlers/error";
 import {
   ListingInput,
+  listingCreateSchema,
   listingSchema,
   photoVisitScheduleSchema,
   photoVisitCompleteSchema,
@@ -144,7 +145,7 @@ export async function createListing(
   // 1. Validation + Authorization
   const validationResult = await action({
     params,
-    schema: listingSchema,
+    schema: listingCreateSchema,
     authorize: true,
   });
 
@@ -164,7 +165,7 @@ export async function createListing(
   }
 
   try {
-    const parsedParams = listingSchema.parse(validationResult.params);
+    const parsedParams = listingCreateSchema.parse(validationResult.params);
 
     const evaluation = parsedParams.evaluation
       ? {
@@ -180,37 +181,28 @@ export async function createListing(
 
     await dbConnect();
 
-    // 3. Create seller client if seller information is provided
-    let sellerClientId: Types.ObjectId | undefined = undefined;
+    // 3. Create the required seller client
     const { sellerFirstName, sellerLastName, sellerPhone, sellerEmail } =
       parsedParams;
 
-    if (sellerPhone) {
-      // Generate seller client reference code
-      const sellerCount = await Client.countDocuments({ type: "SELLER" });
-      const sellerReferenceCode = `${clientPrefix("SELLER")}-${String(
-        sellerCount + 1
-      ).padStart(3, "0")}`;
+    const sellerCount = await Client.countDocuments({ type: "SELLER" });
+    const sellerReferenceCode = `${clientPrefix("SELLER")}-${String(
+      sellerCount + 1
+    ).padStart(3, "0")}`;
 
-      // Create seller client
-      const sellerClient = await Client.create({
-        referenceCode: sellerReferenceCode,
-        type: "SELLER",
-        firstName: sellerFirstName,
-        lastName: sellerLastName,
-        phone: sellerPhone,
-        email: sellerEmail || undefined,
-        city: parsedParams.location.city,
-        qualificationStatus: "NEW",
-        archived: false,
-        createdBy: user.data._id,
-        assignedAgent: user.data._id,
-      });
-
-      if (sellerClient) {
-        sellerClientId = sellerClient._id as Types.ObjectId;
-      }
-    }
+    const sellerClient = await Client.create({
+      referenceCode: sellerReferenceCode,
+      type: "SELLER",
+      firstName: sellerFirstName,
+      lastName: sellerLastName,
+      phone: sellerPhone,
+      email: sellerEmail || undefined,
+      city: parsedParams.location.city,
+      qualificationStatus: "NEW",
+      archived: false,
+      createdBy: user.data._id,
+      assignedAgent: user.data._id,
+    });
 
     // 4. Create listing (no reference code yet — assigned on validation)
     const description =
@@ -227,7 +219,7 @@ export async function createListing(
       propertyTypeCustom: normalizedPropertyTypeCustom,
       evaluation,
       agent: user.data._id,
-      sellerClient: sellerClientId,
+      sellerClient: sellerClient._id,
       isValidated: false,
     });
 

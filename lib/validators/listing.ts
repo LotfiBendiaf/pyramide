@@ -132,6 +132,16 @@ export const listingSchema = z
     }
   });
 
+export const listingCreateSchema = listingSchema.superRefine((data, ctx) => {
+  if (!data.sellerPhone) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Téléphone du vendeur requis",
+      path: ["sellerPhone"],
+    });
+  }
+});
+
 /* ---------------------------------
    Photo Visit
 ----------------------------------*/

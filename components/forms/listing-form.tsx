@@ -37,7 +37,10 @@ import {
 } from "@/components/ui/card";
 
 // Schema
-import { listingSchema } from "@/lib/validators/listing";
+import {
+  listingCreateSchema,
+  listingSchema,
+} from "@/lib/validators/listing";
 import ImageUpload from "../listing/ImageUpload";
 import { ListingDocumentUpload } from "../listing/ListingDocumentUpload";
 import { createListing, updateListing } from "@/lib/actions/listings.action";
@@ -78,7 +81,7 @@ export default function ListingForm({
   const router = useRouter();
 
   const form = useForm<ListingFormValues>({
-    resolver: zodResolver(listingSchema),
+    resolver: zodResolver(isEditMode ? listingSchema : listingCreateSchema),
     defaultValues: initialData
       ? {
           title: initialData.title ?? "",
@@ -369,7 +372,9 @@ export default function ListingForm({
                       : field.value.replace(/^\+\d+/, "");
                     return (
                       <FormItem>
-                        <FormLabel>Téléphone du vendeur</FormLabel>
+                        <FormLabel>
+                          Téléphone du vendeur{!isEditMode && " *"}
+                        </FormLabel>
                         <FormControl>
                           <div className="flex">
                             <Select

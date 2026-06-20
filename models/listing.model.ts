@@ -118,7 +118,7 @@ export interface IListing {
 
   owner: string; // admin or agent
   agent: Schema.Types.ObjectId; // admin or agent
-  sellerClient?: Schema.Types.ObjectId; // Reference to the seller client created for this listing
+  sellerClient: Schema.Types.ObjectId; // Reference to the seller client created for this listing
   isPublished: boolean;
   publishedAt?: Date;
 
@@ -287,6 +287,7 @@ const listingSchema = new Schema<IListing>(
     sellerClient: {
       type: Schema.Types.ObjectId,
       ref: "Client",
+      required: true,
     },
     isPublished: { type: Boolean, default: false },
     publishedAt: { type: Date, default: new Date() },

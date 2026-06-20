@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import {
   BadgeDollarSign,
-  FileSignature,
   Minus,
   Target,
   TrendingDown,
@@ -161,18 +160,6 @@ function ExecutiveKpiCard({
 }
 
 export function SectionCards({ stats }: SectionCardsProps) {
-  // Calculate percentage changes
-  const listingsChange =
-    stats.listingsLastMonth > 0
-      ? Math.round(
-          ((stats.listingsThisMonth - stats.listingsLastMonth) /
-            stats.listingsLastMonth) *
-            100
-        )
-      : stats.listingsThisMonth > 0
-        ? 100
-        : 0;
-
   // Calculate conversion rate (qualified clients / total clients)
   const conversionRate =
     stats.totalBuyerRenterClients > 0
@@ -190,7 +177,7 @@ export function SectionCards({ stats }: SectionCardsProps) {
   ).toFixed(1);
 
   return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
       <ExecutiveKpiCard
         title="Valeur des transactions"
         value={`${formatPriceAlgeria(stats.totalRevenue)} DA`}
@@ -233,28 +220,6 @@ export function SectionCards({ stats }: SectionCardsProps) {
           )
         }
         footerMuted="Calculé depuis les commissions des négociations conclues."
-      />
-
-      <ExecutiveKpiCard
-        title="Nouveaux mandats"
-        value={`${stats.listingsThisMonth}`}
-        badge={`${listingsChange >= 0 ? "+" : ""}${listingsChange}%`}
-        badgeIcon={listingsChange >= 0 ? TrendingUp : TrendingDown}
-        icon={FileSignature}
-        variant="amber"
-        badgePositive={listingsChange >= 0}
-        footerLead={
-          listingsChange >= 0 ? (
-            <>
-              Progression des acquisitions <TrendingUp className="size-4" />
-            </>
-          ) : (
-            <>
-              Baisse des acquisitions <TrendingDown className="size-4" />
-            </>
-          )
-        }
-        footerMuted={`${stats.totalListings} propriétés au total en portefeuille.`}
       />
 
       <ExecutiveKpiCard
