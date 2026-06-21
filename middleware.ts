@@ -1,7 +1,11 @@
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import { auth } from "./auth";
 import type { NextRequest } from "next/server";
+
+import authConfig from "./auth.config";
 import ROUTES from "@/constants/routes";
+
+const { auth } = NextAuth(authConfig);
 
 export async function middleware(req: NextRequest) {
   const session = await auth();
