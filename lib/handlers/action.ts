@@ -11,9 +11,11 @@ type ActionOptions<T> = {
 };
 
 async function action<T>({ params, schema }: ActionOptions<T>) {
+  let parsedParams = params;
+
   if (schema && params) {
     try {
-      schema.parse(params);
+      parsedParams = schema.parse(params);
     } catch (error) {
       if (error instanceof ZodError) {
         return new ValidationError(
@@ -27,7 +29,7 @@ async function action<T>({ params, schema }: ActionOptions<T>) {
 
   await dbConnect();
 
-  return { params };
+  return { params: parsedParams };
 }
 
 export default action;

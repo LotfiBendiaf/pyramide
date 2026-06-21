@@ -5,10 +5,11 @@ import Google from "next-auth/providers/google";
 
 import { api } from "./lib/api";
 import { SignInSchema } from "./lib/validators/auth";
+import dbConnect from "./lib/mongoose";
 
 import bcrypt from "bcryptjs";
-import { IAccountDoc } from "./models/account.model";
 import { Role } from "./constants/values";
+import { Account, User } from "./models";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -29,21 +30,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (validatedFields.success) {
           const { email, password } = validatedFields.data;
-          const { data: existingAccount } = (await api.accounts.getByProvider(
-            email.toLowerCase()
-          )) as ActionResponse<IAccountDoc>;
+          await dbConnect();
 
-          if (!existingAccount) return null;
+          const existingAccount = await Account.findOne({
+            provider: "credentials",
+            providerAccountId: email,
+            password: { $exists: true },
+          });
 
-          const { data: existingUser } = (await api.users.getById(
-            existingAccount.userId.toString()
-          )) as ActionResponse<User>;
+          if (!existingAccount?.password) return null;
+
+          const existingUser = await User.findById(existingAccount.userId);
 
           if (!existingUser) return null;
 
           const isValidPassword = await bcrypt.compare(
             password,
-            existingAccount.password!
+            existingAccount.password
           );
 
           if (isValidPassword) {

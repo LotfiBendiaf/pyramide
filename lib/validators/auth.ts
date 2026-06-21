@@ -110,7 +110,8 @@ export const SignUpSchema = z
     email: z
       .string()
       .email({ message: "Veuillez fournir une adresse email valide." })
-      .min(1, { message: "L'email est requis." }),
+      .min(1, { message: "L'email est requis." })
+      .transform((val) => val.toLowerCase()),
 
     password: PasswordSchema,
 
