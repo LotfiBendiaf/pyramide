@@ -681,7 +681,7 @@ export default function ListingForm({
                   name="features.facade"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Façades</FormLabel>
+                      <FormLabel>Façades (optionnel)</FormLabel>
                       <Input
                         type="number"
                         {...field}

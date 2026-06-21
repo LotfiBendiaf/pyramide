@@ -58,7 +58,10 @@ export const listingSchema = z
     features: z.object({
       bedrooms: z.coerce.number().min(0).max(20),
       bathrooms: z.coerce.number().min(0).max(20),
-      facade: z.coerce.number().min(1).max(4).optional(),
+      facade: z.preprocess(
+        (value) => (value === "" ? undefined : value),
+        z.coerce.number().min(1).max(4).optional()
+      ),
       area: z.coerce.number().positive("Surface invalide"),
       etage: z.coerce.number().optional(),
       nombreEtages: z.coerce.number().min(1).optional(),

@@ -96,7 +96,7 @@ interface Listing {
     bedrooms: number;
     bathrooms: number;
     area: number; // m²
-    facade: number;
+    facade?: number;
     etage?: number;
     nombreEtages?: number;
     furnished?: boolean;
