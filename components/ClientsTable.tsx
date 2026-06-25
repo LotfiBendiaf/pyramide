@@ -186,6 +186,7 @@ export default function ClientsTable({
                       qualificationStatus={client.qualificationStatus}
                       pipelineStage={client.pipelineStage}
                       listings={negotiationListings}
+                      canUseRestrictedStatuses={userRole === "ADMIN"}
                     />
                   ) : (
                     <Badge

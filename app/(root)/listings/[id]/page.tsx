@@ -76,7 +76,7 @@ export default async function ListingDetailsPage({
           <ListingInfo listing={listing} isStaff={isStaff} />
 
           {/* Sidebar */}
-          <ListingSidebar listing={listing} />
+          <ListingSidebar listing={listing} isStaff={isStaff} />
         </div>
       </section>
     </main>

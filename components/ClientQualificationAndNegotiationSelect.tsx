@@ -50,6 +50,7 @@ type Props = {
   qualificationStatus: ClientQualification;
   pipelineStage?: string;
   listings: NegotiationListingOption[];
+  canUseRestrictedStatuses?: boolean;
 };
 
 const OPTIONS: {
@@ -60,6 +61,7 @@ const OPTIONS: {
   triggerClassName: string;
   selectedClassName: string;
   category: "qualification" | "negotiation";
+  adminOnly?: boolean;
 }[] = [
   {
     value: "NEUTRAL",
@@ -87,6 +89,7 @@ const OPTIONS: {
     triggerClassName: "border-green-200 bg-green-50 text-green-700",
     selectedClassName: "bg-green-50 text-green-700 focus:bg-green-100",
     category: "qualification",
+    adminOnly: true,
   },
   {
     value: "HOT",
@@ -123,6 +126,7 @@ const OPTIONS: {
     triggerClassName: "border-yellow-200 bg-yellow-50 text-yellow-700",
     selectedClassName: "bg-yellow-50 text-yellow-700 focus:bg-yellow-100",
     category: "qualification",
+    adminOnly: true,
   },
   {
     value: "ARCHIVED",
@@ -150,6 +154,7 @@ const OPTIONS: {
     triggerClassName: "border-green-200 bg-green-50 text-green-700",
     selectedClassName: "bg-green-50 text-green-700 focus:bg-green-100",
     category: "negotiation",
+    adminOnly: true,
   },
 ];
 
@@ -168,6 +173,7 @@ export default function ClientQualificationAndNegotiationSelect({
   qualificationStatus,
   pipelineStage,
   listings,
+  canUseRestrictedStatuses = false,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -189,6 +195,9 @@ export default function ClientQualificationAndNegotiationSelect({
     OPTIONS.find((option) => option.value === currentValue) ?? OPTIONS[0];
   const CurrentIcon = currentOption.icon;
   const archiveReasonId = `archiveReason-${clientId}`;
+  const visibleOptions = OPTIONS.filter(
+    (option) => canUseRestrictedStatuses || !option.adminOnly
+  );
 
   const filteredListings = listings.filter((listing) => {
     const query = listingSearch.trim().toLowerCase();
@@ -199,6 +208,12 @@ export default function ClientQualificationAndNegotiationSelect({
   });
 
   const handleChange = async (newValue: PipelineStatusOption) => {
+    const selectedOption = OPTIONS.find((option) => option.value === newValue);
+    if (selectedOption?.adminOnly && !canUseRestrictedStatuses) {
+      toast.error("Action réservée aux administrateurs");
+      return;
+    }
+
     // If selecting IN_NEGOTIATION, show dialog
     if (newValue === "IN_NEGOTIATION" && currentValue !== "IN_NEGOTIATION") {
       setDialogOpen(true);
@@ -424,8 +439,9 @@ export default function ClientQualificationAndNegotiationSelect({
           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
             Qualification
           </div>
-          {OPTIONS.filter((opt) => opt.category === "qualification").map(
-            (option) => (
+          {visibleOptions
+            .filter((opt) => opt.category === "qualification")
+            .map((option) => (
               <SelectItem
                 key={option.value}
                 value={option.value}
@@ -438,8 +454,7 @@ export default function ClientQualificationAndNegotiationSelect({
                   {option.label}
                 </span>
               </SelectItem>
-            )
-          )}
+            ))}
 
           {/* Divider */}
           <div className="my-1 h-px bg-border" />
@@ -448,8 +463,9 @@ export default function ClientQualificationAndNegotiationSelect({
           <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
             Négociation
           </div>
-          {OPTIONS.filter((opt) => opt.category === "negotiation").map(
-            (option) => (
+          {visibleOptions
+            .filter((opt) => opt.category === "negotiation")
+            .map((option) => (
               <SelectItem
                 key={option.value}
                 value={option.value}
@@ -462,8 +478,7 @@ export default function ClientQualificationAndNegotiationSelect({
                   {option.label}
                 </span>
               </SelectItem>
-            )
-          )}
+            ))}
         </SelectContent>
       </Select>
 

@@ -88,7 +88,9 @@ export default function ListingSidebar({
         </div>
       )}
       <div className="rounded-2xl border p-6 space-y-4">
-        <h4 className="font-semibold mb-4">Agent</h4>
+        <h4 className="font-semibold mb-4">
+          {isStaff ? "Ajoutée par" : "Agent"}
+        </h4>
         <div className="space-y-3">
           <div>
             <p className="text-xs text-muted-foreground mb-1">Nom</p>

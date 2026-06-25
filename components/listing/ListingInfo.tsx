@@ -14,15 +14,20 @@ import {
   Trees,
   Waves,
   Hash,
+  CalendarDays,
+  ExternalLink,
+  Mail,
+  Phone,
+  User,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import AddToWishlistButton from "@/components/AddToWishlistButton";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { formatPrice, formatPriceAlgeria } from "@/lib/utils";
+import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "../ui/card";
-import { Mail, User, ExternalLink } from "lucide-react";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 
 const LocationMap = dynamic(() => import("./LocationMap"), { ssr: false });
 
@@ -43,6 +48,18 @@ export default function ListingInfo({
   listing,
   isStaff = false,
 }: ListingInfoProps) {
+  const agentName = listing.agent
+    ? [listing.agent.firstname, listing.agent.lastname].filter(Boolean).join(" ")
+    : "";
+  const agentInitials =
+    agentName
+      .split(" ")
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AG";
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -116,6 +133,55 @@ export default function ListingInfo({
                 <Mail className="w-4 h-4 shrink-0" />
                 {listing.sellerClient.email}
               </a>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {isStaff && (
+        <Card>
+          <CardHeader className="font-bold">Annonce ajoutée par</CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Avatar className="size-10">
+                <AvatarFallback>{agentInitials}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 space-y-1">
+                <p className="font-medium">
+                  {agentName || "Agent non spécifié"}
+                </p>
+                {listing.createdAt && (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CalendarDays className="h-4 w-4 shrink-0" />
+                    Ajoutée le {formatDate(listing.createdAt)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {(listing.agent?.phone || listing.agent?.email) && (
+              <div className="grid gap-2 text-sm sm:grid-cols-2">
+                {listing.agent.phone && (
+                  <a
+                    href={`https://wa.me/${listing.agent.phone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline flex items-center gap-2"
+                  >
+                    <Phone className="w-4 h-4 shrink-0" />
+                    {listing.agent.phone}
+                  </a>
+                )}
+                {listing.agent.email && (
+                  <a
+                    href={`mailto:${listing.agent.email}`}
+                    className="text-primary hover:underline flex items-center gap-2"
+                  >
+                    <Mail className="w-4 h-4 shrink-0" />
+                    {listing.agent.email}
+                  </a>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
