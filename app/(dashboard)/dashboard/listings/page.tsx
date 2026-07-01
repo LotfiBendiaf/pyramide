@@ -9,6 +9,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import ListingFilterDashboard from "@/components/ListingFilterDashboard";
 import { PaginationControls } from "@/components/PaginationControls";
 import ROUTES from "@/constants/routes";
+import { fetchAgents } from "@/lib/actions/users.action";
 
 const LISTINGS_PER_PAGE = 15;
 
@@ -39,7 +40,16 @@ type ListingsSectionProps = {
   };
 };
 
-async function ListingsContent({ searchParams }: ListingsSectionProps) {
+type ListingsContentProps = ListingsSectionProps & {
+  agents?: User[];
+  canAssignAgent?: boolean;
+};
+
+async function ListingsContent({
+  searchParams,
+  agents = [],
+  canAssignAgent = false,
+}: ListingsContentProps) {
   const params = await searchParams;
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
   const isArchiveView = params?.view === "archives";
@@ -114,7 +124,11 @@ async function ListingsContent({ searchParams }: ListingsSectionProps) {
 
   return (
     <>
-      <ListingTable listings={listings} />
+      <ListingTable
+        listings={listings}
+        agents={agents}
+        canAssignAgent={canAssignAgent}
+      />
       <PaginationControls currentPage={page} totalPages={totalPages} />
     </>
   );
@@ -126,6 +140,8 @@ export default async function ListingsPage({
   const params = await searchParams;
   const user = await getUserBySessionEmail();
   const canViewNewListings = canAccessNewListings(user.data?.role);
+  const canAssignAgent = user.data?.role === "ADMIN";
+  const agentsResult = canAssignAgent ? await fetchAgents() : undefined;
   const isArchiveView = params?.view === "archives";
   const isNeutreView = canViewNewListings && params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
@@ -181,7 +197,11 @@ export default async function ListingsPage({
 
       <Suspense fallback={<TableSkeleton />}>
         {isActiveView && <ListingFilterDashboard />}
-        <ListingsContent searchParams={searchParams} />
+        <ListingsContent
+          searchParams={searchParams}
+          agents={agentsResult?.data ?? []}
+          canAssignAgent={canAssignAgent}
+        />
       </Suspense>
     </section>
   );

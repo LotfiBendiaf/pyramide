@@ -1,6 +1,6 @@
 "use server";
 
-import { Listing, Client, Negotiation, Visit } from "@/models";
+import { Listing, Client, Negotiation, Visit, User } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import action from "../handlers/action";
 import handleError from "../handlers/error";
@@ -471,6 +471,78 @@ export async function fetchListings(
       success: true,
       data: JSON.parse(JSON.stringify(listings)),
       total,
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function updateListingAgent(
+  listingId: string,
+  agentId: string
+): Promise<ActionResponse<Listing>> {
+  const user = await getUserBySessionEmail();
+
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorisé" },
+      status: 401,
+    };
+  }
+
+  if (user.data.role !== "ADMIN") {
+    return {
+      success: false,
+      error: { message: "Seul un administrateur peut affecter un bien" },
+      status: 403,
+    };
+  }
+
+  if (!Types.ObjectId.isValid(listingId) || !Types.ObjectId.isValid(agentId)) {
+    return {
+      success: false,
+      error: { message: "Annonce ou agent invalide" },
+      status: 400,
+    };
+  }
+
+  try {
+    await dbConnect();
+
+    const agent = await User.findOne({ _id: agentId, role: "AGENT" }).select(
+      "_id"
+    );
+
+    if (!agent) {
+      return {
+        success: false,
+        error: { message: "Veuillez sélectionner un agent valide" },
+        status: 400,
+      };
+    }
+
+    const listing = await Listing.findByIdAndUpdate(
+      listingId,
+      { agent: agent._id },
+      { new: true }
+    ).populate("agent", "firstname lastname email phone");
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(listing)),
       status: 200,
     };
   } catch (error) {

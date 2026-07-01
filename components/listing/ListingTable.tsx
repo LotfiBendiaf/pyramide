@@ -60,9 +60,12 @@ import { STATUS_COLORS } from "@/constants/values";
 import { useState } from "react";
 import { toast } from "sonner";
 import ROUTES from "@/constants/routes";
+import ListingAgentSelect from "./ListingAgentSelect";
 
 interface ListingTableProps {
   listings: Listing[];
+  agents?: User[];
+  canAssignAgent?: boolean;
 }
 
 type ValidationState = "validé" | "approuvé" | "neutre" | "archivé";
@@ -104,7 +107,11 @@ function hasNegotiationPipeline(listing: Listing) {
   return listing.pipelineStatus === "UNDER_NEGOTIATION";
 }
 
-export function ListingTable({ listings }: ListingTableProps) {
+export function ListingTable({
+  listings,
+  agents = [],
+  canAssignAgent = false,
+}: ListingTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -470,8 +477,14 @@ export function ListingTable({ listings }: ListingTableProps) {
                     </div>
                   </TableCell>
 
-                  <TableCell>
-                    {listing.agent ? (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {canAssignAgent ? (
+                      <ListingAgentSelect
+                        listingId={listing._id}
+                        agents={agents}
+                        value={listing.agent?._id}
+                      />
+                    ) : listing.agent ? (
                       <Badge variant="outline">
                         {`${listing.agent.firstname ?? ""} ${
                           listing.agent.lastname ?? ""
