@@ -190,6 +190,11 @@ export default function ScheduleEventCard({
             <User className="h-4 w-4" />
             <span>
               {event.client.firstName} {event.client.lastName}
+              {event.client.referenceCode && (
+                <span className="ml-1 text-xs">
+                  ({event.client.referenceCode})
+                </span>
+              )}
             </span>
             {event.client.phone && (
               <a

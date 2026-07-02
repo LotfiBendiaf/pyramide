@@ -17,6 +17,7 @@ interface PopulatedClient {
   firstName: string;
   lastName: string;
   phone?: string;
+  referenceCode?: string;
 }
 
 interface PopulatedListing {
@@ -92,6 +93,7 @@ export interface ScheduleEvent {
     firstName: string;
     lastName: string;
     phone?: string;
+    referenceCode?: string;
   };
   listing?: {
     _id: string;
@@ -126,7 +128,7 @@ export async function getSchedule(
       startTime: { $gte: params.startDate, $lte: params.endDate },
       syncStatus: { $ne: "DELETED" },
     })
-      .populate("client", "firstName lastName phone")
+      .populate("client", "firstName lastName phone referenceCode")
       .populate("listing", "title")
       .sort({ startTime: 1 })
       .lean()) as unknown as CalendarEventLean[];
@@ -141,7 +143,7 @@ export async function getSchedule(
       ],
       status: { $in: ["PENDING", "OVERDUE"] },
     })
-      .populate("client", "firstName lastName phone")
+      .populate("client", "firstName lastName phone referenceCode")
       .populate("listing", "title")
       .lean()) as unknown as FollowUpLean[];
 
@@ -155,7 +157,7 @@ export async function getSchedule(
       ],
       status: { $in: ["PENDING", "IN_PROGRESS"] },
     })
-      .populate("client", "firstName lastName phone")
+      .populate("client", "firstName lastName phone referenceCode")
       .populate("listing", "title")
       .lean()) as unknown as TaskLean[];
 
@@ -183,6 +185,7 @@ export async function getSchedule(
               firstName: event.client.firstName,
               lastName: event.client.lastName,
               phone: event.client.phone,
+              referenceCode: event.client.referenceCode,
             }
           : undefined,
         listing: event.listing
@@ -219,6 +222,7 @@ export async function getSchedule(
               firstName: followUp.client.firstName,
               lastName: followUp.client.lastName,
               phone: followUp.client.phone,
+              referenceCode: followUp.client.referenceCode,
             }
           : undefined,
         listing: followUp.listing
@@ -253,6 +257,7 @@ export async function getSchedule(
               firstName: task.client.firstName,
               lastName: task.client.lastName,
               phone: task.client.phone,
+              referenceCode: task.client.referenceCode,
             }
           : undefined,
         listing: task.listing
