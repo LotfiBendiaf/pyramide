@@ -9,7 +9,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import ListingFilterDashboard from "@/components/ListingFilterDashboard";
 import { PaginationControls } from "@/components/PaginationControls";
 import ROUTES from "@/constants/routes";
-import { fetchAgents } from "@/lib/actions/users.action";
+import { fetchListingAssignees } from "@/lib/actions/users.action";
 
 const LISTINGS_PER_PAGE = 15;
 
@@ -41,13 +41,13 @@ type ListingsSectionProps = {
 };
 
 type ListingsContentProps = ListingsSectionProps & {
-  agents?: User[];
+  assignees?: User[];
   canAssignAgent?: boolean;
 };
 
 async function ListingsContent({
   searchParams,
-  agents = [],
+  assignees = [],
   canAssignAgent = false,
 }: ListingsContentProps) {
   const params = await searchParams;
@@ -126,7 +126,7 @@ async function ListingsContent({
     <>
       <ListingTable
         listings={listings}
-        agents={agents}
+        agents={assignees}
         canAssignAgent={canAssignAgent}
       />
       <PaginationControls currentPage={page} totalPages={totalPages} />
@@ -141,7 +141,9 @@ export default async function ListingsPage({
   const user = await getUserBySessionEmail();
   const canViewNewListings = canAccessNewListings(user.data?.role);
   const canAssignAgent = user.data?.role === "ADMIN";
-  const agentsResult = canAssignAgent ? await fetchAgents() : undefined;
+  const assigneesResult = canAssignAgent
+    ? await fetchListingAssignees()
+    : undefined;
   const isArchiveView = params?.view === "archives";
   const isNeutreView = canViewNewListings && params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
@@ -199,7 +201,7 @@ export default async function ListingsPage({
         {isActiveView && <ListingFilterDashboard />}
         <ListingsContent
           searchParams={searchParams}
-          agents={agentsResult?.data ?? []}
+          assignees={assigneesResult?.data ?? []}
           canAssignAgent={canAssignAgent}
         />
       </Suspense>

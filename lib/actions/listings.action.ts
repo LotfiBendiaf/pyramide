@@ -503,7 +503,7 @@ export async function updateListingAgent(
   if (!Types.ObjectId.isValid(listingId) || !Types.ObjectId.isValid(agentId)) {
     return {
       success: false,
-      error: { message: "Annonce ou agent invalide" },
+      error: { message: "Annonce ou responsable invalide" },
       status: 400,
     };
   }
@@ -511,14 +511,15 @@ export async function updateListingAgent(
   try {
     await dbConnect();
 
-    const agent = await User.findOne({ _id: agentId, role: "AGENT" }).select(
-      "_id"
-    );
+    const agent = await User.findOne({
+      _id: agentId,
+      role: { $in: ["AGENT", "ADMIN"] },
+    }).select("_id");
 
     if (!agent) {
       return {
         success: false,
-        error: { message: "Veuillez sélectionner un agent valide" },
+        error: { message: "Veuillez sélectionner un agent ou un admin valide" },
         status: 400,
       };
     }

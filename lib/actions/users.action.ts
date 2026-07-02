@@ -69,6 +69,42 @@ export async function fetchAgents(): Promise<ActionResponse<User[]>> {
   }
 }
 
+export async function fetchListingAssignees(): Promise<ActionResponse<User[]>> {
+  try {
+    const currentUser = await getUserBySessionEmail();
+
+    if (!currentUser?.data) {
+      return {
+        success: false,
+        error: { message: "Non autorisé" },
+        status: 401,
+      };
+    }
+
+    if (currentUser.data.role !== "ADMIN") {
+      return {
+        success: false,
+        error: { message: "Accès refusé" },
+        status: 403,
+      };
+    }
+
+    await dbConnect();
+
+    const assignees = await User.find({ role: { $in: ["AGENT", "ADMIN"] } })
+      .select("firstname lastname email role")
+      .sort({ role: 1, firstname: 1, lastname: 1 })
+      .lean();
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(assignees)),
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function fetchTeamMembers(): Promise<ActionResponse<User[]>> {
   try {
     const currentUser = await getUserBySessionEmail();
