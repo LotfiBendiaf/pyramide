@@ -23,6 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { updateClientNotes } from "@/lib/actions/client.action";
 import { cn } from "@/lib/utils";
+import ClientFollowUpsDialog from "./ClientFollowUpsDialog";
 
 interface ClientNotesDialogProps {
   clientId: string;
@@ -163,6 +164,7 @@ export default function ClientNotesDialog({
           onChange={(e) => setNotes(e.target.value)}
         />
         <DialogFooter>
+          <ClientFollowUpsDialog clientId={clientId} clientName={clientName} />
           <Button variant="outline" onClick={() => setOpen(false)}>
             Annuler
           </Button>
