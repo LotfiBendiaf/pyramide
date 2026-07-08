@@ -43,12 +43,14 @@ type ListingsSectionProps = {
 type ListingsContentProps = ListingsSectionProps & {
   assignees?: User[];
   canAssignAgent?: boolean;
+  assignedToCurrentUser?: boolean;
 };
 
 async function ListingsContent({
   searchParams,
   assignees = [],
   canAssignAgent = false,
+  assignedToCurrentUser = false,
 }: ListingsContentProps) {
   const params = await searchParams;
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
@@ -65,6 +67,7 @@ async function ListingsContent({
     (isActiveView ? "desc" : undefined);
 
   const result = await fetchListings({
+    assignedToCurrentUser: isApprovedView && assignedToCurrentUser,
     search: params?.search,
     city: params?.city,
     status: params?.status as ListingInput["status"] | undefined,
@@ -203,6 +206,7 @@ export default async function ListingsPage({
           searchParams={searchParams}
           assignees={assigneesResult?.data ?? []}
           canAssignAgent={canAssignAgent}
+          assignedToCurrentUser={user.data?.role === "AGENT"}
         />
       </Suspense>
     </section>

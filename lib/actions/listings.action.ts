@@ -243,6 +243,7 @@ export async function createListing(
 }
 
 interface FetchListingsParams {
+  assignedToCurrentUser?: boolean;
   isPublished?: boolean;
   isValidated?: boolean;
   hasReferenceCode?: boolean;
@@ -296,6 +297,7 @@ export async function fetchListings(
 ): Promise<ActionResponse<Listing[]>> {
   try {
     const {
+      assignedToCurrentUser,
       isPublished,
       isValidated,
       hasReferenceCode,
@@ -325,6 +327,20 @@ export async function fetchListings(
     const query: FilterQuery<Listing> = {};
 
     await dbConnect();
+
+    if (assignedToCurrentUser) {
+      const user = await getUserBySessionEmail();
+
+      if (!user?.data) {
+        return {
+          success: false,
+          error: { message: "Utilisateur non autorisé" },
+          status: 401,
+        };
+      }
+
+      query.agent = user.data._id;
+    }
 
     if (isPublished !== undefined) {
       query.isPublished = isPublished;
