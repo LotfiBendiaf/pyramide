@@ -711,7 +711,8 @@ export async function fetchClientById(
 
     await dbConnect();
 
-    const [client, pendingArchiveRequest, user] = await Promise.all([
+    const [client, pendingArchiveRequest, approvedArchiveRequest, user] =
+      await Promise.all([
       Client.findById(clientId)
         .populate("createdBy", "firstname lastname email role")
         .populate("assignedAgent", "firstname lastname email role")
@@ -723,6 +724,22 @@ export async function fetchClientById(
       })
         .select("requestedBy")
         .lean<{ requestedBy: Types.ObjectId }>(),
+      ArchiveRequest.findOne({
+        entityType: "CLIENT",
+        entityId: clientId,
+        status: "APPROVED",
+      })
+        .populate("requestedBy", "firstname lastname role")
+        .sort({ reviewedAt: -1, createdAt: -1 })
+        .select("requestedBy")
+        .lean<{
+          requestedBy: {
+            _id: Types.ObjectId;
+            firstname: string;
+            lastname: string;
+            role: string;
+          };
+        }>(),
       getUserBySessionEmail(),
     ]);
 
@@ -744,6 +761,9 @@ export async function fetchClientById(
     );
     const clientWithArchiveStatus = {
       ...client,
+      archiveRequestedBy: !Array.isArray(client) && client.archiveReason
+        ? approvedArchiveRequest?.requestedBy
+        : undefined,
       hasPendingArchiveRequest: Boolean(pendingArchiveRequest),
       canCancelPendingArchiveRequest,
     };

@@ -216,6 +216,10 @@ interface Client {
   archived: boolean;
   archivedAt?: Date;
   archiveReason?: string;
+  archiveRequestedBy?: Pick<
+    User,
+    "_id" | "firstname" | "lastname" | "role"
+  >;
   hasPendingArchiveRequest?: boolean;
   canCancelPendingArchiveRequest?: boolean;
 

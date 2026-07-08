@@ -87,6 +87,14 @@ export default function ClientDetailPage({
     CLIENT_QUALIFICATIONS.find((q) => q.value === client.qualificationStatus)
       ?.label ?? client.qualificationStatus;
   const archiveReasonId = `archiveReason-${client._id}`;
+  const archiveRequesterName = client.archiveRequestedBy
+    ? [
+        client.archiveRequestedBy.firstname,
+        client.archiveRequestedBy.lastname,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    : "";
   const dealDoneListingLabel = dealDone?.listing
     ? [dealDone.listing.referenceCode, dealDone.listing.title]
         .filter(Boolean)
@@ -230,9 +238,27 @@ export default function ClientDetailPage({
 
       {/* Archived banner */}
       {client.archived && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-          Ce client est actuellement archivé. Utilisez le bouton
-          &quot;Restaurer&quot; pour le rendre actif.
+        <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <p>
+            Ce client est actuellement archivé. Utilisez le bouton
+            &quot;Restaurer&quot; pour le rendre actif.
+          </p>
+          {(client.archiveReason || archiveRequesterName) && (
+            <div className="space-y-1 border-t border-amber-200 pt-2 dark:border-amber-900">
+              {archiveRequesterName && (
+                <p>
+                  <span className="font-medium">Demande effectuée par :</span>{" "}
+                  {archiveRequesterName}
+                </p>
+              )}
+              {client.archiveReason && (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Motif :</span>{" "}
+                  {client.archiveReason}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
