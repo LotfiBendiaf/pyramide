@@ -152,6 +152,7 @@ export async function scheduleVisit(
 
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+    revalidatePath(ROUTES.MES_BIENS);
 
     return {
       success: true,
@@ -258,6 +259,7 @@ export async function completeVisit(
 
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+    revalidatePath(ROUTES.MES_BIENS);
 
     return { success: true, status: 200 };
   } catch (error) {
@@ -341,6 +343,7 @@ export async function cancelVisit(
 
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(visit.client.toString()));
+    revalidatePath(ROUTES.MES_BIENS);
 
     // Notify the visit agent if a manager is doing the cancellation
     if (isManager && visit.agent && !isVisitAgent) {
@@ -415,6 +418,7 @@ export async function markVisitNoShow(
 
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(visit.client.toString()));
+    revalidatePath(ROUTES.MES_BIENS);
 
     return { success: true, status: 200 };
   } catch (error) {

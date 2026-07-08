@@ -556,6 +556,7 @@ export async function updateListingAgent(
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+    revalidatePath(ROUTES.MES_BIENS);
 
     return {
       success: true,
@@ -1000,6 +1001,7 @@ export async function toggleListingValidation(
 
       revalidatePath(ROUTES.LISTINGS_DASHBOARD);
       revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+      revalidatePath(ROUTES.MES_BIENS);
 
       return {
         success: true,
@@ -1018,6 +1020,7 @@ export async function toggleListingValidation(
 
       revalidatePath(ROUTES.LISTINGS_DASHBOARD);
       revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+      revalidatePath(ROUTES.MES_BIENS);
 
       return {
         success: true,
@@ -1075,6 +1078,7 @@ export async function approveListingWithoutReference(
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+    revalidatePath(ROUTES.MES_BIENS);
 
     return {
       success: true,
@@ -1122,6 +1126,7 @@ export async function setListingNeutre(
     });
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.MES_BIENS);
 
     return { success: true, data: null, status: 200 };
   } catch (error) {
@@ -1330,6 +1335,7 @@ export async function schedulePhotoVisit(
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+    revalidatePath(ROUTES.MES_BIENS);
 
     return { success: true, status: 200 };
   } catch (error) {
@@ -1390,6 +1396,7 @@ export async function completePhotoVisit(
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+    revalidatePath(ROUTES.MES_BIENS);
 
     return { success: true, status: 200 };
   } catch (error) {
@@ -1515,6 +1522,53 @@ export interface ActiveListingWithVisits {
       phone: string;
     };
   }>;
+}
+
+export interface MyApprovedListing {
+  _id: string;
+  title?: string;
+  pipelineStatus: string;
+  photoVisitScheduledAt?: string | Date;
+  location?: { city?: string };
+  propertyType?: string;
+}
+
+export async function fetchMyApprovedListings(): Promise<
+  ActionResponse<MyApprovedListing[]>
+> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  try {
+    await dbConnect();
+
+    const listings = await Listing.find({
+      agent: user.data._id,
+      isValidated: true,
+      archived: { $ne: true },
+      pipelineStatus: "PHOTO_VISIT_PENDING",
+      $or: [
+        { referenceCode: { $exists: false } },
+        { referenceCode: null },
+        { referenceCode: "" },
+      ],
+    })
+      .select(
+        "title pipelineStatus photoVisitScheduledAt location propertyType"
+      )
+      .sort({ validatedAt: -1, createdAt: -1 })
+      .lean();
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(listings)),
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
 }
 
 export async function fetchMyActiveListings(): Promise<
