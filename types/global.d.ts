@@ -216,6 +216,8 @@ interface Client {
   archived: boolean;
   archivedAt?: Date;
   archiveReason?: string;
+  hasPendingArchiveRequest?: boolean;
+  canCancelPendingArchiveRequest?: boolean;
 
   createdAt: Date;
   updatedAt: Date;

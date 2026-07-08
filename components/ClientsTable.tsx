@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ListPlus } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Clock3, ListPlus, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -18,6 +21,7 @@ import ClientQualificationAndNegotiationSelect from "./ClientQualificationAndNeg
 import ClientNotesDialog from "./clients/ClientNotesDialog";
 import ROUTES from "@/constants/routes";
 import type { NegotiationListingOption } from "@/lib/actions/negotiation.action";
+import { cancelClientArchiveRequest } from "@/lib/actions/archiveRequest.action";
 import { formatDate } from "@/lib/utils";
 
 type ClientsTableProps = {
@@ -86,6 +90,10 @@ export default function ClientsTable({
   userRole,
   negotiationListings = [],
 }: ClientsTableProps) {
+  const router = useRouter();
+  const [cancelingClientId, setCancelingClientId] = useState<string | null>(
+    null
+  );
   const canAssignAgent =
     userRole === "ADMIN" || userRole === "MANAGER" || userRole === "DEVELOPER";
 
@@ -94,6 +102,161 @@ export default function ClientsTable({
     userRole === "MANAGER" ||
     userRole === "DEVELOPER" ||
     userRole === "AGENT";
+
+  const activeClients = clients.filter(
+    (client) => !client.hasPendingArchiveRequest
+  );
+  const pendingArchiveClients = clients.filter(
+    (client) => client.hasPendingArchiveRequest
+  );
+  const columnCount = canAssignAgent ? 8 : 7;
+
+  const handleCancelArchiveRequest = async (clientId: string) => {
+    setCancelingClientId(clientId);
+    const result = await cancelClientArchiveRequest(clientId);
+    setCancelingClientId(null);
+
+    if (!result.success) {
+      toast.error("Impossible d'annuler la demande", {
+        description: result.error?.message,
+      });
+      return;
+    }
+
+    toast.success("Demande d'archivage annulée");
+    router.refresh();
+  };
+
+  const renderClientRow = (client: Client) => (
+    <TableRow
+      key={client._id}
+      className={
+        client.hasPendingArchiveRequest
+          ? "cursor-pointer bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/20 dark:hover:bg-amber-950/30"
+          : "cursor-pointer hover:bg-muted/50"
+      }
+      onClick={() =>
+        window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")
+      }
+      onAuxClick={(e) =>
+        e.button === 1 &&
+        window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")
+      }
+    >
+      <TableCell>
+        <Badge variant="outline">{client.referenceCode}</Badge>
+      </TableCell>
+
+      <TableCell>
+        <Badge variant={TYPE_COLORS[client.type]}>
+          {TYPE_LABELS[client.type]}
+        </Badge>
+      </TableCell>
+
+      <TableCell>
+        <div className="text-sm">
+          <p>{client.phone}</p>
+          {client.email && (
+            <p className="text-muted-foreground">{client.email}</p>
+          )}
+        </div>
+      </TableCell>
+
+      <TableCell className="text-muted-foreground text-sm">
+        {formatDate(client.createdAt)}
+      </TableCell>
+
+      {canAssignAgent && (
+        <TableCell
+          className="w-[190px] text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ClientAgentSelect
+            clientId={client._id}
+            agents={agents}
+            value={client.assignedAgent?._id}
+          />
+        </TableCell>
+      )}
+
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        {client.hasPendingArchiveRequest ? (
+          <div className="flex items-center gap-2">
+            <Badge className="border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              <Clock3 className="mr-1 size-3" />
+              Archivage en attente
+            </Badge>
+            {client.canCancelPendingArchiveRequest && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1 border-amber-300 text-amber-800 hover:bg-amber-100 hover:text-amber-900 dark:border-amber-800 dark:text-amber-200"
+                disabled={cancelingClientId === client._id}
+                onClick={() => handleCancelArchiveRequest(client._id)}
+              >
+                {cancelingClientId === client._id ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <X className="size-3.5" />
+                )}
+                Annuler
+              </Button>
+            )}
+          </div>
+        ) : canQualifyClient ? (
+          <ClientQualificationAndNegotiationSelect
+            clientId={client._id}
+            qualificationStatus={client.qualificationStatus}
+            pipelineStage={client.pipelineStage}
+            listings={negotiationListings}
+            canUseRestrictedStatuses={userRole === "ADMIN"}
+          />
+        ) : (
+          <Badge
+            variant={
+              PIPELINE_STATUS_VARIANTS[getPipelineStatusKey(client)] ||
+              "outline"
+            }
+          >
+            {PIPELINE_STATUS_LABELS[getPipelineStatusKey(client)] || "Neutre"}
+          </Badge>
+        )}
+      </TableCell>
+
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <ClientNotesDialog
+          clientId={client._id}
+          clientName={
+            [client.firstName, client.lastName].filter(Boolean).join(" ") ||
+            client.referenceCode
+          }
+          initialNotes={client.extraNotes}
+          preferredLocation={client.preferredLocation}
+          budgetMin={client.budgetMin}
+          budgetMax={client.budgetMax}
+          priceCurrency={client.priceCurrency}
+          wantedPropertyType={client.wantedPropertyType}
+          rooms={client.rooms}
+        />
+      </TableCell>
+
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <Button
+          asChild
+          size="sm"
+          variant="outline"
+          className="h-8 gap-1.5 whitespace-nowrap"
+          title="Ajouter un suivi"
+        >
+          <Link href={`${ROUTES.NEW_FOLLOWUP}?clientId=${client._id}`}>
+            <ListPlus className="h-4 w-4" />
+            Ajouter suivi
+          </Link>
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
 
   return (
     <Card>
@@ -117,129 +280,24 @@ export default function ClientsTable({
           </TableHeader>
 
           <TableBody>
-            {clients.map((client) => (
-              <TableRow
-                key={client._id}
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() =>
-                  window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")
-                }
-                onAuxClick={(e) =>
-                  e.button === 1 &&
-                  window.open(ROUTES.CLIENT_DETAIL(client._id), "_blank")
-                }
-              >
-                {/* Reference code */}
-                <TableCell>
-                  <Badge variant="outline">{client.referenceCode}</Badge>
-                </TableCell>
-
-                {/* Client name */}
-                {/* <TableCell className="font-medium">
-                  {client.firstName} {client.lastName}
-                </TableCell> */}
-
-                {/* Type */}
-                <TableCell>
-                  <Badge variant={TYPE_COLORS[client.type]}>
-                    {TYPE_LABELS[client.type]}
-                  </Badge>
-                </TableCell>
-
-                {/* City */}
-                {/* <TableCell>{client.city || "—"}</TableCell> */}
-
-                {/* Contact */}
-                <TableCell>
-                  <div className="text-sm">
-                    <p>{client.phone}</p>
-                    {client.email && (
-                      <p className="text-muted-foreground">{client.email}</p>
-                    )}
+            {activeClients.map(renderClientRow)}
+            {pendingArchiveClients.length > 0 && (
+              <TableRow className="border-y border-amber-200 bg-amber-50 hover:bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+                <TableCell colSpan={columnCount} className="py-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-200">
+                    <Clock3 className="size-4" aria-hidden="true" />
+                    Demandes d&apos;archivage en attente
+                    <Badge
+                      variant="outline"
+                      className="border-amber-300 text-amber-800 dark:border-amber-800 dark:text-amber-200"
+                    >
+                      {pendingArchiveClients.length}
+                    </Badge>
                   </div>
                 </TableCell>
-
-                {/* Created at */}
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(client.createdAt)}
-                </TableCell>
-
-                {/* Agent */}
-                {canAssignAgent && (
-                  <TableCell
-                    className="w-[190px] text-center"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ClientAgentSelect
-                      clientId={client._id}
-                      agents={agents}
-                      value={client.assignedAgent?._id}
-                    />
-                  </TableCell>
-                )}
-
-                {/* Pipeline status */}
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  {canQualifyClient ? (
-                    <ClientQualificationAndNegotiationSelect
-                      clientId={client._id}
-                      qualificationStatus={client.qualificationStatus}
-                      pipelineStage={client.pipelineStage}
-                      listings={negotiationListings}
-                      canUseRestrictedStatuses={userRole === "ADMIN"}
-                    />
-                  ) : (
-                    <Badge
-                      variant={
-                        PIPELINE_STATUS_VARIANTS[
-                          getPipelineStatusKey(client)
-                        ] || "outline"
-                      }
-                    >
-                      {PIPELINE_STATUS_LABELS[getPipelineStatusKey(client)] ||
-                        "Neutre"}
-                    </Badge>
-                  )}
-                </TableCell>
-
-                {/* Compte rendu */}
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <ClientNotesDialog
-                    clientId={client._id}
-                    clientName={
-                      [client.firstName, client.lastName]
-                        .filter(Boolean)
-                        .join(" ") || client.referenceCode
-                    }
-                    initialNotes={client.extraNotes}
-                    preferredLocation={client.preferredLocation}
-                    budgetMin={client.budgetMin}
-                    budgetMax={client.budgetMax}
-                    priceCurrency={client.priceCurrency}
-                    wantedPropertyType={client.wantedPropertyType}
-                    rooms={client.rooms}
-                  />
-                </TableCell>
-
-                {/* Suivi */}
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    asChild
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5 whitespace-nowrap"
-                    title="Ajouter un suivi"
-                  >
-                    <Link
-                      href={`${ROUTES.NEW_FOLLOWUP}?clientId=${client._id}`}
-                    >
-                      <ListPlus className="h-4 w-4" />
-                      Ajouter suivi
-                    </Link>
-                  </Button>
-                </TableCell>
               </TableRow>
-            ))}
+            )}
+            {pendingArchiveClients.map(renderClientRow)}
           </TableBody>
         </Table>
       </CardContent>

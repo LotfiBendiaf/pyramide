@@ -8,7 +8,10 @@ import {
   ArrowRight,
   Building2,
   CheckCircle2,
+  Clock3,
+  Loader2,
   Plus,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -31,6 +34,7 @@ import {
 import ROUTES from "@/constants/routes";
 import { CLIENT_QUALIFICATIONS } from "@/constants/values";
 import { archiveClient, restoreClient } from "@/lib/actions/client.action";
+import { cancelClientArchiveRequest } from "@/lib/actions/archiveRequest.action";
 import type { ClientDealDoneSummary } from "@/lib/actions/negotiation.action";
 import { SetBreadcrumbTitle } from "@/components/navigation/BreadcrumbTitleContext";
 import ClientEditForm from "./ClientEditForm";
@@ -141,6 +145,22 @@ export default function ClientDetailPage({
     router.refresh();
   };
 
+  const handleCancelArchiveRequest = async () => {
+    setIsWorking(true);
+    const result = await cancelClientArchiveRequest(client._id);
+    setIsWorking(false);
+
+    if (!result.success) {
+      toast.error("Impossible d'annuler la demande", {
+        description: result.error?.message,
+      });
+      return;
+    }
+
+    toast.success("Demande d'archivage annulée");
+    router.refresh();
+  };
+
   return (
     <section className="container py-6 space-y-6">
       <SetBreadcrumbTitle title={client.referenceCode} />
@@ -173,6 +193,29 @@ export default function ClientDetailPage({
           >
             {isWorking ? "En cours…" : "Restaurer"}
           </Button>
+        ) : client.hasPendingArchiveRequest ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900 dark:border-amber-800 dark:text-amber-200"
+            onClick={handleCancelArchiveRequest}
+            disabled={
+              isWorking || !client.canCancelPendingArchiveRequest
+            }
+          >
+            {isWorking ? (
+              <Loader2 className="mr-1.5 size-4 animate-spin" />
+            ) : client.canCancelPendingArchiveRequest ? (
+              <X className="mr-1.5 size-4" />
+            ) : (
+              <Clock3 className="mr-1.5 size-4" />
+            )}
+            {isWorking
+              ? "Annulation…"
+              : client.canCancelPendingArchiveRequest
+                ? "Annuler la demande"
+                : "Archivage en attente"}
+          </Button>
         ) : (
           <Button
             variant="outline"
@@ -190,6 +233,13 @@ export default function ClientDetailPage({
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
           Ce client est actuellement archivé. Utilisez le bouton
           &quot;Restaurer&quot; pour le rendre actif.
+        </div>
+      )}
+
+      {client.hasPendingArchiveRequest && !client.archived && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <Clock3 className="size-4 shrink-0" aria-hidden="true" />
+          La demande d&apos;archivage est en attente de validation.
         </div>
       )}
 

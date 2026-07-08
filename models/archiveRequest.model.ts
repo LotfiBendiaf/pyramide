@@ -1,7 +1,11 @@
 import { Schema, model, models } from "mongoose";
 
 export type ArchiveRequestEntityType = "CLIENT" | "LISTING";
-export type ArchiveRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type ArchiveRequestStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
 
 export interface IArchiveRequest {
   entityType: ArchiveRequestEntityType;
@@ -38,7 +42,7 @@ const archiveRequestSchema = new Schema<IArchiveRequest>(
     },
     status: {
       type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED"],
+      enum: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
       default: "PENDING",
     },
     reviewedBy: {

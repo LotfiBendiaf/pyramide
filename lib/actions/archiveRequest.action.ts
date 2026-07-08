@@ -19,6 +19,63 @@ function canReviewArchiveRequests(role: string): boolean {
   return role === "ADMIN" || role === "MANAGER";
 }
 
+/* ─────────────────────── Cancel Archive Request ─────────────────────── */
+
+export async function cancelClientArchiveRequest(
+  clientId: string
+): Promise<ActionResponse> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  if (!Types.ObjectId.isValid(clientId)) {
+    return {
+      success: false,
+      error: { message: "ID client invalide" },
+      status: 400,
+    };
+  }
+
+  try {
+    await dbConnect();
+
+    const filter = {
+      entityType: "CLIENT" as const,
+      entityId: clientId,
+      status: "PENDING" as const,
+      ...(canReviewArchiveRequests(user.data.role)
+        ? {}
+        : { requestedBy: user.data._id }),
+    };
+
+    const request = await ArchiveRequest.findOneAndUpdate(
+      filter,
+      { $set: { status: "CANCELLED" } },
+      { new: true }
+    );
+
+    if (!request) {
+      return {
+        success: false,
+        error: {
+          message:
+            "Demande introuvable, déjà traitée, ou vous ne pouvez pas l'annuler",
+        },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+    revalidatePath(ROUTES.DEMANDES);
+
+    return { success: true, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 /* ─────────────────────── Request Archive ─────────────────────── */
 
 export async function requestArchive(
@@ -372,7 +429,7 @@ type IArchiveRequest = {
     title?: string;
   };
   reason: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
   reviewedBy?: string;
   reviewedAt?: Date;
   managerNote?: string;

@@ -348,10 +348,44 @@ export async function fetchClients(
       Client.countDocuments(filter),
     ]);
 
+    const pendingArchiveRequests = clients.length
+      ? await ArchiveRequest.find({
+          entityType: "CLIENT",
+          entityId: { $in: clients.map((client) => client._id) },
+          status: "PENDING",
+        })
+          .select("entityId requestedBy")
+          .lean()
+      : [];
+    const pendingArchiveRequestsByClientId = new Map(
+      pendingArchiveRequests.map((request) => [
+        request.entityId.toString(),
+        request,
+      ])
+    );
+    const canCancelAnyArchiveRequest =
+      user.data.role === "ADMIN" || user.data.role === "MANAGER";
+    const currentUserId = user.data._id.toString();
+    const clientsWithArchiveStatus = clients.map((client) => {
+      const pendingRequest = pendingArchiveRequestsByClientId.get(
+        String(client._id)
+      );
+
+      return {
+        ...client,
+        hasPendingArchiveRequest: Boolean(pendingRequest),
+        canCancelPendingArchiveRequest: Boolean(
+          pendingRequest &&
+            (canCancelAnyArchiveRequest ||
+              pendingRequest.requestedBy.toString() === currentUserId)
+        ),
+      };
+    });
+
     return {
       success: true,
       data: {
-        clients: JSON.parse(JSON.stringify(clients)),
+        clients: JSON.parse(JSON.stringify(clientsWithArchiveStatus)),
         total,
       },
       status: 200,
@@ -677,10 +711,20 @@ export async function fetchClientById(
 
     await dbConnect();
 
-    const client = await Client.findById(clientId)
-      .populate("createdBy", "firstname lastname email role")
-      .populate("assignedAgent", "firstname lastname email role")
-      .lean();
+    const [client, pendingArchiveRequest, user] = await Promise.all([
+      Client.findById(clientId)
+        .populate("createdBy", "firstname lastname email role")
+        .populate("assignedAgent", "firstname lastname email role")
+        .lean(),
+      ArchiveRequest.findOne({
+        entityType: "CLIENT",
+        entityId: clientId,
+        status: "PENDING",
+      })
+        .select("requestedBy")
+        .lean<{ requestedBy: Types.ObjectId }>(),
+      getUserBySessionEmail(),
+    ]);
 
     if (!client) {
       return {
@@ -690,9 +734,23 @@ export async function fetchClientById(
       };
     }
 
+    const canCancelAnyArchiveRequest =
+      user.data?.role === "ADMIN" || user.data?.role === "MANAGER";
+    const canCancelPendingArchiveRequest = Boolean(
+      pendingArchiveRequest &&
+        (canCancelAnyArchiveRequest ||
+          pendingArchiveRequest.requestedBy.toString() ===
+            user.data?._id.toString())
+    );
+    const clientWithArchiveStatus = {
+      ...client,
+      hasPendingArchiveRequest: Boolean(pendingArchiveRequest),
+      canCancelPendingArchiveRequest,
+    };
+
     return {
       success: true,
-      data: JSON.parse(JSON.stringify(client)),
+      data: JSON.parse(JSON.stringify(clientWithArchiveStatus)),
       status: 200,
     };
   } catch (error) {
