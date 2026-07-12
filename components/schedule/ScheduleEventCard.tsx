@@ -94,13 +94,13 @@ export default function ScheduleEventCard({
   return (
     <div
       className={cn(
-        "group relative bg-card border rounded-lg p-4 hover:shadow-md transition-shadow",
+        "group relative min-w-0 bg-card border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow",
         event.status === "OVERDUE" && "border-red-300 bg-red-50/50"
       )}
     >
       {/* Time and badges row */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex shrink-0 items-center gap-2">
           <span className="text-lg font-semibold text-primary">
             {format(startTime, "HH:mm")}
           </span>
@@ -110,7 +110,7 @@ export default function ScheduleEventCard({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:justify-end sm:gap-2">
           {/* Status badge */}
           {statusInfo && StatusIcon && (
             <Badge variant="outline" className={cn("gap-1", statusInfo.color)}>
@@ -146,7 +146,7 @@ export default function ScheduleEventCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                 aria-label="Actions"
               >
                 <MoreVertical className="h-4 w-4" />
@@ -173,7 +173,7 @@ export default function ScheduleEventCard({
       </div>
 
       {/* Title */}
-      <h3 className="font-medium text-foreground mb-2">{event.title}</h3>
+      <h3 className="break-words font-medium text-foreground mb-2">{event.title}</h3>
 
       {/* Description */}
       {event.description && (
@@ -186,7 +186,7 @@ export default function ScheduleEventCard({
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         {/* Client */}
         {event.client && (
-          <div className="flex items-center gap-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-1 break-words">
             <User className="h-4 w-4" />
             <span>
               {event.client.firstName} {event.client.lastName}
@@ -209,17 +209,17 @@ export default function ScheduleEventCard({
 
         {/* Listing */}
         {event.listing && (
-          <div className="flex items-center gap-1">
+          <div className="flex min-w-0 items-center gap-1 break-words">
             <Home className="h-4 w-4" />
-            <span>{event.listing.title}</span>
+            <span className="min-w-0 break-words">{event.listing.title}</span>
           </div>
         )}
 
         {/* Location */}
         {event.location && (
-          <div className="flex items-center gap-1">
+          <div className="flex min-w-0 items-center gap-1 break-words">
             <MapPin className="h-4 w-4" />
-            <span>{event.location}</span>
+            <span className="min-w-0 break-words">{event.location}</span>
           </div>
         )}
 

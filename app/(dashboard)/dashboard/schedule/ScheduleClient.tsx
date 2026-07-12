@@ -118,23 +118,23 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4 sm:space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           const value = stats[stat.key as keyof typeof stats];
 
           return (
             <Card key={stat.key}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                   <div className={cn("p-2 rounded-lg", stat.color)}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{value}</p>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="text-xl font-bold sm:text-2xl">{value}</p>
+                    <p className="truncate text-xs text-muted-foreground">
                       {stat.label}
                     </p>
                   </div>
@@ -146,7 +146,7 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
       </div>
 
       {/* Main Content */}
-      <div className="grid md:grid-cols-[300px_1fr] gap-6">
+      <div className="grid min-w-0 gap-4 md:grid-cols-[300px_minmax(0,1fr)] md:gap-6">
         {/* Left Sidebar - Calendar */}
         <div className="space-y-4">
           <Card>
@@ -155,7 +155,7 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
                 Calendrier
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
+            <CardContent className="flex justify-center p-1 sm:p-2">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -171,7 +171,7 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
                     textDecorationColor: "hsl(var(--primary))",
                   },
                 }}
-                className="rounded-md"
+                className="max-w-full rounded-md p-2 sm:p-3"
               />
             </CardContent>
           </Card>
@@ -198,11 +198,11 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
         </div>
 
         {/* Right Content - Daily Schedule */}
-        <Card>
-          <CardHeader className="pb-2 border-b">
-            <div className="flex items-center justify-between">
+        <Card className="min-w-0">
+          <CardHeader className="border-b px-3 pb-3 sm:px-6 sm:pb-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg font-medium">Planning</CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full items-center gap-2 sm:w-auto">
                 <Button variant="outline" size="icon" onClick={handlePrevDay} aria-label="Jour précédent">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -210,7 +210,7 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
                   variant="outline"
                   onClick={handleToday}
                   className={cn(
-                    "px-3",
+                    "min-w-0 flex-1 px-2 sm:flex-none sm:px-3",
                     isToday(selectedDate) &&
                       "bg-primary text-primary-foreground"
                   )}
@@ -223,7 +223,7 @@ export default function ScheduleClient({ events, stats }: ScheduleClientProps) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <DailySchedule
               events={events}
               selectedDate={selectedDate}

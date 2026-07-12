@@ -41,12 +41,12 @@ export default function DailySchedule({
   return (
     <div className="space-y-4">
       {/* Date header */}
-      <div className="flex items-center gap-3 pb-4 border-b">
+      <div className="flex items-center gap-2 border-b pb-4 sm:gap-3">
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
             {format(selectedDate, "EEEE", { locale: fr })}
           </p>
-          <p className="text-3xl font-bold">{format(selectedDate, "d")}</p>
+          <p className="text-2xl font-bold sm:text-3xl">{format(selectedDate, "d")}</p>
           <p className="text-sm text-muted-foreground">
             {format(selectedDate, "MMMM yyyy", { locale: fr })}
           </p>
@@ -56,8 +56,8 @@ export default function DailySchedule({
             Aujourd&apos;hui
           </span>
         )}
-        <div className="ml-auto text-right">
-          <p className="text-2xl font-semibold">{dayEvents.length}</p>
+        <div className="ml-auto shrink-0 text-right">
+          <p className="text-xl font-semibold sm:text-2xl">{dayEvents.length}</p>
           <p className="text-sm text-muted-foreground">
             {dayEvents.length === 1 ? "événement" : "événements"}
           </p>
@@ -88,7 +88,7 @@ export default function DailySchedule({
               </div>
 
               {/* Events for this hour */}
-              <div className="pl-16 space-y-3">
+              <div className="space-y-3 sm:pl-16">
                 {eventsByHour[hour].map((event) => (
                   <ScheduleEventCard
                     key={event._id}

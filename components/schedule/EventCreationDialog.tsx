@@ -156,7 +156,7 @@ export default function EventCreationDialog({
           Nouvel événement
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:max-w-[500px] sm:p-6">
         <DialogHeader>
           <DialogTitle>Créer un événement</DialogTitle>
         </DialogHeader>
@@ -234,7 +234,7 @@ export default function EventCreationDialog({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="startTime"
@@ -306,7 +306,7 @@ export default function EventCreationDialog({
               )}
             />
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
@@ -314,7 +314,7 @@ export default function EventCreationDialog({
               >
                 Annuler
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting ? "Création..." : "Créer l'événement"}
               </Button>
             </div>

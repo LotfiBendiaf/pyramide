@@ -18,6 +18,7 @@ import ROUTES from "@/constants/routes";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Button } from "../ui/button";
 import { useBreadcrumbTitle } from "../navigation/BreadcrumbTitleContext";
+import { House } from "lucide-react";
 
 interface SiteHeaderProps {
   title?: string;
@@ -74,17 +75,17 @@ export function SiteHeader({ title, dynamic = false }: SiteHeaderProps) {
 
   return (
     !hideBreadcrumbs && (
-      <header className=" h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) p-3 pr-10 mb-3">
-        <div className="flex w-full items-center gap-1 py-2 lg:gap-2">
-          <SidebarTrigger />
+      <header className="mb-3 h-(--header-height) min-w-0 shrink-0 items-center gap-2 border-b p-3 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) sm:pr-5 lg:pr-10">
+        <div className="flex min-w-0 w-full items-center gap-1 py-2 lg:gap-2">
+          <SidebarTrigger className="shrink-0" />
           <Separator
             orientation="vertical"
             className="mx-2 data-[orientation=vertical]:h-4"
           />
-          <h1 className="text-lg md:text-xl lg:text-3xl syncopate">
+          <h1 className="syncopate min-w-0 truncate text-base sm:text-lg md:text-xl lg:text-3xl">
             {dynamicTitle}
           </h1>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
             <NotificationBell />
             <Theme />
 
@@ -96,8 +97,11 @@ export function SiteHeader({ title, dynamic = false }: SiteHeaderProps) {
             >
               <NotificationsBell />
             </Button> */}
-            <Button>
-              <Link href={ROUTES.HOME}>Site principale</Link>
+            <Button asChild size="sm" className="px-2 sm:px-3">
+              <Link href={ROUTES.HOME} aria-label="Ouvrir le site principal">
+                <House className="size-4 sm:hidden" />
+                <span className="hidden sm:inline">Site principal</span>
+              </Link>
             </Button>
           </div>
         </div>
