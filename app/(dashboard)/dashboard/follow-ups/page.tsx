@@ -108,14 +108,18 @@ export default async function FollowUpsPage({
     : { success: true, data: [] };
 
   return (
-    <section className="space-y-6">
-      <div className="flex items-center justify-between">
-        <SectionHeader title="Suivis" subtitle="Gérez vos suivis clients" />
-        <Link href={ROUTES.NEW_FOLLOWUP}>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" /> Nouveau suivi
-          </Button>
-        </Link>
+    <section className="min-w-0 space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <SectionHeader
+          title="Suivis"
+          subtitle="Gérez vos suivis clients"
+          className="mb-4 min-w-0 sm:mb-16"
+        />
+        <Button asChild className="w-full shrink-0 sm:w-auto">
+          <Link href={ROUTES.NEW_FOLLOWUP}>
+            <Plus className="h-4 w-4" /> Nouveau suivi
+          </Link>
+        </Button>
       </div>
 
       <FollowUpsFilter

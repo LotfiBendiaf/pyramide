@@ -46,7 +46,7 @@ export function PaginationControls({
   };
 
   return (
-    <div className="flex items-center justify-center gap-1 py-4">
+    <div className="flex max-w-full items-center justify-start gap-1 overflow-x-auto py-4 sm:justify-center">
       <Button
         variant="outline"
         size="icon"

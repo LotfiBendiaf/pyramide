@@ -86,10 +86,10 @@ export default function FollowUpsFilter({
   };
 
   return (
-    <div className="bg-background border rounded-lg p-4 space-y-4">
-      <div className="flex flex-wrap gap-3">
+    <div className="space-y-4 rounded-lg border bg-background p-3 sm:p-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap">
         {/* Search input */}
-        <div className="flex-1 min-w-[200px]">
+        <div className="min-w-0 sm:col-span-2 lg:flex-1 lg:min-w-[200px]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -105,7 +105,7 @@ export default function FollowUpsFilter({
         {/* Agent filter (admin/manager only) */}
         {canFilterByAgent && agents.length > 0 && (
           <Select value={agentId} onValueChange={setAgentId}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full lg:w-[200px]">
               <SelectValue placeholder="Tous les agents" />
             </SelectTrigger>
             <SelectContent>
@@ -121,7 +121,7 @@ export default function FollowUpsFilter({
 
         {/* Type filter */}
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-full lg:w-[160px]">
             <SelectValue placeholder="Type de suivi" />
           </SelectTrigger>
           <SelectContent>
@@ -135,7 +135,7 @@ export default function FollowUpsFilter({
 
         {/* Status filter */}
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-full lg:w-[160px]">
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
           <SelectContent>
@@ -149,7 +149,7 @@ export default function FollowUpsFilter({
 
         {/* Channel filter */}
         <Select value={channel} onValueChange={setChannel}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-full lg:w-[160px]">
             <SelectValue placeholder="Canal" />
           </SelectTrigger>
           <SelectContent>
@@ -162,7 +162,7 @@ export default function FollowUpsFilter({
         </Select>
 
         {/* Apply button */}
-        <Button onClick={handleApplyFilters} disabled={isPending}>
+        <Button onClick={handleApplyFilters} disabled={isPending} className="w-full lg:w-auto">
           Filtrer
         </Button>
 
@@ -172,6 +172,7 @@ export default function FollowUpsFilter({
             variant="outline"
             onClick={handleClearFilters}
             disabled={isPending}
+            className="w-full lg:w-auto"
           >
             <X className="h-4 w-4 mr-2" />
             Réinitialiser

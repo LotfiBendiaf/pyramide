@@ -74,7 +74,7 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
       ) : (
         <div className="relative">
           {/* Timeline line */}
-          <div className="absolute left-6 top-0 bottom-0 w-px bg-gradient-to-b from-border via-border to-transparent" />
+          <div className="absolute bottom-0 left-3 top-0 w-px bg-gradient-to-b from-border via-border to-transparent sm:left-6" />
 
           <div className="space-y-6">
             {followUps.map((f) => {
@@ -86,9 +86,9 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
               const isCancelled = f.status === "CANCELLED";
 
               return (
-                <div key={f._id} className="relative pl-14 group">
+                <div key={f._id} className="group relative pl-10 sm:pl-14">
                   {/* Timeline dot */}
-                  <div className="absolute left-3 top-3">
+                  <div className="absolute left-0 top-3 sm:left-3">
                     <span
                       className={cn(
                         "flex h-6 w-6 rounded-full items-center justify-center ring-4 ring-background transition-all duration-300",
@@ -120,13 +120,13 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
                     )}
                   >
                     {/* Header */}
-                    <div className="px-5 py-4 border-b bg-muted/30">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="border-b bg-muted/30 px-3 py-3 sm:px-5 sm:py-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
                           <Badge
                             variant="secondary"
                             className={cn(
-                              "font-semibold px-3 py-1",
+                              "px-2 py-1 font-semibold sm:px-3",
                               typeStyle.text,
                               "bg-background"
                             )}
@@ -156,7 +156,7 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
                         {f.reminderAt && (
                           <div
                             className={cn(
-                              "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md",
+                              "flex w-fit items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium",
                               isOverdue
                                 ? "bg-destructive/10 text-destructive"
                                 : "bg-primary/10 text-primary"
@@ -170,25 +170,25 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
                     </div>
 
                     {/* Content */}
-                    <div className="px-5 py-4 space-y-3">
+                    <div className="space-y-3 px-3 py-4 sm:px-5">
                       {/* Title */}
                       {f.title && (
-                        <h4 className="font-semibold text-base leading-tight">
+                        <h4 className="break-words text-base font-semibold leading-tight">
                           {f.title}
                         </h4>
                       )}
 
                       {/* Listing info */}
                       {f.listing?.title && (
-                        <p className="text-sm font-medium text-primary">
+                        <p className="break-words text-sm font-medium text-primary">
                           {f.listing.title}
                         </p>
                       )}
 
                       {/* Client */}
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="h-3.5 w-3.5" />
-                        <span>
+                      <div className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
+                        <User className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span className="min-w-0 break-words">
                           {f.client?.firstName} {f.client?.lastName}
                           {f.client?.referenceCode && (
                             <span className="text-xs ml-1">
@@ -200,20 +200,20 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
 
                       {/* Note */}
                       {f.note && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">
+                        <p className="break-words text-sm leading-relaxed text-muted-foreground">
                           {f.note}
                         </p>
                       )}
 
                       {/* Footer */}
-                      <div className="flex items-center justify-between gap-4 pt-2 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-start gap-3 pt-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                        <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
                           {isAdmin && f.agent && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
                               <span className="text-muted-foreground/70">
                                 Agent:
                               </span>
-                              <Badge variant="outline" className="font-medium">
+                              <Badge variant="outline" className="max-w-full whitespace-normal break-words font-medium">
                                 {f.agent.firstname} {f.agent.lastname}
                               </Badge>
                             </div>
