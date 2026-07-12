@@ -32,7 +32,7 @@ interface CalendarEventLean {
   startTime: Date;
   endTime: Date;
   location?: string;
-  sourceType: "FOLLOWUP" | "TASK" | "MANUAL";
+  sourceType: "FOLLOWUP" | "TASK" | "VISIT" | "MANUAL";
   client?: PopulatedClient;
   listing?: PopulatedListing;
   syncStatus?: string;
@@ -179,6 +179,7 @@ export async function getSchedule(
             : event.sourceType === "TASK"
             ? "task"
             : "event",
+        channel: event.sourceType === "VISIT" ? "VISIT" : undefined,
         client: event.client
           ? {
               _id: event.client._id.toString(),

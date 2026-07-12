@@ -3,7 +3,7 @@ export const maxDuration = 60;
 import { NextRequest, NextResponse } from "next/server";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { toZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 import dbConnect from "@/lib/mongoose";
 import { User, CalendarEvent, FollowUp, Task } from "@/models";
@@ -28,10 +28,12 @@ export async function GET(request: NextRequest) {
     });
 
     const now = toZonedTime(new Date(), TIMEZONE);
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
+    const zonedStartOfDay = new Date(now);
+    zonedStartOfDay.setHours(0, 0, 0, 0);
+    const zonedEndOfDay = new Date(now);
+    zonedEndOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = fromZonedTime(zonedStartOfDay, TIMEZONE);
+    const endOfDay = fromZonedTime(zonedEndOfDay, TIMEZONE);
 
     const dateStr = format(now, "EEEE d MMMM yyyy", { locale: fr });
 
@@ -99,6 +101,7 @@ export async function GET(request: NextRequest) {
                 : event.sourceType === "TASK"
                   ? "task"
                   : "event",
+            channel: event.sourceType === "VISIT" ? "VISIT" : undefined,
             clientName: client
               ? `${client.firstName} ${client.lastName}`
               : undefined,

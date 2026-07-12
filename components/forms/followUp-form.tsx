@@ -75,8 +75,10 @@ export function FollowUpForm({
   const onSubmit = (data: FollowUpFormValues) => {
     startTransition(async () => {
       try {
+        const status = data.reminderAt ? "PENDING" : "DONE";
         const result = await createFollowUp({
           ...data,
+          status,
           listing: data.listing === "AUTRE" ? undefined : data.listing,
           title: data.title || undefined,
         });
@@ -88,7 +90,9 @@ export function FollowUpForm({
           return;
         }
 
-        toast.success("Suivi ajouté comme terminé");
+        toast.success(
+          status === "PENDING" ? "Suivi planifié" : "Suivi ajouté comme terminé"
+        );
         router.push(ROUTES.FOLLOWUPS);
       } catch (error) {
         form.setError("root", {

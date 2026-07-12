@@ -50,7 +50,9 @@ export async function createFollowUp(
       isAdmin && validationResult.params && validationResult.params.agent
         ? validationResult.params.agent
         : user.data._id;
-    const followUpStatus = validationResult.params?.status ?? "DONE";
+    const followUpStatus =
+      validationResult.params?.status ??
+      (validationResult.params?.reminderAt ? "PENDING" : "DONE");
 
     console.log("Creating follow-up with data:", {
       ...validationResult.params,

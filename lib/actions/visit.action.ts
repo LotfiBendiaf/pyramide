@@ -56,7 +56,7 @@ export async function scheduleVisit(
     status,
     notes,
   } = validationResult.params;
-  const visitStatus = status ?? "COMPLETED";
+  const visitStatus = status ?? "SCHEDULED";
 
   if (!Types.ObjectId.isValid(clientId)) {
     return {
@@ -151,6 +151,7 @@ export async function scheduleVisit(
     }
 
     revalidatePath(ROUTES.VISITS);
+    revalidatePath(ROUTES.SCHEDULE);
     revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
     revalidatePath(ROUTES.MES_BIENS);
 

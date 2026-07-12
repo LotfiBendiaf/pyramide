@@ -204,7 +204,7 @@ export function ScheduleVisitDialog({
       isExternalListing: false,
       externalListingRef: "",
       scheduledAt: applyTimePart(new Date(), "09:00"),
-      status: "COMPLETED",
+      status: "SCHEDULED",
       notes: "",
     },
   });
@@ -217,7 +217,7 @@ export function ScheduleVisitDialog({
       toast.error("Erreur", { description: result.error?.message });
       return;
     }
-    toast.success("Visite ajoutée comme terminée");
+    toast.success("Visite planifiée");
     form.reset();
     setOpen(false);
     router.refresh();
