@@ -385,6 +385,40 @@ export async function createCalendarEventFromVisit(
     return { success: true };
   }
 
+  // Reuse an existing event so retries cannot create duplicate local or
+  // Google Calendar events for the same visit.
+  const existingEvent =
+    (visit.calendarEventId
+      ? await CalendarEvent.findById(visit.calendarEventId)
+      : null) ||
+    (await CalendarEvent.findOne({
+      sourceType: "VISIT",
+      sourceId: visit._id,
+      syncStatus: { $ne: "DELETED" },
+    }));
+
+  if (existingEvent) {
+    if (!visit.calendarEventId) {
+      await Visit.updateOne(
+        { _id: visit._id },
+        { $set: { calendarEventId: existingEvent._id } }
+      );
+    }
+
+    const user = await User.findById(visit.agent);
+    const hasCalendar = await hasGoogleCalendarConnected(
+      visit.agent.toString()
+    );
+    if (hasCalendar && user?.calendarSettings?.googleCalendarEnabled) {
+      const syncResult = await syncEventToGoogle(existingEvent._id.toString());
+      return syncResult.success
+        ? { success: true, eventId: existingEvent._id.toString() }
+        : { ...syncResult, eventId: existingEvent._id.toString() };
+    }
+
+    return { success: true, eventId: existingEvent._id.toString() };
+  }
+
   const user = await User.findById(visit.agent);
   if (!user) {
     return { success: false, error: "User not found" };
@@ -423,7 +457,14 @@ export async function createCalendarEventFromVisit(
 
   const hasCalendar = await hasGoogleCalendarConnected(visit.agent.toString());
   if (hasCalendar && user.calendarSettings?.googleCalendarEnabled) {
-    await syncEventToGoogle(calendarEvent._id.toString());
+    const syncResult = await syncEventToGoogle(calendarEvent._id.toString());
+    if (!syncResult.success) {
+      return {
+        success: false,
+        eventId: calendarEvent._id.toString(),
+        error: syncResult.error,
+      };
+    }
   }
 
   return { success: true, eventId: calendarEvent._id.toString() };
@@ -440,7 +481,7 @@ export async function syncPendingEvents(): Promise<{
   await dbConnect();
 
   const pendingEvents = await CalendarEvent.find({
-    syncStatus: "PENDING",
+    syncStatus: { $in: ["PENDING", "FAILED"] },
   }).limit(50);
 
   let synced = 0;

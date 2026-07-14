@@ -145,7 +145,15 @@ export async function scheduleVisit(
     await Client.findByIdAndUpdate(clientId, { lastContactedAt: new Date() });
 
     try {
-      await createCalendarEventFromVisit(visit._id.toString());
+      const calendarResult = await createCalendarEventFromVisit(
+        visit._id.toString()
+      );
+      if (!calendarResult.success) {
+        console.error(
+          "Failed to add visit to Google Calendar:",
+          calendarResult.error
+        );
+      }
     } catch (err) {
       console.error("Failed to sync visit to Google Calendar:", err);
     }
