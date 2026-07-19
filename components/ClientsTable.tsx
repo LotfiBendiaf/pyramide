@@ -23,6 +23,7 @@ import ROUTES from "@/constants/routes";
 import type { NegotiationListingOption } from "@/lib/actions/negotiation.action";
 import { cancelClientArchiveRequest } from "@/lib/actions/archiveRequest.action";
 import { formatDate } from "@/lib/utils";
+import PhoneActionLink from "@/components/PhoneActionLink";
 
 type ClientsTableProps = {
   clients: Client[];
@@ -153,9 +154,9 @@ export default function ClientsTable({
         </Badge>
       </TableCell>
 
-      <TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="text-sm">
-          <p>{client.phone}</p>
+          <PhoneActionLink phone={client.phone} />
           {client.email && (
             <p className="text-muted-foreground">{client.email}</p>
           )}
