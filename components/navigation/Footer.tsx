@@ -182,9 +182,22 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {currentYear} Pyramide Immobilier. Tous droits réservés.</p>
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link href="/privacy" className="transition-colors hover:text-stone-200">Politique de confidentialité</Link>
             <Link href="/terms" className="transition-colors hover:text-stone-200">Conditions d&apos;utilisation</Link>
+            <span className="hidden h-3 w-px bg-white/15 lg:block" aria-hidden="true" />
+            <a
+              href="https://deevdigital.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-1.5 transition-colors hover:text-stone-200 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70"
+            >
+              Developed by
+              <span className="font-semibold tracking-wide text-stone-300 transition-colors group-hover:text-amber-300">
+                DEEV DIGITAL
+              </span>
+              <ArrowUpRight className="size-3 text-amber-500/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </a>
           </div>
         </div>
       </div>
