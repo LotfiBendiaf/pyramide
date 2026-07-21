@@ -248,7 +248,7 @@ export function ListingTable({
               <TableHead>Specs</TableHead>
               <TableHead>Agent</TableHead>
               <TableHead className="w-[170px]">État</TableHead>
-              <TableHead className="w-[140px]">Ajout</TableHead>
+              <TableHead className="w-[140px]">Validation / ajout</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -531,13 +531,15 @@ export function ListingTable({
                   <TableCell>
                     <div className="space-y-1 text-sm">
                       <p className="font-medium">
-                        {listing.createdAt
-                          ? formatDate(listing.createdAt)
+                        {listing.validatedAt
+                          ? formatDate(listing.validatedAt)
+                          : listing.createdAt
+                            ? formatDate(listing.createdAt)
                           : "-"}
                       </p>
-                      {listing.validatedAt && (
+                      {listing.validatedAt && listing.createdAt && (
                         <p className="text-xs text-muted-foreground">
-                          Validé {formatDate(listing.validatedAt)}
+                          Ajouté {formatDate(listing.createdAt)}
                         </p>
                       )}
                     </div>
