@@ -29,7 +29,7 @@ export default function AboutSection() {
 
           <div className="space-y-6">
             <div>
-              <p className="text-primary font-medium mb-2">Qui sommes-nous</p>
+              <p className="text-primary font-medium mb-2">Qui sommes-nous ?</p>
               <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
                 Votre partenaire de confiance en immobilier
               </h2>
