@@ -2,7 +2,6 @@ import Image from "next/image";
 import { CheckCircle2, Star } from "lucide-react";
 
 const features = [
-  "Plus de 10 ans d'expérience dans l'immobilier",
   "Une équipe d'agents qualifiés et dévoués",
   "Accompagnement personnalisé à chaque étape",
   "Connaissance approfondie du marché local",
@@ -69,8 +68,12 @@ export default function AboutSection() {
               </div>
               <div>
                 <span className="font-bold text-foreground text-lg">4,7</span>
-                <span className="text-muted-foreground text-sm ml-1">/ 5 sur Google</span>
-                <p className="text-muted-foreground text-sm">Basé sur 85 avis clients</p>
+                <span className="text-muted-foreground text-sm ml-1">
+                  / 5 sur Google
+                </span>
+                <p className="text-muted-foreground text-sm">
+                  Basé sur 85 avis clients
+                </p>
               </div>
             </div>
           </div>

@@ -21,10 +21,9 @@ export default function GlobalImpactSection() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-          <StatCounter value={2_400} label="Ventes" suffix="+" />
-          <StatCounter value={50} label="Active Agents" />
+          <StatCounter value={50_0} label="Transactions" suffix="+" />
+          <StatCounter value={10} label="Agents actifs" />
           <StatCounter value={45_0} label="Biens actifs" suffix="+" />
-          <StatCounter value={3_20} label="Leads mensuel" suffix="+" />
         </div>
       </div>
     </section>
