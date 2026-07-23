@@ -75,8 +75,8 @@ export default function ContactSection() {
                   <a href="tel:0779079706" className="hover:underline">
                     0779 07 97 06
                   </a>
-                  <a href="tel:0792116596" className="hover:underline">
-                    0792 11 65 96
+                  <a href="tel:0556510000" className="hover:underline">
+                    0556 51 00 00
                   </a>
                 </div>
               </div>

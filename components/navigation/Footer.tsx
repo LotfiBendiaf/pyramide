@@ -31,8 +31,18 @@ const propertyTypes = [
 ];
 
 const contactInfo = [
-  { icon: Phone, label: "Téléphone", text: "0779 07 97 06", phone: "+213779079706" },
-  { icon: Phone, label: "Téléphone", text: "0556 51 00 00", phone: "+213556510000" },
+  {
+    icon: Phone,
+    label: "Téléphone",
+    text: "0779 07 97 06",
+    phone: "+213779079706",
+  },
+  {
+    icon: Phone,
+    label: "Téléphone",
+    text: "0556 51 00 00",
+    phone: "+213556510000",
+  },
   {
     icon: Mail,
     label: "E-mail",
@@ -100,7 +110,11 @@ export default function Footer() {
 
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.35fr_0.8fr_0.9fr_1.35fr] lg:gap-12">
           <div>
-            <Link href="/" aria-label="Pyramide Immobilier — Accueil" className="inline-block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70">
+            <Link
+              href="/"
+              aria-label="Pyramide Immobilier — Accueil"
+              className="inline-block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70"
+            >
               <Logo2 />
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-7 text-stone-400">
@@ -128,11 +142,15 @@ export default function Footer() {
               <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10 text-amber-400">
                 <ArrowUpRight className="size-3.5" />
               </span>
-              <h3 className="text-sm font-semibold tracking-wide text-white">Explorer</h3>
+              <h3 className="text-sm font-semibold tracking-wide text-white">
+                Explorer
+              </h3>
             </div>
             <ul className="space-y-3.5">
               {quickLinks.map((link) => (
-                <li key={link.name}><FooterLink {...link} /></li>
+                <li key={link.name}>
+                  <FooterLink {...link} />
+                </li>
               ))}
             </ul>
           </div>
@@ -142,11 +160,15 @@ export default function Footer() {
               <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10 text-amber-400">
                 <Building2 className="size-3.5" />
               </span>
-              <h3 className="text-sm font-semibold tracking-wide text-white">Nos biens</h3>
+              <h3 className="text-sm font-semibold tracking-wide text-white">
+                Nos biens
+              </h3>
             </div>
             <ul className="space-y-3.5">
               {propertyTypes.map((type) => (
-                <li key={type.name}><FooterLink {...type} /></li>
+                <li key={type.name}>
+                  <FooterLink {...type} />
+                </li>
               ))}
             </ul>
           </div>
@@ -156,22 +178,41 @@ export default function Footer() {
               <span className="flex size-7 items-center justify-center rounded-lg bg-amber-400/10 text-amber-400">
                 <Mail className="size-3.5" />
               </span>
-              <h3 className="text-sm font-semibold tracking-wide text-white">Nous joindre</h3>
+              <h3 className="text-sm font-semibold tracking-wide text-white">
+                Nous joindre
+              </h3>
             </div>
             <ul className="space-y-4">
               {contactInfo.map((info) => (
-                <li key={`${info.label}-${info.text}`} className="group flex min-w-0 items-start gap-3">
+                <li
+                  key={`${info.label}-${info.text}`}
+                  className="group flex min-w-0 items-start gap-3"
+                >
                   <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-stone-400 transition-colors group-hover:border-amber-400/20 group-hover:text-amber-400">
                     <info.icon className="size-3.5" strokeWidth={1.8} />
                   </span>
                   <div className="min-w-0">
-                    <span className="block text-[10px] font-medium uppercase tracking-widest text-stone-600">{info.label}</span>
+                    <span className="block text-[10px] font-medium uppercase tracking-widest text-stone-600">
+                      {info.label}
+                    </span>
                     {info.phone ? (
-                      <PhoneActionLink phone={info.phone} label={info.text} showIcon={false} className="mt-0.5 block text-sm text-stone-300 transition-colors hover:text-amber-300 hover:no-underline" />
+                      <PhoneActionLink
+                        phone={info.phone}
+                        label={info.text}
+                        showIcon={false}
+                        className="mt-0.5 block text-sm text-stone-300 transition-colors hover:text-amber-300 hover:no-underline"
+                      />
                     ) : info.href ? (
-                      <a href={info.href} className="mt-0.5 block break-all text-sm text-stone-300 transition-colors hover:text-amber-300">{info.text}</a>
+                      <a
+                        href={info.href}
+                        className="mt-0.5 block break-all text-sm text-stone-300 transition-colors hover:text-amber-300"
+                      >
+                        {info.text}
+                      </a>
                     ) : (
-                      <span className="mt-0.5 block text-sm text-stone-300">{info.text}</span>
+                      <span className="mt-0.5 block text-sm text-stone-300">
+                        {info.text}
+                      </span>
                     )}
                   </div>
                 </li>
@@ -183,9 +224,22 @@ export default function Footer() {
         <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {currentYear} Pyramide Immobilier. Tous droits réservés.</p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <Link href="/privacy" className="transition-colors hover:text-stone-200">Politique de confidentialité</Link>
-            <Link href="/terms" className="transition-colors hover:text-stone-200">Conditions d&apos;utilisation</Link>
-            <span className="hidden h-3 w-px bg-white/15 lg:block" aria-hidden="true" />
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-stone-200"
+            >
+              Politique de confidentialité
+            </Link>
+            <Link
+              href="/terms"
+              className="transition-colors hover:text-stone-200"
+            >
+              Conditions d&apos;utilisation
+            </Link>
+            <span
+              className="hidden h-3 w-px bg-white/15 lg:block"
+              aria-hidden="true"
+            />
             <a
               href="https://deevdigital.com"
               target="_blank"
