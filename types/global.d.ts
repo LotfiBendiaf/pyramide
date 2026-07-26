@@ -58,6 +58,7 @@ interface Listing {
   _id: string;
   title?: string;
   referenceCode?: string; // VA-0001 — assigned on validation
+  referenceGeneratedAt?: Date;
   slug?: string;
 
   description: string;
@@ -154,6 +155,7 @@ interface Listing {
   publishedAt?: Date;
 
   isValidated: boolean;
+  validationStatus?: "NEUTRAL" | "APPROVED" | "VALIDATED";
   validatedAt?: Date;
   validatedBy?: string;
 

@@ -14,6 +14,7 @@ export type ListingPipelineStatus =
   | "ARCHIVED";
 
 export type SellerMotivation = "LOW" | "MEDIUM" | "HIGH";
+export type ListingValidationStatus = "NEUTRAL" | "APPROVED" | "VALIDATED";
 
 export interface IListingDocument {
   publicId: string;
@@ -29,6 +30,7 @@ export interface IListingDocument {
 
 export interface IListing {
   referenceCode?: string; // V-0000001 (vente), L-0000001 (location) — assigned on validation
+  referenceGeneratedAt?: Date;
   title?: string;
   slug?: string;
 
@@ -123,6 +125,7 @@ export interface IListing {
   publishedAt?: Date;
 
   isValidated: boolean;
+  validationStatus: ListingValidationStatus;
   validatedAt?: Date;
   validatedBy?: Schema.Types.ObjectId;
 
@@ -141,6 +144,7 @@ export interface IListing {
 const listingSchema = new Schema<IListing>(
   {
     referenceCode: { type: String },
+    referenceGeneratedAt: { type: Date },
     title: { type: String, trim: true },
 
     slug: {
@@ -292,6 +296,11 @@ const listingSchema = new Schema<IListing>(
     isPublished: { type: Boolean, default: false },
     publishedAt: { type: Date, default: new Date() },
     isValidated: { type: Boolean, default: false },
+    validationStatus: {
+      type: String,
+      enum: ["NEUTRAL", "APPROVED", "VALIDATED"],
+      default: "NEUTRAL",
+    },
     validatedAt: { type: Date },
     validatedBy: { type: Schema.Types.ObjectId, ref: "User" },
     archived: { type: Boolean, default: false },
@@ -307,13 +316,23 @@ const listingSchema = new Schema<IListing>(
 /* ---------------------------------
    Indexes (important for performance)
 ----------------------------------*/
-listingSchema.index({ referenceCode: 1 });
+listingSchema.index(
+  { referenceCode: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      referenceCode: { $type: "string", $gt: "" },
+    },
+  }
+);
+listingSchema.index({ referenceGeneratedAt: -1 });
 listingSchema.index({ "location.city": 1 });
 listingSchema.index({ price: 1 });
 listingSchema.index({ status: 1 });
 listingSchema.index({ propertyType: 1 });
 listingSchema.index({ isFeatured: 1 });
 listingSchema.index({ isValidated: 1 });
+listingSchema.index({ validationStatus: 1 });
 listingSchema.index({ archived: 1 });
 listingSchema.index({ "evaluation.finalScore": -1 });
 listingSchema.index({ pipelineStatus: 1 });

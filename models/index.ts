@@ -13,6 +13,7 @@ import Visit from "./visit.model";
 import Negotiation from "./negotiation.model";
 import Notification from "./notification.model";
 import PasswordResetToken from "./passwordResetToken.model";
+import ReferenceCounter from "./referenceCounter.model";
 
 export {
   Account,
@@ -30,4 +31,5 @@ export {
   Negotiation,
   Notification,
   PasswordResetToken,
+  ReferenceCounter,
 };

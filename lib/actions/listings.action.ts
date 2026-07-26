@@ -1,6 +1,13 @@
 "use server";
 
-import { Listing, Client, Negotiation, Visit, User } from "@/models";
+import {
+  Listing,
+  Client,
+  Negotiation,
+  Visit,
+  User,
+  ReferenceCounter,
+} from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import action from "../handlers/action";
 import handleError from "../handlers/error";
@@ -42,7 +49,29 @@ async function generateListingReferenceCode(prefix: "V" | "L") {
     ? parseInt(lastListing.referenceCode.split("-")[1], 10)
     : 0;
 
-  return `${prefix}-${String(lastNumber + 1).padStart(7, "0")}`;
+  // The aggregation-pipeline update is atomic. It also self-heals a missing or
+  // stale counter by never allocating below the highest code already stored.
+  const counter = (await ReferenceCounter.findOneAndUpdate(
+    { _id: `listing:${prefix}` },
+    [
+      {
+        $set: {
+          prefix,
+          sequence: {
+            $add: [
+              { $max: [{ $ifNull: ["$sequence", 0] }, lastNumber] },
+              1,
+            ],
+          },
+          updatedAt: "$$NOW",
+          createdAt: { $ifNull: ["$createdAt", "$$NOW"] },
+        },
+      },
+    ],
+    { upsert: true, new: true }
+  ).lean()) as unknown as { sequence: number };
+
+  return `${prefix}-${String(counter.sequence).padStart(7, "0")}`;
 }
 
 function upsertReferenceInDescription(
@@ -246,6 +275,7 @@ interface FetchListingsParams {
   assignedToCurrentUser?: boolean;
   isPublished?: boolean;
   isValidated?: boolean;
+  validationStatus?: "NEUTRAL" | "APPROVED" | "VALIDATED";
   hasReferenceCode?: boolean;
   archived?: boolean;
   status?: ListingInput["status"];
@@ -300,6 +330,7 @@ export async function fetchListings(
       assignedToCurrentUser,
       isPublished,
       isValidated,
+      validationStatus,
       hasReferenceCode,
       archived,
       status,
@@ -351,6 +382,10 @@ export async function fetchListings(
     } else if (isValidated === false) {
       // Catch both explicit false and documents where the field is not set
       query.isValidated = { $ne: true };
+    }
+
+    if (validationStatus) {
+      query.validationStatus = validationStatus;
     }
 
     if (hasReferenceCode === true) {
@@ -809,6 +844,7 @@ export async function updateListingStatus(
     const update: {
       status: PropertyStatus;
       referenceCode?: string;
+      referenceGeneratedAt?: Date;
       description?: string;
     } = { status };
 
@@ -819,6 +855,7 @@ export async function updateListingStatus(
     ) {
       const referenceCode = await generateListingReferenceCode(expectedPrefix);
       update.referenceCode = referenceCode;
+      update.referenceGeneratedAt = new Date();
       update.description =
         upsertReferenceInDescription(listing.description, referenceCode) ||
         listing.description;
@@ -904,6 +941,8 @@ export async function updateListing(
     }
 
     const description = buildListingDescription(parsedParams, referenceCode);
+    const referenceGeneratedAt =
+      referenceCode !== existingListing?.referenceCode ? new Date() : undefined;
 
     const updated = await Listing.findByIdAndUpdate(
       listingId,
@@ -911,6 +950,7 @@ export async function updateListing(
         ...parsedParams,
         description,
         referenceCode,
+        ...(referenceGeneratedAt && { referenceGeneratedAt }),
         propertyTypeCustom: normalizedPropertyTypeCustom,
         evaluation,
         // Do not overwrite agent or seller form-only fields
@@ -992,7 +1032,12 @@ export async function toggleListingValidation(
 
       await Listing.findByIdAndUpdate(listingId, {
         referenceCode,
+        referenceGeneratedAt:
+          referenceCode !== listing.referenceCode
+            ? new Date()
+            : listing.referenceGeneratedAt,
         isValidated: true,
+        validationStatus: "VALIDATED",
         validatedAt: new Date(),
         validatedBy: user.data._id,
         description: updatedDescription || listing.description,
@@ -1056,7 +1101,7 @@ export async function approveListingWithoutReference(
 
     await dbConnect();
 
-    const listing = await Listing.findById(listingId).select("_id");
+    const listing = await Listing.findById(listingId);
     if (!listing) {
       return {
         success: false,
@@ -1065,8 +1110,26 @@ export async function approveListingWithoutReference(
       };
     }
 
+    let referenceCode = listing.referenceCode as string | undefined;
+    let updatedDescription = listing.description;
+    const prefix = getListingReferencePrefix(listing.status);
+    let referenceGeneratedAt = listing.referenceGeneratedAt;
+
+    if (!hasListingReferencePrefix(referenceCode, prefix)) {
+      referenceCode = await generateListingReferenceCode(prefix);
+      referenceGeneratedAt = new Date();
+      updatedDescription = upsertReferenceInDescription(
+        listing.description,
+        referenceCode
+      );
+    }
+
     await Listing.findByIdAndUpdate(listingId, {
+      referenceCode,
+      referenceGeneratedAt,
+      description: updatedDescription || listing.description,
       isValidated: true,
+      validationStatus: "APPROVED",
       validatedAt: new Date(),
       validatedBy: user.data._id,
       archived: false,
@@ -1115,6 +1178,7 @@ export async function setListingNeutre(
 
     await Listing.findByIdAndUpdate(listingId, {
       isValidated: false,
+      validationStatus: "NEUTRAL",
       archived: false,
       $unset: {
         validatedAt: 1,

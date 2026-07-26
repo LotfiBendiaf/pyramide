@@ -59,9 +59,7 @@ async function ListingsContent({
   const isApprovedView = params?.view === "approved";
   const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView;
 
-  // Keep rent and sale listings mixed by recency. Sorting by referenceCode groups
-  // all V-* before L-* and hides rentals behind pagination.
-  const sortBy = params?.sortBy ?? (isActiveView ? "validatedAt" : undefined);
+  const sortBy = params?.sortBy ?? (isActiveView ? "referenceCode" : undefined);
   const sortOrder =
     (params?.sortOrder as "asc" | "desc" | undefined) ??
     (isActiveView ? "desc" : undefined);
@@ -91,7 +89,13 @@ async function ListingsContent({
     isPremium: params?.isPremium,
     isValidated:
       isActiveView || isApprovedView ? true : isNeutreView ? false : undefined,
-    hasReferenceCode: isActiveView ? true : isApprovedView ? false : undefined,
+    validationStatus: isActiveView
+      ? "VALIDATED"
+      : isApprovedView
+        ? "APPROVED"
+        : isNeutreView
+          ? "NEUTRAL"
+          : undefined,
     archived: isArchiveView ? true : undefined,
     page,
     limit: LISTINGS_PER_PAGE,

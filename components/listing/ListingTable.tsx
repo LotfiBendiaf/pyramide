@@ -72,7 +72,7 @@ type ValidationState = "validé" | "approuvé" | "neutre" | "archivé";
 
 function getValidationState(listing: Listing): ValidationState {
   if (listing.archived) return "archivé";
-  if (listing.isValidated && !listing.referenceCode) return "approuvé";
+  if (listing.validationStatus === "APPROVED") return "approuvé";
   if (listing.isValidated) return "validé";
   return "neutre";
 }
@@ -195,7 +195,7 @@ export function ListingTable({
     setValidatingStates((prev) => ({ ...prev, [listingId]: true }));
     const result = await approveListingWithoutReference(listingId);
     if (result.success) {
-      toast.success("Annonce approuvée sans référence");
+      toast.success("Annonce approuvée");
     } else {
       toast.error(result.error?.message || "Erreur lors de l'approbation");
     }
