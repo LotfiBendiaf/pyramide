@@ -233,7 +233,7 @@ export default function ListingInfo({
         </div>
       </section>
 
-      {listing.location.coordinates && (
+      {isStaff && listing.location.coordinates && (
         <section>
           <h2 className="font-semibold text-lg mb-4">Localisation</h2>
           <LocationMap coordinates={listing.location.coordinates} />
