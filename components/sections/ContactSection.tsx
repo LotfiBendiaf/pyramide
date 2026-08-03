@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 
 import {
   Form,
@@ -53,61 +53,107 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="contact" className="py-10 bg-muted/30 rounded-2xl">
-      <div className="container px-5 mx-auto">
-        {/* Header */}
-        <div className="text-center mb-14">
-          <SectionHeader
-            title="Contactez-nous"
-            subtitle="Nous vous accompagnons dans tous vos projets immobiliers."
-          />
-        </div>
+    <section
+      id="contact"
+      className="relative overflow-hidden border-t border-primary/[0.08] bg-third/30 py-20 md:py-28"
+    >
+      <div
+        className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-secondary/20 blur-3xl"
+        aria-hidden="true"
+      />
 
-        <div className="grid gap-10 lg:grid-cols-2 max-w-6xl mx-auto">
-          {/* Left Info */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold">Parlons de votre projet</h3>
+      <div className="container relative mx-auto px-4">
+        <SectionHeader
+          title="Parlons de votre projet"
+          subtitle="Une question, un bien à vendre ou un nouveau projet ? Notre équipe vous répond avec attention."
+          watermark="CONTACT"
+          className="mb-12 md:mb-16"
+        />
 
-            <div className="space-y-4 text-sm">
-              <div className="flex items-start gap-4">
-                <Phone className="text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="flex flex-col gap-1">
-                  <a href="tel:0779079706" className="hover:underline">
-                    0779 07 97 06
-                  </a>
-                  <a href="tel:0556510000" className="hover:underline">
-                    0556 51 00 00
+        <div className="mx-auto grid max-w-6xl overflow-hidden rounded-2xl border border-primary/10 bg-background/70 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="flex flex-col bg-primary p-6 text-primary-foreground md:p-8 lg:p-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-foreground/45">
+              Restons en contact
+            </p>
+            <h3 className="mt-4 max-w-sm text-2xl font-semibold leading-tight md:text-3xl">
+              Un échange simple pour commencer votre projet sereinement.
+            </h3>
+            <p className="mt-4 max-w-md text-sm leading-6 text-primary-foreground/60">
+              Contactez-nous par téléphone ou par email. Un conseiller prendra
+              le temps de comprendre votre besoin et de vous orienter.
+            </p>
+
+            <div className="mt-8 space-y-3 text-sm">
+              <div className="flex items-start gap-3 border-b border-primary-foreground/10 pb-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
+                  <Phone className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs text-primary-foreground/45">
+                    Téléphone
+                  </p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 font-medium">
+                    <a href="tel:0779079706" className="hover:underline">
+                      0779 07 97 06
+                    </a>
+                    <a href="tel:0556510000" className="hover:underline">
+                      0556 51 00 00
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 border-b border-primary-foreground/10 py-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
+                  <Mail className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="mb-1 text-xs text-primary-foreground/45">
+                    Email
+                  </p>
+                  <a
+                    href="mailto:contact@pyramideimmobilier.com"
+                    className="break-all font-medium hover:underline"
+                  >
+                    contact@pyramideimmobilier.com
                   </a>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <Mail className="text-blue-600" />
-                <a
-                  href="mailto:contact@pyramideimmobilier.com"
-                  className="hover:underline"
-                >
-                  contact@pyramideimmobilier.com
-                </a>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <MapPin className="text-blue-600" />
-                Oran, Algérie
+              <div className="flex items-center gap-3 pt-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
+                  <MapPin className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs text-primary-foreground/45">
+                    Agence
+                  </p>
+                  <p className="font-medium">Oran, Algérie</p>
+                </div>
               </div>
             </div>
-            {/* <h3 className="text-xl font-semibold">Retrouvez-nous</h3>
 
-            <LeafletMap /> */}
+            <p className="mt-auto pt-10 text-xs leading-5 text-primary-foreground/40">
+              Nous vous répondons dans les meilleurs délais pendant nos horaires
+              d&apos;ouverture.
+            </p>
           </div>
 
-          {/* Form */}
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="bg-background rounded-2xl shadow-md p-6 flex flex-col gap-4 h-full"
+              className="flex h-full flex-col gap-5 bg-background p-6 md:p-8 lg:p-10"
             >
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="mb-1">
+                <h3 className="text-xl font-semibold text-foreground">
+                  Envoyez-nous un message
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Remplissez le formulaire et nous reviendrons vers vous.
+                </p>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="name"
@@ -115,7 +161,11 @@ export default function ContactSection() {
                     <FormItem>
                       <FormLabel>Nom</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nom complet" {...field} />
+                        <Input
+                          placeholder="Votre nom complet"
+                          className="h-11 bg-muted/25"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -132,6 +182,7 @@ export default function ContactSection() {
                         <Input
                           type="email"
                           placeholder="email@exemple.com"
+                          className="h-11 bg-muted/25"
                           {...field}
                         />
                       </FormControl>
@@ -147,8 +198,12 @@ export default function ContactSection() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Téléphone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+213..." {...field} />
+                  <FormControl>
+                    <Input
+                      placeholder="+213..."
+                      className="h-11 bg-muted/25"
+                      {...field}
+                    />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -164,7 +219,7 @@ export default function ContactSection() {
                     <FormControl className="flex-1">
                       <Textarea
                         placeholder="Décrivez votre besoin..."
-                        className="resize-none h-full min-h-[120px]"
+                        className="h-full min-h-[140px] resize-none bg-muted/25"
                         {...field}
                       />
                     </FormControl>
@@ -174,10 +229,12 @@ export default function ContactSection() {
               />
 
               <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                type="submit"
+                className="h-11 w-full gap-2 sm:w-fit sm:px-6"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Envoi en cours..." : "Envoyer le message"}
+                {!isSubmitting && <ArrowUpRight className="h-4 w-4" />}
               </Button>
             </form>
           </Form>

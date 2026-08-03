@@ -39,19 +39,17 @@ export function StatCounter({ value, label, suffix = "" }: StatCounterProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6 }}
-      className="flex flex-col items-center justify-center p-6 
-                 bg-white/5 backdrop-blur-md border border-white/10 
-                 rounded-lg shadow-xl"
+      transition={{ duration: 0.5 }}
+      className="flex flex-col items-center justify-center px-6 py-8 sm:py-10"
     >
-      <span className="text-4xl md:text-5xl font-bold text-white flex">
+      <span className="flex text-3xl font-semibold tracking-tight text-white md:text-4xl">
         <span ref={ref}>0</span>
         {suffix}
       </span>
 
-      <p className="text-muted-foreground mt-2 font-medium uppercase tracking-wider text-sm text-center">
+      <p className="mt-2 text-center text-[0.68rem] font-medium uppercase tracking-[0.18em] text-white/45">
         {label}
       </p>
     </motion.div>

@@ -1,4 +1,5 @@
 import { Home, Key, FileText, Users, TrendingUp, Shield } from "lucide-react";
+import { SectionHeader } from "@/components/SectionHeader";
 
 const services = [
   {
@@ -41,36 +42,61 @@ const services = [
 
 export default function ExpertiseSection() {
   return (
-    <section id="expertise" className="py-20 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="text-primary font-medium mb-2">Nos Services</p>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-            Notre Expertise à Votre Service
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Découvrez l&apos;ensemble de nos services conçus pour répondre à tous
-            vos besoins immobiliers avec professionnalisme et efficacité.
-          </p>
-        </div>
+    <section
+      id="expertise"
+      className="relative overflow-hidden bg-background py-20 md:py-28"
+    >
+      <div
+        className="pointer-events-none absolute -left-32 bottom-10 h-96 w-96 rounded-full bg-third/55 blur-3xl"
+        aria-hidden="true"
+      />
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="container relative mx-auto px-4">
+        <SectionHeader
+          title="Notre expertise"
+          subtitle="Des solutions immobilières complètes, portées par une équipe engagée à chaque étape de votre projet."
+          watermark="SERVICES"
+          className="mb-12 md:mb-16"
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service, index) => (
-            <div
-              key={index}
-              className="group p-6 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300"
+            <article
+              key={service.title}
+              className="group relative overflow-hidden rounded-xl border border-primary/[0.08] bg-card/80 p-6 transition-colors duration-300 hover:border-primary/20 hover:bg-card"
             >
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                <service.icon className="h-6 w-6 text-primary" />
+              <span
+                className="absolute right-5 top-5 text-[0.65rem] font-semibold tracking-[0.18em] text-primary/25 transition-colors group-hover:text-primary/40"
+                aria-hidden="true"
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+
+              <div className="mb-6 flex h-9 w-9 items-center justify-center rounded-lg bg-third/70 text-primary ring-1 ring-primary/[0.08] transition-colors duration-300 group-hover:bg-third">
+                <service.icon className="h-4 w-4" strokeWidth={1.7} />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+
+              <h3 className="mb-2.5 text-lg font-semibold tracking-tight text-foreground">
                 {service.title}
               </h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {service.description}
               </p>
-            </div>
+            </article>
           ))}
+        </div>
+
+        <div className="mt-10 flex flex-col gap-3 rounded-2xl border border-primary/10 bg-third/45 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
+          <p className="font-medium text-foreground">
+            Un besoin spécifique ? Nous construisons aussi un accompagnement sur
+            mesure.
+          </p>
+          <a
+            href="#contact"
+            className="w-fit text-sm font-semibold text-primary underline-offset-4 hover:underline"
+          >
+            Parler à un conseiller →
+          </a>
         </div>
       </div>
     </section>

@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { CheckCircle2, Star } from "lucide-react";
+import { CheckCircle2, Quote, Star } from "lucide-react";
+import { SectionHeader } from "@/components/SectionHeader";
 
 const features = [
   "Une équipe d'agents qualifiés et dévoués",
@@ -9,71 +10,92 @@ const features = [
 
 export default function AboutSection() {
   return (
-    <section id="about" className="py-20 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="relative">
-            <div className="aspect-[4/3] relative rounded-2xl overflow-hidden shadow-xl">
+    <section
+      id="about"
+      className="relative overflow-hidden bg-third/45 py-20 md:py-28"
+    >
+      <div
+        className="pointer-events-none absolute -right-24 top-20 h-80 w-80 rounded-full bg-secondary/25 blur-3xl"
+        aria-hidden="true"
+      />
+
+      <div className="container relative mx-auto px-4">
+        <SectionHeader
+          title="Qui sommes-nous ?"
+          subtitle="Une expertise locale, une écoute attentive et un accompagnement pensé autour de votre projet."
+          watermark="À PROPOS"
+          className="mb-12 md:mb-16"
+        />
+
+        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
+          <div className="relative mx-auto w-full max-w-2xl lg:mx-0">
+            <div className="absolute -left-4 -top-4 h-28 w-28 rounded-tl-[2rem] border-l border-t border-primary/25 md:-left-7 md:-top-7" />
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] bg-muted shadow-[0_24px_70px_-30px_rgba(51,34,18,0.55)]">
               <Image
                 src="/pyramide-img.jpg"
-                alt="Notre équipe Pyramide Immobilier"
+                alt="L'équipe de Pyramide Immobilier"
                 fill
-                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 52vw"
+                className="object-cover transition-transform duration-700 hover:scale-[1.03]"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/35 via-transparent to-transparent" />
             </div>
-            {/* <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground p-6 rounded-xl shadow-lg hidden md:block">
-              <p className="text-4xl font-bold">10+</p>
-              <p className="text-sm">Années d&apos;expérience</p>
-            </div> */}
-          </div>
 
-          <div className="space-y-6">
-            <div>
-              <p className="text-primary font-medium mb-2">Qui sommes-nous ?</p>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-                Votre partenaire de confiance en immobilier
-              </h2>
-              <p className="text-muted-foreground leading-relaxed">
-                Pyramide Immobilier est une agence immobilière de premier plan,
-                dédiée à vous accompagner dans tous vos projets immobiliers. Que
-                vous souhaitiez acheter, vendre ou louer, notre équipe
-                d&apos;experts est là pour vous guider à chaque étape.
+            <div className="absolute -bottom-6 right-4 flex max-w-[17rem] items-start gap-3 rounded-2xl border border-white/40 bg-background/95 p-4 shadow-xl backdrop-blur md:-right-5 md:bottom-8">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <Quote className="h-4 w-4" />
+              </div>
+              <p className="text-sm font-medium leading-relaxed text-foreground">
+                Votre projet mérite un accompagnement à sa mesure.
               </p>
             </div>
+          </div>
 
-            <ul className="space-y-3">
-              {features.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="text-foreground">{feature}</span>
+          <div className="pt-5 lg:pt-0">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-primary/70">
+              L&apos;immobilier, en toute confiance
+            </p>
+            <h3 className="max-w-xl text-3xl font-semibold leading-tight tracking-tight text-foreground md:text-4xl">
+              Bien plus qu&apos;une agence, votre partenaire immobilier.
+            </h3>
+            <p className="mt-6 text-base leading-7 text-muted-foreground md:text-lg">
+              Pyramide Immobilier vous accompagne dans tous vos projets. Achat,
+              vente ou location : notre équipe d&apos;experts transforme chaque
+              étape en une expérience simple, claire et sereine.
+            </p>
+
+            <ul className="mt-8 grid gap-3">
+              {features.map((feature) => (
+                <li
+                  key={feature}
+                  className="flex items-center gap-3 rounded-xl border border-primary/10 bg-background/65 px-4 py-3.5 transition-colors hover:border-primary/25 hover:bg-background"
+                >
+                  <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+                  <span className="text-sm font-medium text-foreground md:text-base">
+                    {feature}
+                  </span>
                 </li>
               ))}
             </ul>
 
-            <p className="text-muted-foreground leading-relaxed">
-              Notre mission est de rendre l&apos;expérience immobilière simple,
-              transparente et satisfaisante pour tous nos clients. Nous croyons
-              en des relations durables basées sur la confiance et
-              l&apos;intégrité.
-            </p>
-
-            <div className="flex items-center gap-4 pt-2">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "fill-yellow-400/70 text-yellow-400/70"}`}
-                  />
-                ))}
-              </div>
-              <div>
-                <span className="font-bold text-foreground text-lg">4,7</span>
-                <span className="text-muted-foreground text-sm ml-1">
-                  / 5 sur Google
-                </span>
-                <p className="text-muted-foreground text-sm">
-                  Basé sur 85 avis clients
-                </p>
+            <div className="mt-8 flex flex-col gap-4 border-t border-primary/15 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+                Des relations durables fondées sur la transparence,
+                l&apos;intégrité et les résultats.
+              </p>
+              <div className="flex shrink-0 items-center gap-3">
+                <div className="flex gap-0.5" aria-label="Note de 4,7 sur 5">
+                  {[...Array(5)].map((_, index) => (
+                    <Star
+                      key={index}
+                      className="h-4 w-4 fill-amber-400 text-amber-400"
+                    />
+                  ))}
+                </div>
+                <div className="leading-tight">
+                  <p className="font-semibold text-foreground">4,7 / 5</p>
+                  <p className="text-xs text-muted-foreground">85 avis Google</p>
+                </div>
               </div>
             </div>
           </div>

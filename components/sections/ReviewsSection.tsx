@@ -4,6 +4,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback } from "react";
+import { SectionHeader } from "@/components/SectionHeader";
 
 const reviews = [
   {
@@ -103,57 +104,79 @@ export default function ReviewsSection() {
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   return (
-    <section id="reviews" className="py-10 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="text-primary font-medium mb-2">Avis Clients</p>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-            Ce que disent nos clients
-          </h2>
-          <div className="flex items-center justify-center gap-3">
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-5 w-5 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "fill-yellow-400/70 text-yellow-400/70"}`}
-                />
-              ))}
+    <section
+      id="reviews"
+      className="relative overflow-hidden border-t border-primary/[0.08] bg-third/20 py-20 md:py-28"
+    >
+      <div className="container relative mx-auto px-4">
+        <SectionHeader
+          title="Ils nous font confiance"
+          subtitle="Des expériences partagées par celles et ceux que nous avons accompagnés dans leur projet immobilier."
+          watermark="AVIS"
+          className="mb-10 md:mb-12"
+          action={
+            <div className="flex items-center gap-3 rounded-full border border-primary/10 bg-background/70 px-4 py-2.5">
+              <div className="flex gap-0.5" aria-label="Note de 4,7 sur 5">
+                {[...Array(5)].map((_, index) => (
+                  <Star
+                    key={index}
+                    className="h-3.5 w-3.5 fill-amber-400 text-amber-400"
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-semibold text-foreground">4,7</span>
+              <span className="text-xs text-muted-foreground">
+                85 avis Google
+              </span>
             </div>
-            <span className="font-bold text-foreground text-lg">4,7 / 5</span>
-            <span className="text-muted-foreground text-sm">
-              · 85 avis sur Google
-            </span>
-          </div>
-        </div>
+          }
+        />
 
         <div className="relative">
+          <div className="mb-4 flex justify-end gap-2">
+            <button
+              onClick={scrollPrev}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/10 bg-background/70 text-foreground transition-colors hover:border-primary/25 hover:bg-background"
+              aria-label="Avis précédent"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={scrollNext}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/10 bg-background/70 text-foreground transition-colors hover:border-primary/25 hover:bg-background"
+              aria-label="Avis suivant"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex gap-6">
+            <div className="flex gap-4">
               {reviews.map((review, index) => (
-                <div
+                <article
                   key={index}
-                  className="flex-none w-[90%] sm:w-[45%] lg:w-[30%] bg-card border border-border rounded-xl p-6 flex flex-col"
+                  className="flex min-h-80 w-[90%] flex-none flex-col rounded-xl border border-primary/[0.08] bg-card/80 p-6 sm:w-[calc(50%_-_0.5rem)] lg:w-[calc(33.333%_-_0.7rem)]"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex gap-0.5">
+                  <div className="mb-5 flex items-start justify-between">
+                    <div className="flex gap-0.5" aria-hidden="true">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                          className="h-3.5 w-3.5 fill-amber-400 text-amber-400"
                         />
                       ))}
                     </div>
                     <GoogleIcon />
                   </div>
 
-                  <Quote className="h-5 w-5 text-primary/30 mb-2" />
-                  <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-4">
+                  <Quote className="mb-3 h-4 w-4 text-primary/20" />
+                  <p className="mb-5 flex-1 text-sm leading-6 text-muted-foreground">
                     {review.text}
                   </p>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex items-center justify-between gap-3 border-t border-primary/[0.08] pt-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-third">
                         <span className="text-primary text-xs font-semibold">
                           {review.name.charAt(0).toUpperCase()}
                         </span>
@@ -166,25 +189,10 @@ export default function ReviewsSection() {
                       {review.date}
                     </span>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </div>
-
-          <button
-            onClick={scrollPrev}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-10 h-10 bg-card border border-border rounded-full flex items-center justify-center shadow-md hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors z-10"
-            aria-label="Précédent"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={scrollNext}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-10 h-10 bg-card border border-border rounded-full flex items-center justify-center shadow-md hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors z-10"
-            aria-label="Suivant"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
         </div>
       </div>
     </section>

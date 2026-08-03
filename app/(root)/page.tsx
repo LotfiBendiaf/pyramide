@@ -27,12 +27,13 @@ const page = ({ searchParams }: ListingsSectionProps) => {
       <Navbar />
 
       <Hero />
+      <AboutSection />
       <div className="container mx-auto">
         <ListingsSection searchParams={searchParams} />
       </div>
       <ExpertiseSection />
       <GlobalImpactSection />
-      <AboutSection />
+
       <div className="container mx-auto space-y-10">
         <PremiumListings />
         <ReviewsSection />
