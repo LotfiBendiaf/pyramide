@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import { SectionHeader } from "../SectionHeader";
 import { fetchListings } from "@/lib/actions/listings.action";
-import ListingCard from "../ListingCard";
 import { ListingsSkeleton } from "../skeletons/ListingsSkeleton";
 import ROUTES from "@/constants/routes";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { ArrowUpRight } from "lucide-react";
+import { FeaturedListingsFeed, type FeaturedListingFilters } from "./FeaturedListingsFeed";
 
 type ListingsSectionProps = {
   searchParams?: {
@@ -22,7 +22,7 @@ type ListingsSectionProps = {
 
 const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
   const params = await searchParams;
-  const result = await fetchListings({
+  const filters: FeaturedListingFilters = {
     city: params?.city,
     status:
       params?.status && params.status !== "Retiré"
@@ -32,9 +32,13 @@ const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
     maxPrice: params?.maxPrice ? Number(params.maxPrice) : undefined,
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
     propertyType: params?.propertyType,
-    isPremium: false,
+  };
+  const result = await fetchListings({
+    ...filters,
+    isFeatured: true,
     isPublished: true,
-    limit: params?.limit ? Number(params.limit) : 4,
+    isValidated: true,
+    limit: 4,
   });
 
   if (!result.success) {
@@ -55,13 +59,7 @@ const ListingsContent = async ({ searchParams }: ListingsSectionProps) => {
     );
   }
 
-  return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      {listings.map((listing) => (
-        <ListingCard key={listing._id} listing={listing} />
-      ))}
-    </div>
-  );
+  return <FeaturedListingsFeed initialListings={listings} total={result.total ?? listings.length} filters={filters} />;
 };
 
 export default function ListingsSection({
@@ -72,7 +70,7 @@ export default function ListingsSection({
       {/* Client component */}
       <SectionHeader
         title="Biens immobiliers"
-        subtitle="Trouvez notre sélection de biens"
+        subtitle="Découvrez les biens sélectionnés par notre équipe"
         buttonHref={ROUTES.LISTINGS}
         buttonLabel="Voir tous les biens"
       />

@@ -291,6 +291,7 @@ interface FetchListingsParams {
   limit?: number;
   page?: number;
   isPremium?: boolean;
+  isFeatured?: boolean;
   minScore?: number;
   search?: string;
   referenceCodeSearch?: string;
@@ -346,6 +347,7 @@ export async function fetchListings(
       limit,
       page = 1,
       isPremium,
+      isFeatured,
       minScore,
       search,
       referenceCodeSearch,
@@ -413,7 +415,8 @@ export async function fetchListings(
     if (status) query.status = status;
     if (propertyType) query.propertyType = propertyType;
     if (city) query["location.city"] = city;
-    if (isPremium) query["isPremium"] = isPremium;
+    if (isPremium !== undefined) query.isPremium = isPremium;
+    if (isFeatured !== undefined) query.isFeatured = isFeatured;
     if (minScore !== undefined) {
       query["evaluation.finalScore"] = { $gte: minScore };
     }
@@ -1369,6 +1372,58 @@ export async function toggleListingPublished(
       data: { isPublished: newStatus },
       status: 200,
     };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function setListingFeatured(
+  listingId: string,
+  isFeatured: boolean
+): Promise<ActionResponse<{ isFeatured: boolean }>> {
+  try {
+    const user = await getUserBySessionEmail();
+
+    if (!user.data || !isElevatedRole(user.data.role)) {
+      return {
+        success: false,
+        error: { message: "Vous n’êtes pas autorisé à gérer les biens à la une." },
+        status: 403,
+      };
+    }
+
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID annonce invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+    const listing = await Listing.findOneAndUpdate(
+      {
+        _id: listingId,
+        isPublished: true,
+        isValidated: true,
+        archived: { $ne: true },
+      },
+      { isFeatured },
+      { new: true }
+    ).select("isFeatured");
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Seules les annonces publiées et validées peuvent être mises à la une." },
+        status: 400,
+      };
+    }
+
+    revalidatePath(ROUTES.FEATURED_LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.HOME);
+
+    return { success: true, data: { isFeatured: listing.isFeatured }, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

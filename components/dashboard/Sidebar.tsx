@@ -52,6 +52,7 @@ import {
   BriefcaseBusiness,
   ClipboardCheck,
   Lock,
+  Star,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -104,6 +105,12 @@ const sidebarConfig: SidebarGroup[] = [
         url: ROUTES.LISTING_ADD,
         icon: PlusCircle,
         roles: ["ADMIN", "MANAGER", "AGENT", "ASSISTANT"],
+      },
+      {
+        title: "Biens à la une",
+        url: ROUTES.FEATURED_LISTINGS_DASHBOARD,
+        icon: Star,
+        roles: ["ADMIN", "MANAGER"],
       },
     ],
   },

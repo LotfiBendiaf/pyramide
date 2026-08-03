@@ -100,6 +100,7 @@ export const routeTitles: Record<string, string> = {
   "/dashboard/listings/add": "Nouvelle Annonce",
   "/dashboard/listings/[id]": "Détails de l’Annonce",
   "/dashboard/listings/[id]/edit": "Modifier l’Annonce",
+  "/dashboard/featured-listings": "Biens à la une",
 
   //Suivies Clients
   "/dashboard/follow-ups": "Suivis Clients",
