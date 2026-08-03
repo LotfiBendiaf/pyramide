@@ -225,7 +225,7 @@ export default function ListingFilterDashboard() {
           <div className="relative w-full min-w-0">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Rechercher par référence, ville, adresse..."
+              placeholder="Rechercher par référence, ville, adresse, téléphone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 pr-4 h-10 rounded-full border-border/60 bg-muted/40 shadow-sm focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-400 transition-all placeholder:text-muted-foreground/60"

@@ -473,10 +473,24 @@ export async function fetchListings(
       const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(escapedSearch, "i");
 
+      // Phone numbers are stored in international format (for example
+      // +213555123456), while users commonly search using the local format
+      // (0555123456) or add spaces. Match the significant digits as well.
+      const phoneDigits = search.replace(/\D/g, "");
+      const localPhoneDigits = phoneDigits.replace(/^0/, "");
+      const phoneRegex =
+        localPhoneDigits.length >= 5
+          ? new RegExp(localPhoneDigits.split("").join("\\D*"), "i")
+          : null;
+
       // Find seller clients matching the search term (phone, name, email)
       const matchingClientIds = await Client.find({
         $or: [
           { phone: regex },
+          { phone2: regex },
+          ...(phoneRegex
+            ? [{ phone: phoneRegex }, { phone2: phoneRegex }]
+            : []),
           { firstName: regex },
           { lastName: regex },
           { email: regex },
