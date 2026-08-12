@@ -205,7 +205,17 @@ export default async function ListingsPage({
       </div>
 
       <Suspense fallback={<TableSkeleton />}>
-        {isActiveView && <ListingFilterDashboard />}
+        <ListingFilterDashboard
+          key={
+            isArchiveView
+              ? "archives"
+              : isApprovedView
+                ? "approved"
+                : isNeutreView
+                  ? "neutre"
+                  : "active"
+          }
+        />
         <ListingsContent
           searchParams={searchParams}
           assignees={assigneesResult?.data ?? []}

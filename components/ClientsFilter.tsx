@@ -42,6 +42,9 @@ export default function ClientsFilter({
 
   const handleApplyFilters = () => {
     const params = new URLSearchParams();
+    const view = searchParams.get("view");
+
+    if (view) params.set("view", view);
 
     if (agentId) params.set("agentId", agentId);
     if (qualification) params.set("qualification", qualification);
@@ -62,7 +65,15 @@ export default function ClientsFilter({
     setSearch("");
 
     startTransition(() => {
-      router.push(window.location.pathname, { scroll: false });
+      const params = new URLSearchParams();
+      const view = searchParams.get("view");
+
+      if (view) params.set("view", view);
+
+      const query = params.toString();
+      router.push(`${window.location.pathname}${query ? `?${query}` : ""}`, {
+        scroll: false,
+      });
     });
   };
 

@@ -165,6 +165,9 @@ export default function ListingFilterDashboard() {
     e.preventDefault();
 
     const params = new URLSearchParams();
+    const view = searchParams.get("view");
+
+    if (view) params.set("view", view);
 
     if (search) params.set("search", search);
     if (city) params.set("city", city);
@@ -201,7 +204,15 @@ export default function ListingFilterDashboard() {
     setRentPriceRange(RENT_PRICE_RANGE_DEFAULT);
     setSalePriceRange(SALE_PRICE_RANGE_DEFAULT);
 
-    router.push(window.location.pathname, { scroll: false });
+    const params = new URLSearchParams();
+    const view = searchParams.get("view");
+
+    if (view) params.set("view", view);
+
+    const query = params.toString();
+    router.push(`${window.location.pathname}${query ? `?${query}` : ""}`, {
+      scroll: false,
+    });
   };
 
   const activeFilterCount =

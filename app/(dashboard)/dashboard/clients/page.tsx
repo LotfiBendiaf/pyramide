@@ -51,30 +51,28 @@ async function ClientsContent({
     archived: isArchiveView ? true : undefined,
   };
 
-  if (!isArchiveView) {
-    if (searchParams.agentId && searchParams.agentId !== "__all__") {
-      filterParams.agentId = searchParams.agentId;
-    }
-    if (
-      searchParams.qualification &&
-      searchParams.qualification !== "__all__"
-    ) {
-      filterParams.qualificationStatus =
-        searchParams.qualification as ClientFilters["qualificationStatus"];
-    }
-    if (searchParams.type && searchParams.type !== "__all__") {
-      filterParams.type = searchParams.type as ClientFilters["type"];
-    }
-    if (searchParams.propertyType && searchParams.propertyType !== "__all__") {
-      filterParams.wantedPropertyType = searchParams.propertyType;
-    }
-    if (searchParams.search) {
-      filterParams.search = searchParams.search;
-    }
-    if (canUsePipeline && searchParams.stage) {
-      filterParams.pipelineStage =
-        searchParams.stage as ClientFilters["pipelineStage"];
-    }
+  if (searchParams.agentId && searchParams.agentId !== "__all__") {
+    filterParams.agentId = searchParams.agentId;
+  }
+  if (
+    searchParams.qualification &&
+    searchParams.qualification !== "__all__"
+  ) {
+    filterParams.qualificationStatus =
+      searchParams.qualification as ClientFilters["qualificationStatus"];
+  }
+  if (searchParams.type && searchParams.type !== "__all__") {
+    filterParams.type = searchParams.type as ClientFilters["type"];
+  }
+  if (searchParams.propertyType && searchParams.propertyType !== "__all__") {
+    filterParams.wantedPropertyType = searchParams.propertyType;
+  }
+  if (searchParams.search) {
+    filterParams.search = searchParams.search;
+  }
+  if (canUsePipeline && !isArchiveView && searchParams.stage) {
+    filterParams.pipelineStage =
+      searchParams.stage as ClientFilters["pipelineStage"];
   }
 
   const [result, agentsResult, listingsResult] = await Promise.all([
@@ -182,12 +180,11 @@ export default async function ClientPage({
         />
       )}
 
-      {!isArchiveView && (
-        <ClientsFilter
-          agents={isAdmin ? agentsResult.data || [] : []}
-          canFilterByAgent={isAdmin}
-        />
-      )}
+      <ClientsFilter
+        key={isArchiveView ? "archives" : "active"}
+        agents={isAdmin ? agentsResult.data || [] : []}
+        canFilterByAgent={isAdmin}
+      />
 
       <Suspense fallback={<ListingsSkeleton />}>
         <ClientsContent searchParams={params} />
