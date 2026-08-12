@@ -970,6 +970,10 @@ export async function updateListing(
         ...(referenceGeneratedAt && { referenceGeneratedAt }),
         propertyTypeCustom: normalizedPropertyTypeCustom,
         evaluation,
+        // An omitted optional price must also clear a previously stored value.
+        ...(parsedParams.offeredPrice === undefined && {
+          $unset: { offeredPrice: 1 },
+        }),
         // Do not overwrite agent or seller form-only fields
         sellerFirstName: undefined,
         sellerLastName: undefined,
