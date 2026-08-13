@@ -39,6 +39,23 @@ export function VisitsList({ visits, showAgent = false, showClient = true }: Pro
 
   return (
     <div className="rounded-lg border overflow-hidden">
+      <div className="space-y-3 p-3 md:hidden">
+        {visits.map((visit) => (
+          <article key={visit._id} className="rounded-xl border bg-card p-3 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div><p className="font-semibold capitalize">{format(new Date(visit.scheduledAt), "EEE dd MMM", { locale: fr })}</p><p className="text-sm text-muted-foreground">{format(new Date(visit.scheduledAt), "HH:mm", { locale: fr })}</p></div>
+              <div className="flex flex-wrap justify-end gap-1"><VisitStatusBadge status={visit.status} />{visit.outcome && <VisitOutcomeBadge outcome={visit.outcome} />}</div>
+            </div>
+            <div className="mt-3 space-y-2 border-y py-3 text-sm">
+              {visit.isExternalListing ? <div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-muted-foreground" /><span className="italic text-muted-foreground">{visit.externalListingRef ?? "Bien externe"}</span></div> : visit.listing ? <Link href={ROUTES.LISTING_DETAIL_DASHBOARD(visit.listing._id)} className="flex items-center gap-2 font-medium"><Building2 className="h-4 w-4 text-muted-foreground" /><span className="truncate">{visit.listing.referenceCode ? `${visit.listing.referenceCode} · ` : ""}{visit.listing.title ?? "Bien"}</span></Link> : null}
+              {showClient && visit.client && <Link href={ROUTES.CLIENT_DETAIL(visit.client._id)} className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /><span className="truncate">{[visit.client.firstName, visit.client.lastName].filter(Boolean).join(" ") || visit.client.phone}</span></Link>}
+              {showAgent && <div className="flex items-center gap-2 text-muted-foreground"><User className="h-4 w-4" />{visit.agent ? `${visit.agent.firstname} ${visit.agent.lastname}` : "Agent non assigné"}</div>}
+            </div>
+            {(visit.status === "SCHEDULED" || visit.status === "COMPLETED") && <div className="mt-3 flex flex-wrap justify-end gap-1">{visit.status === "SCHEDULED" && <CompleteVisitDialog visitId={visit._id} />}<CancelVisitDialog visitId={visit._id} />{visit.status === "SCHEDULED" && <NoShowButton visitId={visit._id} />}</div>}
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
       <Table>
         <TableHeader>
           <TableRow>
@@ -145,6 +162,7 @@ export function VisitsList({ visits, showAgent = false, showClient = true }: Pro
           ))}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

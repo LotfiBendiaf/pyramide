@@ -46,6 +46,8 @@ import {
   Loader2,
   ShowerHead,
   Radio,
+  MoreHorizontal,
+  MapPin,
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
@@ -227,9 +229,79 @@ export function ListingTable({
     setValidatingStates((prev) => ({ ...prev, [listingId]: false }));
   };
 
+  const renderValidationMenu = (listing: Listing) => {
+    const vState = getValidationState(listing);
+    const isLoading = validatingStates[listing._id];
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-9 w-9" disabled={isLoading} aria-label="Actions de validation">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-5 w-5" />}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem disabled={vState === "validé"} onClick={() => handleValidate(listing._id)}>Valider</DropdownMenuItem>
+          <DropdownMenuItem disabled={vState === "validé" || vState === "approuvé"} onClick={() => handleApprove(listing._id)}>Approuver</DropdownMenuItem>
+          <DropdownMenuItem disabled={vState === "neutre"} onClick={() => handleSetNeutre(listing._id)}>Mettre en Neutre</DropdownMenuItem>
+          <DropdownMenuItem disabled={vState === "archivé"} className="text-destructive focus:text-destructive" onClick={() => setArchiveDialog({ open: true, listingId: listing._id })}>Archiver</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
   return (
     <Card>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="p-3 md:hidden">
+        <div className="space-y-3">
+          <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs text-muted-foreground" onClick={handleSortByRef}>
+            Trier par référence <RefSortIcon className="h-3.5 w-3.5" />
+          </Button>
+          {listings.map((listing) => {
+            const vState = getValidationState(listing);
+            const documentsCount = listing.documents?.length ?? 0;
+            return (
+              <article key={listing._id} className="rounded-xl border bg-card p-3 shadow-sm">
+                <div className="flex gap-3">
+                  <Image src={listing?.images?.[0]?.url || "/placeholder.png"} alt={listing.title || "Image du bien"} width={80} height={72} className="h-[72px] w-20 shrink-0 rounded-lg object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {listing.referenceCode && <Badge variant="outline" className="font-mono text-[11px]">{listing.referenceCode}</Badge>}
+                          <Badge variant="default" className="text-[11px]">{listing.propertyTypeCustom || listing.propertyType}</Badge>
+                        </div>
+                        <p className="mt-1 truncate text-sm font-semibold">{listing.title || "Bien immobilier"}</p>
+                      </div>
+                      {renderValidationMenu(listing)}
+                    </div>
+                    <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground"><MapPin className="h-3 w-3 shrink-0" />{listing.location.city || "Localisation non renseignée"}</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-2.5 text-sm">
+                  <div><p className="text-[11px] text-muted-foreground">Prix</p><p className="font-semibold">{listing.price ? formatPriceAlgeria(listing.price) : "À estimer"}</p></div>
+                  <div><p className="text-[11px] text-muted-foreground">Surface</p><p className="font-semibold">{listing.features.area || "—"} m²</p></div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <ValidationBadge state={vState} />
+                  <Badge variant="outline" className={STATUS_COLORS[listing.status]}>{listing.status}</Badge>
+                  {hasNegotiationPipeline(listing) && <Badge variant="purple" className="text-xs"><Radio className="h-3 w-3" />Négociation</Badge>}
+                  {documentsCount > 0 && <Badge variant="outline" className="gap-1 text-xs"><FileText className="h-3 w-3" />{documentsCount}</Badge>}
+                </div>
+                <div className="mt-3 flex items-center gap-2 border-t pt-3">
+                  <Button className="flex-1" size="sm" onClick={() => window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")}>Ouvrir le bien</Button>
+                  <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5">
+                    <Switch checked={listing.isPublished} onCheckedChange={() => openConfirmDialog(listing._id, listing.isPublished)} disabled={publishingStates[listing._id]} aria-label={listing.isPublished ? "Dépublier" : "Publier"} />
+                    <span className="text-xs text-muted-foreground">{listing.isPublished ? "Publié" : "Privé"}</span>
+                  </div>
+                </div>
+                {canAssignAgent && <div className="mt-2" onClick={(e) => e.stopPropagation()}><ListingAgentSelect listingId={listing._id} agents={agents} value={listing.agent?._id} /></div>}
+              </article>
+            );
+          })}
+        </div>
+      </CardContent>
+      <CardContent className="hidden overflow-x-auto md:block">
         <Table className="min-w-[1180px]">
           <TableHeader>
             <TableRow>

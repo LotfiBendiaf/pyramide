@@ -87,10 +87,36 @@ export default function UsersTable({
   const canDelete =
     currentUserRole === "ADMIN" || currentUserRole === "DEVELOPER";
 
+  const renderActions = (user: User, isSelf: boolean) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild><Link href={ROUTES.USER_DETAIL(user._id as string)} className="flex items-center gap-2"><Pencil className="h-4 w-4" />Modifier</Link></DropdownMenuItem>
+        {canDelete && !isSelf && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => handleDeleteClick(user)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Supprimer</DropdownMenuItem></>}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <>
       <Card>
         <CardContent className="p-0">
+          <div className="space-y-3 p-3 md:hidden">
+            {users.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Aucun utilisateur trouvé</p> : users.map((user) => {
+              const userId = user._id as string;
+              const isSelf = userId === currentUserId;
+              return <article key={userId} className="rounded-xl border bg-card p-3 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-11 w-11"><AvatarImage src={user.profileImage} /><AvatarFallback className="bg-primary/10 font-medium text-primary">{user.firstname?.[0]}{user.lastname?.[0]}</AvatarFallback></Avatar>
+                  <div className="min-w-0 flex-1"><div className="flex items-center gap-1.5"><p className="truncate font-semibold">{user.firstname} {user.lastname}</p>{isSelf && <Badge variant="outline" className="text-[10px]">Vous</Badge>}</div><p className="text-sm text-muted-foreground">@{user.username}</p></div>
+                  {renderActions(user, isSelf)}
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t pt-3"><Badge variant="outline" className={ROLE_COLORS[user.role as Role]}>{ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}</Badge><span className="text-xs text-muted-foreground">{formatDate((user as unknown as { createdAt: Date }).createdAt)}</span></div>
+                <div className="mt-3 space-y-1.5 rounded-lg bg-muted/40 p-2.5 text-sm"><a href={`mailto:${user.email}`} className="flex min-w-0 items-center gap-2"><Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="truncate">{user.email}</span></a>{user.phone && <a href={`tel:${user.phone}`} className="flex items-center gap-2 text-muted-foreground"><Phone className="h-3.5 w-3.5" />{user.phone}</a>}</div>
+              </article>;
+            })}
+          </div>
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -220,6 +246,7 @@ export default function UsersTable({
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
