@@ -242,6 +242,11 @@ export async function createListing(
         ? parsedParams.propertyTypeCustom?.trim()
         : undefined;
 
+    // Listings created by an agent skip the waiting-for-approval step and go
+    // straight to APPROVED. A referenceCode is not assigned here — it is only
+    // required once a listing reaches VALIDATED (see toggleListingValidation).
+    const isAgentCreated = user.data.role === "AGENT";
+
     const listing = await Listing.create({
       ...parsedParams,
       description,
@@ -249,7 +254,13 @@ export async function createListing(
       evaluation,
       agent: user.data._id,
       sellerClient: sellerClient._id,
-      isValidated: false,
+      isValidated: isAgentCreated,
+      ...(isAgentCreated && {
+        validationStatus: "APPROVED",
+        validatedAt: new Date(),
+        validatedBy: user.data._id,
+        pipelineStatus: "PHOTO_VISIT_PENDING",
+      }),
     });
 
     if (!listing) {
@@ -851,7 +862,7 @@ export async function updateListingStatus(
     await dbConnect();
 
     const listing = await Listing.findById(listingId).select(
-      "referenceCode description isValidated"
+      "referenceCode description validationStatus"
     );
 
     if (!listing) {
@@ -865,9 +876,11 @@ export async function updateListingStatus(
       description?: string;
     } = { status };
 
+    // Only VALIDATED listings carry a referenceCode — APPROVED ones don't
+    // need one, so skip regeneration for them.
     const expectedPrefix = getListingReferencePrefix(status);
     if (
-      listing.isValidated &&
+      listing.validationStatus === "VALIDATED" &&
       !hasListingReferencePrefix(listing.referenceCode, expectedPrefix)
     ) {
       const referenceCode = await generateListingReferenceCode(expectedPrefix);
@@ -945,13 +958,15 @@ export async function updateListing(
         : undefined;
 
     const existingListing = (await Listing.findById(listingId)
-      .select("referenceCode isValidated")
-      .lean()) as { referenceCode?: string; isValidated?: boolean } | null;
+      .select("referenceCode validationStatus")
+      .lean()) as { referenceCode?: string; validationStatus?: string } | null;
 
+    // Only VALIDATED listings carry a referenceCode — APPROVED ones don't
+    // need one, so skip regeneration for them.
     const expectedPrefix = getListingReferencePrefix(parsedParams.status);
     let referenceCode = existingListing?.referenceCode;
     if (
-      existingListing?.isValidated &&
+      existingListing?.validationStatus === "VALIDATED" &&
       !hasListingReferencePrefix(referenceCode, expectedPrefix)
     ) {
       referenceCode = await generateListingReferenceCode(expectedPrefix);
@@ -1131,24 +1146,9 @@ export async function approveListingWithoutReference(
       };
     }
 
-    let referenceCode = listing.referenceCode as string | undefined;
-    let updatedDescription = listing.description;
-    const prefix = getListingReferencePrefix(listing.status);
-    let referenceGeneratedAt = listing.referenceGeneratedAt;
-
-    if (!hasListingReferencePrefix(referenceCode, prefix)) {
-      referenceCode = await generateListingReferenceCode(prefix);
-      referenceGeneratedAt = new Date();
-      updatedDescription = upsertReferenceInDescription(
-        listing.description,
-        referenceCode
-      );
-    }
-
+    // APPROVED does not require a referenceCode — only VALIDATED does
+    // (see toggleListingValidation), so no code is generated here.
     await Listing.findByIdAndUpdate(listingId, {
-      referenceCode,
-      referenceGeneratedAt,
-      description: updatedDescription || listing.description,
       isValidated: true,
       validationStatus: "APPROVED",
       validatedAt: new Date(),
