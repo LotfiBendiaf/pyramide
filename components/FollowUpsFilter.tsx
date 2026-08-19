@@ -93,7 +93,7 @@ export default function FollowUpsFilter({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher dans les notes..."
+              placeholder="Rechercher par code client, nom, téléphone, notes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleApplyFilters()}

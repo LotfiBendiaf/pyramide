@@ -269,13 +269,28 @@ export async function fetchAllFollowUps(
     if (status) query.status = status;
     if (channel) query.channel = channel;
 
-    // Search in notes, title, client name
+    // Search in title, note, and matching client (name, reference code, phone)
     if (search) {
-      // Note: For searching in populated fields, we need to do it after populating
-      // For now, we'll search in title and note only
+      const regex = { $regex: search, $options: "i" };
+
+      const matchingClients = await Client.find({
+        $or: [
+          { referenceCode: regex },
+          { firstName: regex },
+          { lastName: regex },
+          { phone: regex },
+          { phone2: regex },
+        ],
+      })
+        .select("_id")
+        .lean();
+
       query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { note: { $regex: search, $options: "i" } },
+        { title: regex },
+        { note: regex },
+        ...(matchingClients.length
+          ? [{ client: { $in: matchingClients.map((c) => c._id) } }]
+          : []),
       ];
     }
 
