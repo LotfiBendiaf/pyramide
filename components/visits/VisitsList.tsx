@@ -17,15 +17,21 @@ import {
 } from "./VisitActionDialogs";
 import Link from "next/link";
 import ROUTES from "@/constants/routes";
-import { format } from "date-fns";
+import { format, isToday, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Building2, User } from "lucide-react";
+import { Building2, User, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { PopulatedVisit } from "@/types/visit";
 
 interface Props {
   visits: PopulatedVisit[];
   showAgent?: boolean;
   showClient?: boolean;
+}
+
+function isOverdue(visit: PopulatedVisit) {
+  const date = new Date(visit.scheduledAt);
+  return visit.status === "SCHEDULED" && isPast(date) && !isToday(date);
 }
 
 export function VisitsList({ visits, showAgent = false, showClient = true }: Props) {
@@ -40,10 +46,20 @@ export function VisitsList({ visits, showAgent = false, showClient = true }: Pro
   return (
     <div className="rounded-lg border overflow-hidden">
       <div className="space-y-3 p-3 md:hidden">
-        {visits.map((visit) => (
-          <article key={visit._id} className="rounded-xl border bg-card p-3 shadow-sm">
+        {visits.map((visit) => {
+          const scheduledDate = new Date(visit.scheduledAt);
+          const overdue = isOverdue(visit);
+          return (
+          <article key={visit._id} className={cn("rounded-xl border bg-card p-3 shadow-sm", overdue && "border-destructive/40 bg-destructive/5")}>
             <div className="flex items-start justify-between gap-2">
-              <div><p className="font-semibold capitalize">{format(new Date(visit.scheduledAt), "EEE dd MMM", { locale: fr })}</p><p className="text-sm text-muted-foreground">{format(new Date(visit.scheduledAt), "HH:mm", { locale: fr })}</p></div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold capitalize">{format(scheduledDate, "EEE dd MMM", { locale: fr })}</p>
+                  {isToday(scheduledDate) && <Badge className="text-[10px]">Aujourd&apos;hui</Badge>}
+                </div>
+                <p className="text-sm text-muted-foreground">{format(scheduledDate, "HH:mm", { locale: fr })}</p>
+                {overdue && <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-destructive"><AlertTriangle className="h-3 w-3" />En retard</p>}
+              </div>
               <div className="flex flex-wrap justify-end gap-1"><VisitStatusBadge status={visit.status} />{visit.outcome && <VisitOutcomeBadge outcome={visit.outcome} />}</div>
             </div>
             <div className="mt-3 space-y-2 border-y py-3 text-sm">
@@ -53,7 +69,8 @@ export function VisitsList({ visits, showAgent = false, showClient = true }: Pro
             </div>
             {(visit.status === "SCHEDULED" || visit.status === "COMPLETED") && <div className="mt-3 flex flex-wrap justify-end gap-1">{visit.status === "SCHEDULED" && <CompleteVisitDialog visitId={visit._id} />}<CancelVisitDialog visitId={visit._id} />{visit.status === "SCHEDULED" && <NoShowButton visitId={visit._id} />}</div>}
           </article>
-        ))}
+          );
+        })}
       </div>
       <div className="hidden overflow-x-auto md:block">
       <Table>
@@ -69,12 +86,19 @@ export function VisitsList({ visits, showAgent = false, showClient = true }: Pro
           </TableRow>
         </TableHeader>
         <TableBody>
-          {visits.map((visit) => (
-            <TableRow key={visit._id}>
+          {visits.map((visit) => {
+            const scheduledDate = new Date(visit.scheduledAt);
+            const overdue = isOverdue(visit);
+            return (
+            <TableRow key={visit._id} className={cn(overdue && "bg-destructive/5")}>
               <TableCell className="whitespace-nowrap text-sm">
-                {format(new Date(visit.scheduledAt), "dd MMM yyyy HH:mm", {
-                  locale: fr,
-                })}
+                <div className="flex items-center gap-1.5">
+                  {format(scheduledDate, "dd MMM yyyy HH:mm", {
+                    locale: fr,
+                  })}
+                  {isToday(scheduledDate) && <Badge className="text-[10px]">Aujourd&apos;hui</Badge>}
+                </div>
+                {overdue && <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-destructive"><AlertTriangle className="h-3 w-3" />En retard</p>}
               </TableCell>
               <TableCell>
                 {visit.isExternalListing ? (
@@ -159,7 +183,8 @@ export function VisitsList({ visits, showAgent = false, showClient = true }: Pro
                 )}
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
       </div>

@@ -15,9 +15,10 @@ import {
   CompleteVisitInput,
   CancelVisitInput,
 } from "../validators/visit";
-import { VisitFilters, PopulatedVisit } from "@/types/visit";
+import { VisitFilters, PopulatedVisit, VisitStats } from "@/types/visit";
 import { isElevatedRole } from "@/constants/values";
-import { Types } from "mongoose";
+import { Types, FilterQuery } from "mongoose";
+import { startOfDay, endOfDay, endOfWeek } from "date-fns";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
@@ -556,12 +557,15 @@ export async function fetchVisits(
     listingId,
     agentId,
     status,
+    dateFrom,
+    dateTo,
+    search,
     page = 1,
     limit = 20,
   } = validationResult.params as VisitFilters;
 
   try {
-    const filter: Record<string, unknown> = {};
+    const filter: FilterQuery<IVisit> = {};
 
     // Non-managers only see their own visits
     if (!isElevatedRole(user.data.role)) {
@@ -573,6 +577,47 @@ export async function fetchVisits(
     if (clientId) filter.client = clientId;
     if (listingId) filter.listing = listingId;
     if (status) filter.status = status;
+
+    if (dateFrom || dateTo) {
+      filter.scheduledAt = {
+        ...(dateFrom ? { $gte: startOfDay(new Date(dateFrom)) } : {}),
+        ...(dateTo ? { $lte: endOfDay(new Date(dateTo)) } : {}),
+      };
+    }
+
+    // Search by client (name, reference code, phone) or listing (reference
+    // code, title), plus external listing reference
+    if (search) {
+      const regex = { $regex: search, $options: "i" };
+
+      const [matchingClients, matchingListings] = await Promise.all([
+        Client.find({
+          $or: [
+            { referenceCode: regex },
+            { firstName: regex },
+            { lastName: regex },
+            { phone: regex },
+          ],
+        })
+          .select("_id")
+          .lean(),
+        Listing.find({
+          $or: [{ referenceCode: regex }, { title: regex }],
+        })
+          .select("_id")
+          .lean(),
+      ]);
+
+      filter.$or = [
+        { externalListingRef: regex },
+        ...(matchingClients.length
+          ? [{ client: { $in: matchingClients.map((c) => c._id) } }]
+          : []),
+        ...(matchingListings.length
+          ? [{ listing: { $in: matchingListings.map((l) => l._id) } }]
+          : []),
+      ];
+    }
 
     const skip = (page - 1) * limit;
 
@@ -594,6 +639,58 @@ export async function fetchVisits(
     return {
       success: true,
       data: { visits: JSON.parse(JSON.stringify(visits)), total },
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+/* ─────────────────────── Visit Stats ─────────────────────── */
+
+export async function fetchVisitStats(): Promise<ActionResponse<VisitStats>> {
+  const user = await getUserBySessionEmail();
+  if (!user?.data) {
+    return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+
+  try {
+    await dbConnect();
+
+    const baseFilter: FilterQuery<IVisit> = {};
+    if (!isElevatedRole(user.data.role)) {
+      baseFilter.agent = user.data._id;
+    }
+
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
+    const [today, week, upcoming, overdue] = await Promise.all([
+      Visit.countDocuments({
+        ...baseFilter,
+        scheduledAt: { $gte: todayStart, $lte: todayEnd },
+      }),
+      Visit.countDocuments({
+        ...baseFilter,
+        scheduledAt: { $gte: todayStart, $lte: weekEnd },
+      }),
+      Visit.countDocuments({
+        ...baseFilter,
+        status: "SCHEDULED",
+        scheduledAt: { $gt: todayEnd },
+      }),
+      Visit.countDocuments({
+        ...baseFilter,
+        status: "SCHEDULED",
+        scheduledAt: { $lt: todayStart },
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: { today, week, upcoming, overdue },
       status: 200,
     };
   } catch (error) {

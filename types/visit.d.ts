@@ -57,6 +57,16 @@ export type VisitFilters = {
   listingId?: string;
   agentId?: string;
   status?: VisitStatus;
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
   page?: number;
   limit?: number;
+};
+
+export type VisitStats = {
+  today: number;
+  week: number;
+  upcoming: number;
+  overdue: number;
 };

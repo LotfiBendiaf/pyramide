@@ -45,6 +45,9 @@ export const visitFiltersSchema = z.object({
   listingId: z.string().optional(),
   agentId: z.string().optional(),
   status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"]).optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  search: z.string().optional(),
   page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),
 });
