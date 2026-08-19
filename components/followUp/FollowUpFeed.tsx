@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { cancelFollowUp } from "@/lib/actions/followUp.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import ClientNotesDialog from "@/components/clients/ClientNotesDialog";
 
 const TYPE_STYLES: Record<string, { bg: string; ring: string; text: string }> =
   {
@@ -186,16 +187,35 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
                       )}
 
                       {/* Client */}
-                      <div className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
-                        <User className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span className="min-w-0 break-words">
-                          {f.client?.firstName} {f.client?.lastName}
-                          {f.client?.referenceCode && (
-                            <span className="text-xs ml-1">
-                              ({f.client.referenceCode})
-                            </span>
-                          )}
-                        </span>
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-start gap-2 text-sm text-muted-foreground">
+                          <User className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <span className="min-w-0 break-words">
+                            {f.client?.firstName} {f.client?.lastName}
+                            {f.client?.referenceCode && (
+                              <span className="text-xs ml-1">
+                                ({f.client.referenceCode})
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {f.client?._id && (
+                          <ClientNotesDialog
+                            clientId={f.client._id}
+                            clientName={
+                              [f.client.firstName, f.client.lastName]
+                                .filter(Boolean)
+                                .join(" ") || f.client.referenceCode
+                            }
+                            initialNotes={f.client.extraNotes}
+                            preferredLocation={f.client.preferredLocation}
+                            budgetMin={f.client.budgetMin}
+                            budgetMax={f.client.budgetMax}
+                            priceCurrency={f.client.priceCurrency}
+                            wantedPropertyType={f.client.wantedPropertyType}
+                            rooms={f.client.rooms}
+                          />
+                        )}
                       </div>
 
                       {/* Note */}

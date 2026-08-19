@@ -284,7 +284,10 @@ export async function fetchAllFollowUps(
     const [followUps, total] = await Promise.all([
       FollowUp.find(query)
         .populate("agent", "firstname lastname name")
-        .populate("client", "firstName lastName referenceCode phone")
+        .populate(
+          "client",
+          "firstName lastName referenceCode phone extraNotes preferredLocation budgetMin budgetMax priceCurrency wantedPropertyType rooms"
+        )
         .populate("listing", "title description price images")
         .sort({ createdAt: -1 })
         .skip(skip)
