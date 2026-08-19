@@ -69,6 +69,16 @@ interface Listing {
 
   pipelineStatus: ListingPipelineStatus;
   status: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
+
+  keyAvailable?: boolean;
+  blockedUntil?: Date;
+  blockedForClient?: string;
+  photoVisitScheduledAt?: Date;
+  photoVisitCompletedAt?: Date;
+  photoVisitNotes?: string;
+  sellerMotivation?: "LOW" | "MEDIUM" | "HIGH";
+  listingAgentEvalPrice?: number;
+
   propertyType:
     | "Appartement"
     | "Maison"
@@ -235,6 +245,7 @@ interface FollowUp {
   client: Schema.Types.ObjectId;
   agent?: Schema.Types.ObjectId;
   type: "COLD" | "WARM" | "HOT" | "CUSTOM";
+  context?: "CLIENT" | "LISTING";
   title?: string;
   note?: string;
   reminderAt?: Date;

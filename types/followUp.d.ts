@@ -15,6 +15,7 @@ export type FollowUpFilters = {
   type?: "COLD" | "WARM" | "HOT" | "CUSTOM";
   status?: "PENDING" | "DONE" | "OVERDUE" | "CANCELLED";
   channel?: "CALL" | "EMAIL" | "WHATSAPP" | "VISIT";
+  context?: "CLIENT" | "LISTING";
   search?: string;
   page?: number;
   limit?: number;

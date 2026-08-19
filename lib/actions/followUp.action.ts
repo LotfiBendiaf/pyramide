@@ -1,9 +1,14 @@
 "use server";
 
 import dbConnect from "../mongoose";
-import { Client, FollowUp, Visit } from "@/models";
+import { Client, FollowUp, Listing, Visit } from "@/models";
 import action from "../handlers/action";
-import { FollowUpSchema, fetchFollowUpsSchema } from "../validators/followUp";
+import {
+  FollowUpSchema,
+  ListingFollowUpSchema,
+  fetchFollowUpsSchema,
+} from "../validators/followUp";
+import type { ListingFollowUpFormValues } from "../validators/followUp";
 import handleError from "../handlers/error";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import { FollowUpInput, FollowUpFilters } from "@/types/followUp";
@@ -135,6 +140,74 @@ export async function createFollowUp(
   }
 }
 
+export async function createListingFollowUp(
+  params: ListingFollowUpFormValues
+): Promise<ActionResponse<FollowUp>> {
+  const validationResult = await action({
+    params,
+    schema: ListingFollowUpSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error || !validationResult.params) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const user = await getUserBySessionEmail();
+
+  if (!user?.data) {
+    return {
+      success: false,
+      error: { message: "Utilisateur non autorisé" },
+      status: 401,
+    };
+  }
+
+  try {
+    await dbConnect();
+
+    const { listing: listingId, title, note, reminderAt, status } =
+      validationResult.params;
+
+    const listing = await Listing.findById(listingId)
+      .select("sellerClient")
+      .lean<{ sellerClient?: string }>();
+
+    if (!listing?.sellerClient) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable" },
+        status: 404,
+      };
+    }
+
+    const followUpStatus = status ?? (reminderAt ? "PENDING" : "DONE");
+
+    const followUp = await FollowUp.create({
+      listing: listingId,
+      client: listing.sellerClient,
+      agent: user.data._id,
+      type: "CUSTOM",
+      context: "LISTING",
+      title,
+      note,
+      reminderAt,
+      status: followUpStatus,
+      completedAt: followUpStatus === "DONE" ? new Date() : undefined,
+    });
+
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(followUp)),
+      status: 201,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function fetchFollowUpsByListing(
   listingId: string
 ): Promise<ActionResponse<FollowUp[]>> {
@@ -250,6 +323,7 @@ export async function fetchAllFollowUps(
       type,
       status,
       channel,
+      context,
       search,
       page = 1,
       limit = 50,
@@ -268,28 +342,43 @@ export async function fetchAllFollowUps(
     if (type) query.type = type;
     if (status) query.status = status;
     if (channel) query.channel = channel;
+    // Follow-ups created before this field existed have no context set,
+    // and behave like client follow-ups.
+    if (context === "LISTING") query.context = "LISTING";
+    else if (context === "CLIENT") query.context = { $ne: "LISTING" };
 
-    // Search in title, note, and matching client (name, reference code, phone)
+    // Search in title, note, matching client (name, reference code, phone),
+    // and matching listing (reference code, title)
     if (search) {
       const regex = { $regex: search, $options: "i" };
 
-      const matchingClients = await Client.find({
-        $or: [
-          { referenceCode: regex },
-          { firstName: regex },
-          { lastName: regex },
-          { phone: regex },
-          { phone2: regex },
-        ],
-      })
-        .select("_id")
-        .lean();
+      const [matchingClients, matchingListings] = await Promise.all([
+        Client.find({
+          $or: [
+            { referenceCode: regex },
+            { firstName: regex },
+            { lastName: regex },
+            { phone: regex },
+            { phone2: regex },
+          ],
+        })
+          .select("_id")
+          .lean(),
+        Listing.find({
+          $or: [{ referenceCode: regex }, { title: regex }],
+        })
+          .select("_id")
+          .lean(),
+      ]);
 
       query.$or = [
         { title: regex },
         { note: regex },
         ...(matchingClients.length
           ? [{ client: { $in: matchingClients.map((c) => c._id) } }]
+          : []),
+        ...(matchingListings.length
+          ? [{ listing: { $in: matchingListings.map((l) => l._id) } }]
           : []),
       ];
     }
@@ -303,7 +392,7 @@ export async function fetchAllFollowUps(
           "client",
           "firstName lastName referenceCode phone extraNotes preferredLocation budgetMin budgetMax priceCurrency wantedPropertyType rooms"
         )
-        .populate("listing", "title description price images")
+        .populate("listing", "title referenceCode description price images")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

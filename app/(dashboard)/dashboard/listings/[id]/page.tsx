@@ -3,8 +3,10 @@ import ListingInfo from "@/components/listing/ListingInfo";
 import ListingSidebar from "@/components/listing/ListingSidebar";
 import ListingMatchingPanel from "@/components/listing/ListingMatchingPanel";
 import { ListingDocumentsSection } from "@/components/listing/ListingDocumentsSection";
+import { ListingFollowUpsSection } from "@/components/listing/ListingFollowUpsSection";
 import { fetchListingById } from "@/lib/actions/listings.action";
 import { fetchListingDealDone } from "@/lib/actions/negotiation.action";
+import { fetchFollowUpsByListing } from "@/lib/actions/followUp.action";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ export default async function ListingDetailsPage({
   }
 
   const listing = result.data;
+  const followUpsResult = await fetchFollowUpsByListing(id);
   const dealDoneResult = await fetchListingDealDone(id);
   const dealDone = dealDoneResult.success ? dealDoneResult.data : null;
   const dealDoneClientName = dealDone?.client
@@ -116,6 +119,14 @@ export default async function ListingDetailsPage({
       {/* Matching clients */}
       <div className="mt-10">
         <ListingMatchingPanel listing={listing} />
+      </div>
+
+      {/* Follow-up history */}
+      <div className="mt-10">
+        <ListingFollowUpsSection
+          listing={listing}
+          followUps={followUpsResult.success ? followUpsResult.data ?? [] : []}
+        />
       </div>
     </section>
   );

@@ -16,6 +16,8 @@ import { Search, X } from "lucide-react";
 type FollowUpsFilterProps = {
   agents?: User[];
   canFilterByAgent?: boolean;
+  hideTypeChannel?: boolean;
+  searchPlaceholder?: string;
 };
 
 const TYPE_OPTIONS = [
@@ -45,6 +47,8 @@ const CHANNEL_OPTIONS = [
 export default function FollowUpsFilter({
   agents = [],
   canFilterByAgent = false,
+  hideTypeChannel = false,
+  searchPlaceholder = "Rechercher par code client, nom, téléphone, notes...",
 }: FollowUpsFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -93,7 +97,7 @@ export default function FollowUpsFilter({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher par code client, nom, téléphone, notes..."
+              placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleApplyFilters()}
@@ -120,18 +124,20 @@ export default function FollowUpsFilter({
         )}
 
         {/* Type filter */}
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-full lg:w-[160px]">
-            <SelectValue placeholder="Type de suivi" />
-          </SelectTrigger>
-          <SelectContent>
-            {TYPE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!hideTypeChannel && (
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger className="w-full lg:w-[160px]">
+              <SelectValue placeholder="Type de suivi" />
+            </SelectTrigger>
+            <SelectContent>
+              {TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Status filter */}
         <Select value={status} onValueChange={setStatus}>
@@ -148,18 +154,20 @@ export default function FollowUpsFilter({
         </Select>
 
         {/* Channel filter */}
-        <Select value={channel} onValueChange={setChannel}>
-          <SelectTrigger className="w-full lg:w-[160px]">
-            <SelectValue placeholder="Canal" />
-          </SelectTrigger>
-          <SelectContent>
-            {CHANNEL_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!hideTypeChannel && (
+          <Select value={channel} onValueChange={setChannel}>
+            <SelectTrigger className="w-full lg:w-[160px]">
+              <SelectValue placeholder="Canal" />
+            </SelectTrigger>
+            <SelectContent>
+              {CHANNEL_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Apply button */}
         <Button onClick={handleApplyFilters} disabled={isPending} className="w-full lg:w-auto">

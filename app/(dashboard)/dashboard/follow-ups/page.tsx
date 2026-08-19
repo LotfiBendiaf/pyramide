@@ -11,6 +11,7 @@ import { fetchAllFollowUps } from "@/lib/actions/followUp.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { fetchAgents } from "@/lib/actions/users.action";
 import { FollowUpFeed } from "@/components/followUp/FollowUpFeed";
+import { FollowUpsTabs } from "@/components/followUp/FollowUpsTabs";
 import FollowUpsFilter from "@/components/FollowUpsFilter";
 import { PaginationControls } from "@/components/PaginationControls";
 import { FollowUpFilters } from "@/types/followUp";
@@ -18,6 +19,7 @@ import { FollowUpFilters } from "@/types/followUp";
 const FOLLOW_UPS_PER_PAGE = 10;
 
 type SearchParams = {
+  tab?: string;
   agentId?: string;
   type?: string;
   status?: string;
@@ -27,8 +29,10 @@ type SearchParams = {
 };
 
 async function FollowUpsContent({
+  tab,
   searchParams,
 }: {
+  tab: "clients" | "listings";
   searchParams: SearchParams;
 }) {
   const currentUser = await getUserBySessionEmail();
@@ -39,18 +43,23 @@ async function FollowUpsContent({
   const filterParams: FollowUpFilters = {
     page,
     limit: FOLLOW_UPS_PER_PAGE,
+    context: tab === "listings" ? "LISTING" : "CLIENT",
   };
 
   if (searchParams.agentId && searchParams.agentId !== "__all__") {
     filterParams.agentId = searchParams.agentId;
   }
-  if (searchParams.type && searchParams.type !== "__all__") {
+  if (tab === "clients" && searchParams.type && searchParams.type !== "__all__") {
     filterParams.type = searchParams.type as FollowUpFilters["type"];
   }
   if (searchParams.status && searchParams.status !== "__all__") {
     filterParams.status = searchParams.status as FollowUpFilters["status"];
   }
-  if (searchParams.channel && searchParams.channel !== "__all__") {
+  if (
+    tab === "clients" &&
+    searchParams.channel &&
+    searchParams.channel !== "__all__"
+  ) {
     filterParams.channel = searchParams.channel as FollowUpFilters["channel"];
   }
   if (searchParams.search) {
@@ -74,7 +83,9 @@ async function FollowUpsContent({
   if (!followUps || total === 0) {
     return (
       <div className="text-center text-muted-foreground py-20">
-        Aucun suivi trouvé.
+        {tab === "listings"
+          ? "Aucun suivi d'annonce trouvé."
+          : "Aucun suivi trouvé."}
       </div>
     );
   }
@@ -97,6 +108,8 @@ export default async function FollowUpsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const tab: "clients" | "listings" =
+    params.tab === "listings" ? "listings" : "clients";
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
     currentUser.data?.role === "ADMIN" ||
@@ -112,23 +125,44 @@ export default async function FollowUpsPage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <SectionHeader
           title="Suivis"
-          subtitle="Gérez vos suivis clients"
+          subtitle={
+            tab === "listings"
+              ? "Historique des tâches liées aux annonces"
+              : "Gérez vos suivis clients"
+          }
           className="mb-4 min-w-0 sm:mb-16"
         />
-        <Button asChild className="w-full shrink-0 sm:w-auto">
-          <Link href={ROUTES.NEW_FOLLOWUP}>
-            <Plus className="h-4 w-4" /> Nouveau suivi
-          </Link>
-        </Button>
+        {tab === "clients" && (
+          <Button asChild className="w-full shrink-0 sm:w-auto">
+            <Link href={ROUTES.NEW_FOLLOWUP}>
+              <Plus className="h-4 w-4" /> Nouveau suivi
+            </Link>
+          </Button>
+        )}
       </div>
+
+      <FollowUpsTabs active={tab} />
+
+      {tab === "listings" && (
+        <p className="text-sm text-muted-foreground">
+          Les suivis d&apos;annonces s&apos;ajoutent directement depuis la
+          fiche de chaque annonce, dans la section « Historique &amp; Suivis ».
+        </p>
+      )}
 
       <FollowUpsFilter
         agents={isAdmin ? agentsResult.data || [] : []}
         canFilterByAgent={isAdmin}
+        hideTypeChannel={tab === "listings"}
+        searchPlaceholder={
+          tab === "listings"
+            ? "Rechercher par référence, titre d'annonce, notes..."
+            : "Rechercher par code client, nom, téléphone, notes..."
+        }
       />
 
-      <Suspense fallback={<TableSkeleton />}>
-        <FollowUpsContent searchParams={params} />
+      <Suspense key={tab} fallback={<TableSkeleton />}>
+        <FollowUpsContent tab={tab} searchParams={params} />
       </Suspense>
     </section>
   );

@@ -7,6 +7,7 @@ export interface IFollowUp {
   client: Schema.Types.ObjectId;
   agent: Schema.Types.ObjectId;
   type: "COLD" | "WARM" | "HOT" | "CUSTOM";
+  context: "CLIENT" | "LISTING";
   title?: string;
   note?: string;
   reminderAt?: Date;
@@ -45,6 +46,13 @@ const FollowUpSchema = new Schema<IFollowUp>(
       required: true,
     },
 
+    // Distinguishes client relationship follow-ups from listing lifecycle tasks
+    context: {
+      type: String,
+      enum: ["CLIENT", "LISTING"],
+      default: "CLIENT",
+    },
+
     title: String, // ex: "Relance après visite"
     note: String,
 
@@ -72,5 +80,7 @@ const FollowUpSchema = new Schema<IFollowUp>(
   },
   { timestamps: true }
 );
+
+FollowUpSchema.index({ context: 1, createdAt: -1 });
 
 export const FollowUp = models.FollowUp || model("FollowUp", FollowUpSchema);
