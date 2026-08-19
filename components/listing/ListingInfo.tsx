@@ -24,7 +24,12 @@ import Link from "next/link";
 import AddToWishlistButton from "@/components/AddToWishlistButton";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
+import {
+  formatDate,
+  formatPrice,
+  formatPriceAlgeria,
+  getGoogleMapsUrl,
+} from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import PhoneActionLink from "@/components/PhoneActionLink";
@@ -69,10 +74,15 @@ export default function ListingInfo({
           </Badge>
         </h1>
         <p className="text-muted-foreground mt-2">{listing.title}</p>
-        <div className="flex items-center gap-2 text-muted-foreground mt-2">
+        <a
+          href={getGoogleMapsUrl(listing.location)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-muted-foreground mt-2 w-fit hover:text-primary hover:underline"
+        >
           <MapPin className="w-4 h-4" />
           {listing.location.city}
-        </div>
+        </a>
       </div>
       {isStaff && (
         <Card>
@@ -235,7 +245,19 @@ export default function ListingInfo({
 
       {isStaff && listing.location.coordinates && (
         <section>
-          <h2 className="font-semibold text-lg mb-4">Localisation</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-lg">Localisation</h2>
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={getGoogleMapsUrl(listing.location)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                Ouvrir dans Google Maps
+              </a>
+            </Button>
+          </div>
           <LocationMap coordinates={listing.location.coordinates} />
         </section>
       )}

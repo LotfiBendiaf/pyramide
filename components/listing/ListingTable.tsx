@@ -51,7 +51,12 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
-import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
+import {
+  formatDate,
+  formatPrice,
+  formatPriceAlgeria,
+  getGoogleMapsUrl,
+} from "@/lib/utils";
 import {
   toggleListingPublished,
   toggleListingValidation,
@@ -275,7 +280,15 @@ export function ListingTable({
                       </div>
                       {renderValidationMenu(listing)}
                     </div>
-                    <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground"><MapPin className="h-3 w-3 shrink-0" />{listing.location.city || "Localisation non renseignée"}</p>
+                    <a
+                      href={getGoogleMapsUrl(listing.location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      <MapPin className="h-3 w-3 shrink-0" />{listing.location.city || "Localisation non renseignée"}
+                    </a>
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-2.5 text-sm">
@@ -493,8 +506,13 @@ export function ListingTable({
                     </div>
                   </TableCell>
 
-                  <TableCell>
-                    <div className="space-y-1">
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <a
+                      href={getGoogleMapsUrl(listing.location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block space-y-1 hover:text-primary hover:underline"
+                    >
                       <p className="text-sm font-medium">
                         {listing.location.city || "-"}
                       </p>
@@ -503,7 +521,7 @@ export function ListingTable({
                           {listing.location.address}
                         </p>
                       )}
-                    </div>
+                    </a>
                   </TableCell>
 
                   <TableCell>

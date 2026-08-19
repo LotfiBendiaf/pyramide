@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Mail, MapPin, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatDate, formatPrice, formatPriceAlgeria } from "@/lib/utils";
+import {
+  formatDate,
+  formatPrice,
+  formatPriceAlgeria,
+  getGoogleMapsUrl,
+} from "@/lib/utils";
 
 const WHATSAPP_NUMBER = "213770823300";
 
@@ -133,10 +138,15 @@ export default function ListingSidebar({
             <MapPin className="w-4 h-4 mt-0.5 text-primary" />
             <div>
               <p className="text-xs text-muted-foreground">Localisation</p>
-              <p className="font-medium">
+              <a
+                href={getGoogleMapsUrl(listing.location)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium hover:text-primary hover:underline"
+              >
                 {listing.location.address && `${listing.location.address}, `}
                 {listing.location.city}
-              </p>
+              </a>
             </div>
           </div>
           {listing.referenceCode && (

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { ListingPipelineBadge } from "@/components/pipeline/PipelineBadges";
 import ROUTES from "@/constants/routes";
+import { getGoogleMapsUrl } from "@/lib/utils";
 import type { MyApprovedListing } from "@/lib/actions/listings.action";
 
 interface Props {
@@ -61,10 +62,15 @@ export function MyApprovedListings({ listings }: Props) {
                 </div>
               </TableCell>
               <TableCell>
-                <span className="flex items-center gap-1.5 text-sm">
+                <a
+                  href={getGoogleMapsUrl(listing.location ?? {})}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-sm hover:text-primary hover:underline"
+                >
                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                   {listing.location?.city ?? "Non renseignée"}
-                </span>
+                </a>
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-2">

@@ -66,6 +66,19 @@ export function formatDate(
   });
 }
 
+export function getGoogleMapsUrl(location: {
+  city?: string;
+  address?: string;
+  coordinates?: { lat: number; lng: number };
+}): string {
+  if (location.coordinates) {
+    const { lat, lng } = location.coordinates;
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  }
+  const query = [location.address, location.city].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 export function clientPrefix(type: ClientType) {
   return {
     BUYER: "BUY",
