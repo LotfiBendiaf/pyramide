@@ -208,13 +208,13 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Administration",
-    roles: ["ADMIN", "MANAGER"],
+    roles: ["ADMIN", "MANAGER", "ASSISTANT"],
     items: [
       {
         title: "Messages",
         url: ROUTES.MESSAGES,
         icon: Mail,
-        roles: ["ADMIN", "MANAGER"],
+        roles: ["ADMIN", "MANAGER", "ASSISTANT"],
       },
       {
         title: "Gestion utilisateurs",

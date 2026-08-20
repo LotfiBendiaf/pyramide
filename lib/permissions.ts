@@ -22,7 +22,12 @@ export const RolePermissions = {
     "manage_listings",
     "manage_followups",
   ],
-  ASSISTANT: ["view_dashboard", "manage_clients", "manage_followups"],
+  ASSISTANT: [
+    "view_dashboard",
+    "manage_clients",
+    "manage_followups",
+    "view_all_messages",
+  ],
   EMPLOYEE: ["manage_clients"],
   DEVELOPER: [
     "view_dashboard",

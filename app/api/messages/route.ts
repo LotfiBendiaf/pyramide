@@ -7,7 +7,7 @@ import { FilterQuery } from "mongoose";
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if user is authenticated and has admin/manager role
+    // Check if user is authenticated and can manage messages
     const user = await getUserBySessionEmail();
     const isAuthorized = hasPermission(
       user.data?.role || "",
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    // Check if user is authenticated and has admin/manager role
+    // Check if user is authenticated and can manage messages
     const user = await getUserBySessionEmail();
     const isAuthorized = hasPermission(
       user.data?.role || "",
@@ -134,7 +134,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Check if user is authenticated and has admin/manager role
+    // Check if user is authenticated and can manage messages
     const user = await getUserBySessionEmail();
     const isAuthorized = hasPermission(
       user.data?.role || "",
