@@ -211,8 +211,13 @@ export async function createListing(
     await dbConnect();
 
     // 3. Create the required seller client
-    const { sellerFirstName, sellerLastName, sellerPhone, sellerEmail } =
-      parsedParams;
+    const {
+      sellerFirstName,
+      sellerLastName,
+      sellerPhone,
+      sellerPhone2,
+      sellerEmail,
+    } = parsedParams;
 
     const sellerCount = await Client.countDocuments({ type: "SELLER" });
     const sellerReferenceCode = `${clientPrefix("SELLER")}-${String(
@@ -225,6 +230,7 @@ export async function createListing(
       firstName: sellerFirstName,
       lastName: sellerLastName,
       phone: sellerPhone,
+      phone2: sellerPhone2 || undefined,
       email: sellerEmail || undefined,
       city: parsedParams.location.city,
       qualificationStatus: "NEW",
@@ -958,8 +964,12 @@ export async function updateListing(
         : undefined;
 
     const existingListing = (await Listing.findById(listingId)
-      .select("referenceCode validationStatus")
-      .lean()) as { referenceCode?: string; validationStatus?: string } | null;
+      .select("referenceCode validationStatus sellerClient")
+      .lean()) as {
+      referenceCode?: string;
+      validationStatus?: string;
+      sellerClient?: Types.ObjectId;
+    } | null;
 
     // Only VALIDATED listings carry a referenceCode — APPROVED ones don't
     // need one, so skip regeneration for them.
@@ -993,6 +1003,7 @@ export async function updateListing(
         sellerFirstName: undefined,
         sellerLastName: undefined,
         sellerPhone: undefined,
+        sellerPhone2: undefined,
         sellerEmail: undefined,
       },
       { new: true }
@@ -1004,6 +1015,24 @@ export async function updateListing(
         error: { message: "Annonce introuvable" },
         status: 404,
       };
+    }
+
+    // Seller details live on the client linked to the listing, not on the
+    // listing document itself. Keep that client in sync with the edit form.
+    if (existingListing?.sellerClient) {
+      await Client.findByIdAndUpdate(existingListing.sellerClient, {
+        $set: {
+          firstName: parsedParams.sellerFirstName ?? "",
+          lastName: parsedParams.sellerLastName ?? "",
+          phone: parsedParams.sellerPhone,
+          ...(parsedParams.sellerPhone2 && { phone2: parsedParams.sellerPhone2 }),
+          ...(parsedParams.sellerEmail && { email: parsedParams.sellerEmail }),
+        },
+        $unset: {
+          ...(!parsedParams.sellerPhone2 && { phone2: 1 }),
+          ...(!parsedParams.sellerEmail && { email: 1 }),
+        },
+      });
     }
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);

@@ -136,7 +136,7 @@ export default function ListingForm({
           sellerFirstName: client?.firstName ?? "",
           sellerLastName: client?.lastName ?? "",
           sellerPhone: client?.phone ?? "",
-          sellerPhone2: "",
+          sellerPhone2: client?.phone2 ?? "",
           sellerEmail: client?.email ?? "",
         }
       : {
