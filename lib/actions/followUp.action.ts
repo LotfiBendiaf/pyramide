@@ -196,7 +196,22 @@ export async function createListingFollowUp(
       completedAt: followUpStatus === "DONE" ? new Date() : undefined,
     });
 
+    if (
+      (followUp.status === "PENDING" || followUp.status === "OVERDUE") &&
+      followUp.reminderAt
+    ) {
+      try {
+        await createCalendarEventFromFollowUp(followUp._id.toString());
+      } catch (err) {
+        console.error(
+          "Failed to sync listing follow-up to Google Calendar:",
+          err
+        );
+      }
+    }
+
     revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+    revalidatePath(ROUTES.SCHEDULE);
 
     return {
       success: true,
