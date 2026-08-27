@@ -211,7 +211,7 @@ export default function ClientsTable({
             qualificationStatus={client.qualificationStatus}
             pipelineStage={client.pipelineStage}
             listings={negotiationListings}
-            canUseRestrictedStatuses={userRole === "ADMIN"}
+            canUseRestrictedStatuses={userRole === "ADMIN" || userRole === "DEVELOPER"}
           />
         ) : (
           <Badge
@@ -270,7 +270,7 @@ export default function ClientsTable({
         <ClientNotesDialog clientId={client._id} clientName={[client.firstName, client.lastName].filter(Boolean).join(" ") || client.referenceCode} initialNotes={client.extraNotes} preferredLocation={client.preferredLocation} budgetMin={client.budgetMin} budgetMax={client.budgetMax} priceCurrency={client.priceCurrency} wantedPropertyType={client.wantedPropertyType} rooms={client.rooms} />
       </div>
       <div className="mt-3 space-y-2 border-t pt-3">
-        {client.hasPendingArchiveRequest ? <div className="flex flex-wrap items-center gap-2"><Badge className="border-amber-300 bg-amber-100 text-amber-800"><Clock3 className="mr-1 size-3" />Archivage en attente</Badge>{client.canCancelPendingArchiveRequest && <Button size="sm" variant="outline" disabled={cancelingClientId === client._id} onClick={() => handleCancelArchiveRequest(client._id)}>{cancelingClientId === client._id ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />} Annuler</Button>}</div> : canQualifyClient ? <ClientQualificationAndNegotiationSelect clientId={client._id} qualificationStatus={client.qualificationStatus} pipelineStage={client.pipelineStage} listings={negotiationListings} canUseRestrictedStatuses={userRole === "ADMIN"} /> : <Badge variant={PIPELINE_STATUS_VARIANTS[getPipelineStatusKey(client)] || "outline"}>{PIPELINE_STATUS_LABELS[getPipelineStatusKey(client)] || "Neutre"}</Badge>}
+        {client.hasPendingArchiveRequest ? <div className="flex flex-wrap items-center gap-2"><Badge className="border-amber-300 bg-amber-100 text-amber-800"><Clock3 className="mr-1 size-3" />Archivage en attente</Badge>{client.canCancelPendingArchiveRequest && <Button size="sm" variant="outline" disabled={cancelingClientId === client._id} onClick={() => handleCancelArchiveRequest(client._id)}>{cancelingClientId === client._id ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />} Annuler</Button>}</div> : canQualifyClient ? <ClientQualificationAndNegotiationSelect clientId={client._id} qualificationStatus={client.qualificationStatus} pipelineStage={client.pipelineStage} listings={negotiationListings} canUseRestrictedStatuses={userRole === "ADMIN" || userRole === "DEVELOPER"} /> : <Badge variant={PIPELINE_STATUS_VARIANTS[getPipelineStatusKey(client)] || "outline"}>{PIPELINE_STATUS_LABELS[getPipelineStatusKey(client)] || "Neutre"}</Badge>}
         {canAssignAgent && <ClientAgentSelect clientId={client._id} agents={agents} value={client.assignedAgent?._id} />}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">

@@ -11,7 +11,7 @@ import { getTeamReport } from "@/lib/actions/teamReport.action";
 async function getTeamReportData() {
   const user = await getUserBySessionEmail();
   const role = user.data?.role || "";
-  const isAdmin = role === "ADMIN" || role === "MANAGER";
+  const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 
   if (!isAdmin) {
     redirect(ROUTES.DASHBOARD);

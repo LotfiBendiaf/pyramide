@@ -235,6 +235,7 @@ const sidebarConfig: SidebarGroup[] = [
 function canAccess(userRole: Role | undefined, allowedRoles?: Role[]): boolean {
   if (!allowedRoles || allowedRoles.length === 0) return true;
   if (!userRole) return false;
+  if (userRole === "DEVELOPER") return true;
   return allowedRoles.includes(userRole);
 }
 

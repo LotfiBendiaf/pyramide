@@ -13,7 +13,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const { id } = await params;
   const currentUser = await getUserBySessionEmail();
   const role = currentUser.data?.role || "";
-  const isAdmin = role === "ADMIN" || role === "MANAGER";
+  const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 
   if (!isAdmin) {
     redirect(ROUTES.DASHBOARD);

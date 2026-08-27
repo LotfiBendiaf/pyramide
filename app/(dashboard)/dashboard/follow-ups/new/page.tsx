@@ -14,7 +14,9 @@ export default async function NewFollowUpPage({
   const { clientId } = await searchParams;
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
-    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+    currentUser.data?.role === "ADMIN" ||
+    currentUser.data?.role === "MANAGER" ||
+    currentUser.data?.role === "DEVELOPER";
 
   const [listings, clients, agentsRes, preselectedClient] = await Promise.all([
     fetchListings(),

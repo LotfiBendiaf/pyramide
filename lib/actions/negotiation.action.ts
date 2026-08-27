@@ -76,7 +76,7 @@ export type ClientDealDoneSummary = {
 };
 
 function canReviewNegotiations(role: string): boolean {
-  return role === "ADMIN" || role === "MANAGER";
+  return role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 }
 
 export async function fetchNegotiationListingOptions(options?: {

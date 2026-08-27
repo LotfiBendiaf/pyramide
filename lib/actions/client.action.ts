@@ -364,7 +364,9 @@ export async function fetchClients(
       ])
     );
     const canCancelAnyArchiveRequest =
-      user.data.role === "ADMIN" || user.data.role === "MANAGER";
+      user.data.role === "ADMIN" ||
+      user.data.role === "MANAGER" ||
+      user.data.role === "DEVELOPER";
     const currentUserId = user.data._id.toString();
     const clientsWithArchiveStatus = clients.map((client) => {
       const pendingRequest = pendingArchiveRequestsByClientId.get(
@@ -752,7 +754,9 @@ export async function fetchClientById(
     }
 
     const canCancelAnyArchiveRequest =
-      user.data?.role === "ADMIN" || user.data?.role === "MANAGER";
+      user.data?.role === "ADMIN" ||
+      user.data?.role === "MANAGER" ||
+      user.data?.role === "DEVELOPER";
     const canCancelPendingArchiveRequest = Boolean(
       pendingArchiveRequest &&
         (canCancelAnyArchiveRequest ||

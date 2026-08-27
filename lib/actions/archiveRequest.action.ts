@@ -16,7 +16,7 @@ import ROUTES from "@/constants/routes";
 import { notify, notifyManagers } from "../notifications/notify";
 
 function canReviewArchiveRequests(role: string): boolean {
-  return role === "ADMIN" || role === "MANAGER";
+  return role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 }
 
 /* ─────────────────────── Cancel Archive Request ─────────────────────── */

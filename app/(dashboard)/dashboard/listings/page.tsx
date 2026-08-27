@@ -14,7 +14,7 @@ import { fetchListingAssignees } from "@/lib/actions/users.action";
 const LISTINGS_PER_PAGE = 15;
 
 function canAccessNewListings(role?: string) {
-  return role === "ADMIN" || role === "MANAGER";
+  return role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 }
 
 type ListingsSectionProps = {
@@ -147,7 +147,7 @@ export default async function ListingsPage({
   const params = await searchParams;
   const user = await getUserBySessionEmail();
   const canViewNewListings = canAccessNewListings(user.data?.role);
-  const canAssignAgent = user.data?.role === "ADMIN";
+  const canAssignAgent = user.data?.role === "ADMIN" || user.data?.role === "DEVELOPER";
   const assigneesResult = canAssignAgent
     ? await fetchListingAssignees()
     : undefined;

@@ -7,7 +7,7 @@ import ROUTES from "@/constants/routes";
 export default async function AddUserPage() {
   const user = await getUserBySessionEmail();
   const role = user.data?.role || "";
-  const isAdmin = role === "ADMIN" || role === "MANAGER";
+  const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 
   if (!isAdmin) {
     redirect(ROUTES.DASHBOARD);

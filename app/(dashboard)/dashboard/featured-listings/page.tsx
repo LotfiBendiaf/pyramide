@@ -12,7 +12,7 @@ const PAGE_SIZE = 20;
 
 export default async function FeaturedListingsPage({ searchParams }: RouteParams) {
   const user = await getUserBySessionEmail();
-  if (!user.data || !["ADMIN", "MANAGER"].includes(user.data.role)) {
+  if (!user.data || !["ADMIN", "MANAGER", "DEVELOPER"].includes(user.data.role)) {
     redirect(ROUTES.DASHBOARD);
   }
 

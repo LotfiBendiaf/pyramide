@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const role = user.data.role;
     const userId = user.data._id;
-    const isAdmin = role === "ADMIN" || role === "MANAGER";
+    const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 
     // Get query params
     const date = request.nextUrl.searchParams.get("date");

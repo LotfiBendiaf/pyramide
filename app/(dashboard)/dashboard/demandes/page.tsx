@@ -36,7 +36,7 @@ export default async function DemandesPage({
   const user = await getUserBySessionEmail();
   const role = user.data?.role ?? "";
 
-  if (role !== "ADMIN" && role !== "MANAGER") {
+  if (role !== "ADMIN" && role !== "MANAGER" && role !== "DEVELOPER") {
     redirect(ROUTES.DASHBOARD);
   }
 

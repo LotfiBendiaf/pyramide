@@ -39,7 +39,7 @@ async function ClientsContent({
 }) {
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
-    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER" || currentUser.data?.role === "DEVELOPER";
   const canUsePipeline = currentUser.data?.role === "AGENT";
 
   const isArchiveView = searchParams.view === "archives";
@@ -122,7 +122,7 @@ export default async function ClientPage({
   const params = await searchParams;
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
-    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER";
+    currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER" || currentUser.data?.role === "DEVELOPER";
   const canUsePipeline = currentUser.data?.role === "AGENT";
   const isArchiveView = params?.view === "archives";
 

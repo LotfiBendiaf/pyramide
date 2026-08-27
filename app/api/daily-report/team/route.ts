@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const role = user.data.role;
-    const isAdmin = role === "ADMIN" || role === "MANAGER";
+    const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 
     if (!isAdmin) {
       return NextResponse.json(

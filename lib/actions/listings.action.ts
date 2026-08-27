@@ -571,7 +571,7 @@ export async function updateListingAgent(
     };
   }
 
-  if (user.data.role !== "ADMIN") {
+  if (user.data.role !== "ADMIN" && user.data.role !== "DEVELOPER") {
     return {
       success: false,
       error: { message: "Seul un administrateur peut affecter un bien" },

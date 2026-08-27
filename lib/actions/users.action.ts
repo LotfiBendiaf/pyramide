@@ -81,7 +81,10 @@ export async function fetchListingAssignees(): Promise<ActionResponse<User[]>> {
       };
     }
 
-    if (currentUser.data.role !== "ADMIN") {
+    if (
+      currentUser.data.role !== "ADMIN" &&
+      currentUser.data.role !== "DEVELOPER"
+    ) {
       return {
         success: false,
         error: { message: "Accès refusé" },
@@ -118,7 +121,9 @@ export async function fetchTeamMembers(): Promise<ActionResponse<User[]>> {
     }
 
     const isAdmin =
-      currentUser.data.role === "ADMIN" || currentUser.data.role === "MANAGER";
+      currentUser.data.role === "ADMIN" ||
+      currentUser.data.role === "MANAGER" ||
+      currentUser.data.role === "DEVELOPER";
 
     if (!isAdmin) {
       return {
@@ -170,7 +175,9 @@ export async function createUser(
     }
 
     const isAdmin =
-      currentUser.data.role === "ADMIN" || currentUser.data.role === "MANAGER";
+      currentUser.data.role === "ADMIN" ||
+      currentUser.data.role === "MANAGER" ||
+      currentUser.data.role === "DEVELOPER";
 
     if (!isAdmin) {
       return {
@@ -363,8 +370,11 @@ export async function deleteUser(id: string): Promise<ActionResponse<null>> {
       };
     }
 
-    // Only ADMIN can delete users
-    if (currentUser.data.role !== "ADMIN") {
+    // Full-access roles can delete users.
+    if (
+      currentUser.data.role !== "ADMIN" &&
+      currentUser.data.role !== "DEVELOPER"
+    ) {
       return {
         success: false,
         error: {
