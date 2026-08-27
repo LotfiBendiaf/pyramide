@@ -1,7 +1,10 @@
 /**
  * One-time migration: rebuild all listing descriptions with the updated format
  * (city - address instead of city alone).
- * Run with: npx tsx scripts/rebuild-listing-descriptions.ts
+ * Preview Villa changes:
+ *   npx tsx scripts/rebuild-listing-descriptions.ts --property-type=Villa
+ * Apply Villa changes:
+ *   npx tsx scripts/rebuild-listing-descriptions.ts --property-type=Villa --apply
  */
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -84,16 +87,16 @@ function buildListingDescription(
   const etageSuffix = etage === 1 ? "er" : "e";
   const elevatorText = listing.features?.elevator ? " avec ascenseur" : "";
   const etageLine =
-    etage !== undefined
-      ? isVilla
-        ? `R+${etage}${elevatorText}`
-        : `Étage : ${etage}${etageSuffix}${elevatorText}`
+    etage !== undefined && !isVilla
+      ? `Étage : ${etage}${etageSuffix}${elevatorText}`
       : undefined;
 
   const priceLabel = `${formatPriceAlgeria(listing.price ?? 0).replace(".", ",")} DA`;
 
   const villaTypeLabel =
-    isVilla && etage !== undefined ? `${lowerType} R+${etage}` : lowerType;
+    isVilla && nombreEtages !== undefined
+      ? `${lowerType} R+${nombreEtages}`
+      : lowerType;
 
   const intro =
     locationLabel && areaLabel
@@ -140,18 +143,39 @@ function buildListingDescription(
 /* ---------- main ---------- */
 
 async function main() {
+  const applyChanges = process.argv.includes("--apply");
+  const propertyTypeArg = process.argv.find((arg) =>
+    arg.startsWith("--property-type=")
+  );
+  const propertyType = propertyTypeArg?.slice("--property-type=".length).trim();
+
   await mongoose.connect(MONGODB_URI, { dbName: "Pyramide-Immobilier" });
   console.log("Connected to MongoDB");
 
   const db = mongoose.connection.db!;
   const collection = db.collection<ListingDescriptionSource>("listings");
 
-  const listings = await collection.find({}).toArray();
-  console.log(`Found ${listings.length} listing(s) to update`);
+  const query = propertyType
+    ? { propertyType: { $regex: `^${propertyType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } }
+    : {};
+  const listings = await collection.find(query).toArray();
+  console.log(
+    `Found ${listings.length} listing(s)${propertyType ? ` with type ${propertyType}` : ""}`
+  );
 
   let updated = 0;
   for (const listing of listings) {
     const description = buildListingDescription(listing, listing.referenceCode);
+    if (description === (listing as ListingDescriptionSource & { description?: string }).description) {
+      continue;
+    }
+
+    if (!applyChanges) {
+      updated++;
+      console.log(`  [preview ${updated}] ${listing.referenceCode ?? listing._id}`);
+      continue;
+    }
+
     await collection.updateOne(
       { _id: listing._id },
       { $set: { description } }
@@ -160,7 +184,11 @@ async function main() {
     console.log(`  [${updated}/${listings.length}] ${listing.referenceCode ?? listing._id}`);
   }
 
-  console.log(`\nDone. Updated ${updated} listing(s).`);
+  console.log(
+    applyChanges
+      ? `\nDone. Updated ${updated} listing(s).`
+      : `\nDry run. ${updated} listing(s) would be updated. Re-run with --apply to save changes.`
+  );
   await mongoose.disconnect();
 }
 

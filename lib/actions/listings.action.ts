@@ -115,16 +115,16 @@ function buildListingDescription(
   const etageSuffix = etage === 1 ? "er" : "e";
   const elevatorText = params.features.elevator ? " avec ascenseur" : "";
   const etageLine =
-    etage !== undefined
-      ? isVilla
-        ? `R+${etage}${elevatorText}`
-        : `Étage : ${etage}${etageSuffix}${elevatorText}`
+    etage !== undefined && !isVilla
+      ? `Étage : ${etage}${etageSuffix}${elevatorText}`
       : undefined;
 
   const priceLabel = `${formatPriceAlgeria(params.price ?? 0).replace(".", ",")} DA`;
 
   const villaTypeLabel =
-    isVilla && etage !== undefined ? `${lowerType} R+${etage}` : lowerType;
+    isVilla && nombreEtages !== undefined
+      ? `${lowerType} R+${nombreEtages}`
+      : lowerType;
 
   const intro =
     locationLabel && areaLabel
