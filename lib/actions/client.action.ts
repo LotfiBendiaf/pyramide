@@ -149,9 +149,16 @@ export async function createClient(
   try {
     const { type, assignedAgent: providedAgent } = validationResult.params;
 
-    // 4️⃣ Determine assigned agent
+    // 4️⃣ Determine assigned agent. Agent-created clients must be assigned in
+    // the same database insert so they are never visible to admins as
+    // unassigned. Elevated users may explicitly choose an agent.
     const isAdmin = isElevatedRole(user.data.role);
-    const assignedAgent = isAdmin && providedAgent ? providedAgent : undefined;
+    const assignedAgent =
+      user.data.role === "AGENT"
+        ? user.data._id
+        : isAdmin && providedAgent
+          ? providedAgent
+          : null;
 
     // 3️⃣ Generate reference code with retry on duplicate key (race condition)
     const prefix = clientPrefix(type);
@@ -184,7 +191,7 @@ export async function createClient(
           qualificationStatus: "NEUTRAL",
           archived: false,
           createdBy: user.data._id,
-          ...(assignedAgent ? { assignedAgent } : { assignedAgent: null }),
+          assignedAgent,
         });
         break; // success — exit retry loop
       } catch (err: unknown) {
