@@ -37,6 +37,7 @@ type ListingsSectionProps = {
     view?: string;
     sortBy?: string;
     sortOrder?: string;
+    agentId?: string;
   };
 };
 
@@ -66,6 +67,7 @@ async function ListingsContent({
 
   const result = await fetchListings({
     assignedToCurrentUser: isApprovedView && assignedToCurrentUser,
+    agentId: params?.agentId,
     search: params?.search,
     city: params?.city,
     status: params?.status as ListingInput["status"] | undefined,
@@ -206,6 +208,7 @@ export default async function ListingsPage({
 
       <Suspense fallback={<TableSkeleton />}>
         <ListingFilterDashboard
+          agents={assigneesResult?.data ?? []}
           key={
             isArchiveView
               ? "archives"

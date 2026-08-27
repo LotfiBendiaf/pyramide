@@ -26,6 +26,7 @@ import {
   SearchIcon,
   SlidersHorizontal,
   Store,
+  UserRound,
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
@@ -86,7 +87,13 @@ function getPriceParam(
   return Math.min(Math.max(price, min), max);
 }
 
-export default function ListingFilterDashboard() {
+type ListingFilterDashboardProps = {
+  agents?: User[];
+};
+
+export default function ListingFilterDashboard({
+  agents = [],
+}: ListingFilterDashboardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -98,6 +105,7 @@ export default function ListingFilterDashboard() {
   const [propertyType, setPropertyType] = useState(
     searchParams.get("propertyType") ?? ""
   );
+  const [agentId, setAgentId] = useState(searchParams.get("agentId") ?? "");
   const [filtersOpen, setFiltersOpen] = useState(() =>
     [
       "bedrooms",
@@ -109,6 +117,7 @@ export default function ListingFilterDashboard() {
       "saleMaxPrice",
       "minPrice",
       "maxPrice",
+      "agentId",
     ].some((param) => searchParams.has(param))
   );
 
@@ -174,6 +183,7 @@ export default function ListingFilterDashboard() {
     if (bedrooms) params.set("bedrooms", bedrooms);
     if (status) params.set("status", status);
     if (propertyType) params.set("propertyType", propertyType);
+    if (agentId) params.set("agentId", agentId);
 
     params.set("rentMinPrice", String(rentPriceRange[0]));
     params.set("rentMaxPrice", String(rentPriceRange[1]));
@@ -196,6 +206,7 @@ export default function ListingFilterDashboard() {
     setBedrooms("");
     setStatus("");
     setPropertyType("");
+    setAgentId("");
     setMinScore("");
     setIdealBuyer("");
     setEvaluatedOnly(false);
@@ -216,7 +227,7 @@ export default function ListingFilterDashboard() {
   };
 
   const activeFilterCount =
-    [bedrooms, status, propertyType].filter(Boolean).length +
+    [bedrooms, status, propertyType, agentId].filter(Boolean).length +
     (rentPriceRange[0] !== RENT_PRICE_RANGE_DEFAULT[0] ||
     rentPriceRange[1] !== RENT_PRICE_RANGE_DEFAULT[1]
       ? 1
@@ -265,6 +276,58 @@ export default function ListingFilterDashboard() {
               )}
             />
           </Button>
+          {agents.length > 0 && (
+            <Select
+              value={agentId || "all"}
+              onValueChange={(value) =>
+                setAgentId(value === "all" ? "" : value)
+              }
+            >
+              <SelectTrigger
+                aria-label="Filtrer par agent"
+                className={cn(
+                  "group h-10 w-full gap-2 rounded-full px-4 shadow-sm transition-all sm:w-[230px]",
+                  agentId
+                    ? "border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500/10 hover:bg-blue-100"
+                    : "border-border/70 bg-background hover:border-blue-300 hover:bg-blue-50/50",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full transition-colors",
+                    agentId
+                      ? "bg-blue-600 text-white"
+                      : "bg-muted text-muted-foreground group-hover:bg-blue-100 group-hover:text-blue-600",
+                  )}
+                >
+                  <UserRound className="size-3.5" />
+                </span>
+                <span className="min-w-0 flex-1 text-left">
+                  <SelectValue placeholder="Tous les agents" />
+                </span>
+              </SelectTrigger>
+              <SelectContent className="min-w-[230px] rounded-xl p-1">
+                <SelectItem value="all" className="rounded-lg">
+                  Tous les agents
+                </SelectItem>
+                {agents.map((agent) => {
+                  const name = [agent.firstname, agent.lastname]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <SelectItem
+                      key={agent._id}
+                      value={agent._id}
+                      className="rounded-lg"
+                    >
+                      {name || agent.email}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          )}
           <Button
             type="submit"
             className="h-10 w-full rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 sm:w-auto"

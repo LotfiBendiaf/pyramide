@@ -290,6 +290,7 @@ export async function createListing(
 
 interface FetchListingsParams {
   assignedToCurrentUser?: boolean;
+  agentId?: string;
   isPublished?: boolean;
   isValidated?: boolean;
   validationStatus?: "NEUTRAL" | "APPROVED" | "VALIDATED";
@@ -346,6 +347,7 @@ export async function fetchListings(
   try {
     const {
       assignedToCurrentUser,
+      agentId,
       isPublished,
       isValidated,
       validationStatus,
@@ -390,6 +392,8 @@ export async function fetchListings(
       }
 
       query.agent = user.data._id;
+    } else if (agentId && Types.ObjectId.isValid(agentId)) {
+      query.agent = agentId;
     }
 
     if (isPublished !== undefined) {
