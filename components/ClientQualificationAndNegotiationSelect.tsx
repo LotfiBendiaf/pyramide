@@ -89,7 +89,6 @@ const OPTIONS: {
     triggerClassName: "border-green-200 bg-green-50 text-green-700",
     selectedClassName: "bg-green-50 text-green-700 focus:bg-green-100",
     category: "qualification",
-    adminOnly: true,
   },
   {
     value: "HOT",
