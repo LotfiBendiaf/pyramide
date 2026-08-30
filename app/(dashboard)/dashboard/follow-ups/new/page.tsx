@@ -19,7 +19,10 @@ export default async function NewFollowUpPage({
     currentUser.data?.role === "DEVELOPER";
 
   const [listings, clients, agentsRes, preselectedClient] = await Promise.all([
-    fetchListings(),
+    fetchListings({
+      sortBy: "referenceGeneratedAt",
+      sortOrder: "desc",
+    }),
     fetchClients({ limit: 100 }),
     isAdmin ? fetchAgents() : Promise.resolve({ success: true, data: [] }),
     clientId ? fetchClientById(clientId) : Promise.resolve(null),
