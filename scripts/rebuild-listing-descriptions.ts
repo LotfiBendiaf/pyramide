@@ -98,12 +98,13 @@ function buildListingDescription(
       ? `${lowerType} R+${nombreEtages}`
       : lowerType;
 
-  const intro =
-    locationLabel && areaLabel
-      ? `${article} ${villaTypeLabel} de ${areaLabel}, ${situe}${
-          !isVilla && etage !== undefined ? ` au ${etage}${etageSuffix} étage` : ""
-        } à ${locationLabel}.`
-      : `${article} ${villaTypeLabel} spacieux et lumineux.`;
+  const floorLocation =
+    !isVilla && etage !== undefined ? ` au ${etage}${etageSuffix} étage` : "";
+  const intro = `${article} ${villaTypeLabel}${areaLabel ? ` de ${areaLabel}` : ""}${
+    floorLocation || locationLabel
+      ? `, ${situe}${floorLocation}${locationLabel ? ` à ${locationLabel}` : ""}`
+      : ""
+  }.`;
 
   const details = [
     referenceCode ? `Réf : ${referenceCode}` : undefined,
@@ -117,27 +118,10 @@ function buildListingDescription(
     .filter(Boolean)
     .join("\n");
 
-  const cityLabel = _city || locationLabel;
-  const closing = cityLabel
-    ? `Un bien rare à ${cityLabel}, alliant confort, accessibilité et standing dans l'un des quartiers les plus recherchés.`
-    : "Un bien rare, alliant confort, accessibilité et standing.";
-
   const contact =
-    "Pour plus d'informations ou pour organiser une visite :\n0556510000 / 0779079706";
+    "Pour plus d’informations ou pour organiser une visite :\n0556510000 / 0779079706";
 
-  return [
-    statusLine,
-    "",
-    intro,
-    "",
-    "Ce bien spacieux et lumineux offre de beaux volumes, un cadre agréable et un confort idéal pour une famille recherchant un lieu de vie moderne et bien situé.",
-    "",
-    details,
-    "",
-    closing,
-    "",
-    contact,
-  ].join("\n");
+  return [statusLine, intro, "", details, "", contact].join("\n");
 }
 
 /* ---------- main ---------- */
