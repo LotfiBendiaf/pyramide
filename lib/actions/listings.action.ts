@@ -134,9 +134,14 @@ function buildListingDescription(
       : ""
   }.`;
 
+  const roomCount = params.features.bedrooms;
+  const roomsLine =
+    roomCount && roomCount > 0 ? `Nombre de pièces : F${roomCount}` : undefined;
+
   const details = [
     referenceCode ? `Réf : ${referenceCode}` : undefined,
     `Type : ${typeLabel}`,
+    roomsLine,
     areaLabel ? `Surface : ${areaLabel}` : undefined,
     etageLine,
     nombreEtagesLine,
