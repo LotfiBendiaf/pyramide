@@ -152,10 +152,20 @@ export default function SearchFilter() {
     if (status) params.set("status", status);
     if (propertyType) params.set("propertyType", propertyType);
 
-    params.set("rentMinPrice", String(rentPriceRange[0]));
-    params.set("rentMaxPrice", String(rentPriceRange[1]));
-    params.set("saleMinPrice", String(salePriceRange[0]));
-    params.set("saleMaxPrice", String(salePriceRange[1]));
+    if (
+      rentPriceRange[0] !== RENT_PRICE_RANGE_DEFAULT[0] ||
+      rentPriceRange[1] !== RENT_PRICE_RANGE_DEFAULT[1]
+    ) {
+      params.set("rentMinPrice", String(rentPriceRange[0]));
+      params.set("rentMaxPrice", String(rentPriceRange[1]));
+    }
+    if (
+      salePriceRange[0] !== SALE_PRICE_RANGE_DEFAULT[0] ||
+      salePriceRange[1] !== SALE_PRICE_RANGE_DEFAULT[1]
+    ) {
+      params.set("saleMinPrice", String(salePriceRange[0]));
+      params.set("saleMaxPrice", String(salePriceRange[1]));
+    }
 
     router.push(`?${params.toString()}`, { scroll: false });
   };

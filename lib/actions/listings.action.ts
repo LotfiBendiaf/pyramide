@@ -528,7 +528,11 @@ export async function fetchListings(
     }
 
     // 2. Fetch listings and total count in parallel
-    const sortField = sortBy || "createdAt";
+    // referenceCode is prefixed by type ("L-..." for rent, "V-..." for sale),
+    // so sorting on the string bunches all of one type before the other.
+    // referenceGeneratedAt tracks the same assignment order without that bias.
+    const sortField =
+      sortBy === "referenceCode" ? "referenceGeneratedAt" : sortBy || "createdAt";
     const sortDirection = sortBy
       ? sortOrder === "asc"
         ? 1
