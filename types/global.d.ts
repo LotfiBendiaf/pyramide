@@ -270,3 +270,80 @@ interface Message {
   createdAt: Date;
   updatedAt: Date;
 }
+
+type UnitStatus = "AVAILABLE" | "RESERVED" | "SOLD";
+type ResidenceCompletionStatus =
+  | "PLANNED"
+  | "UNDER_CONSTRUCTION"
+  | "DELIVERED";
+
+interface ResidenceUnit {
+  _id?: string;
+  unitNumber: string;
+  floor?: number;
+  type?: string;
+  typeCustom?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  area: number;
+  price?: number;
+  status: UnitStatus;
+  label?: string;
+}
+
+interface Residence {
+  _id: string;
+  referenceCode?: string;
+  referenceGeneratedAt?: Date;
+
+  title: string;
+  slug: string;
+  tagline?: string;
+  description: string;
+  developerName?: string;
+
+  location: {
+    city: string;
+    district?: string;
+    address?: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  };
+
+  deliveryDate?: Date;
+  completionStatus: ResidenceCompletionStatus;
+
+  amenities?: string[];
+
+  images?: Array<{
+    url: string;
+    isPublic: boolean;
+  }>;
+  coverImage?: string;
+  documents?: Listing["documents"];
+
+  units: ResidenceUnit[];
+  totalUnits?: number;
+  priceFrom?: number;
+
+  agent?: {
+    _id: string;
+    firstname: string;
+    lastname: string;
+    email?: string;
+    phone?: string;
+  };
+
+  isPublished: boolean;
+  publishedAt?: Date;
+  isFeatured: boolean;
+
+  archived?: boolean;
+  archivedAt?: Date;
+
+  views: number;
+  createdAt: Date;
+  updatedAt: Date;
+}

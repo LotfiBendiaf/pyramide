@@ -53,6 +53,7 @@ import {
   ClipboardCheck,
   Lock,
   Star,
+  Landmark,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
@@ -111,6 +112,22 @@ const sidebarConfig: SidebarGroup[] = [
         url: ROUTES.FEATURED_LISTINGS_DASHBOARD,
         icon: Star,
         roles: ["ADMIN", "MANAGER"],
+      },
+    ],
+  },
+  {
+    label: "Résidences",
+    roles: ["ADMIN", "DEVELOPER"],
+    items: [
+      {
+        title: "Toutes les résidences",
+        url: ROUTES.RESIDENCES_DASHBOARD,
+        icon: Landmark,
+      },
+      {
+        title: "Ajouter une résidence",
+        url: ROUTES.RESIDENCE_ADD,
+        icon: PlusCircle,
       },
     ],
   },

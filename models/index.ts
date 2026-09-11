@@ -14,6 +14,7 @@ import Negotiation from "./negotiation.model";
 import Notification from "./notification.model";
 import PasswordResetToken from "./passwordResetToken.model";
 import ReferenceCounter from "./referenceCounter.model";
+import Residence from "./residence.model";
 
 export {
   Account,
@@ -32,4 +33,5 @@ export {
   Notification,
   PasswordResetToken,
   ReferenceCounter,
+  Residence,
 };

@@ -33,6 +33,7 @@ interface ImageUploadProps {
   value?: ImageData[]; // Current image objects
   onChange: (value: ImageData[]) => void; // Function to update form
   onRemove: (url: string) => void; // Function to remove image
+  folder?: string; // Cloudinary upload folder
 }
 
 interface SortableImageProps {
@@ -133,6 +134,7 @@ export default function ImageUpload({
   value,
   onChange,
   onRemove,
+  folder = "pyramide/listings",
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -159,7 +161,7 @@ export default function ImageUpload({
             "upload_preset",
             process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
           );
-          formData.append("folder", "pyramide/listings");
+          formData.append("folder", folder);
 
           const response = await fetch(
             `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
@@ -185,7 +187,7 @@ export default function ImageUpload({
         setUploading(false);
       }
     },
-    [images, onChange]
+    [images, onChange, folder]
   );
 
   const toggleVisibility = (url: string) => {

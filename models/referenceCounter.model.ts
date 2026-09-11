@@ -2,14 +2,14 @@ import { Schema, model, models } from "mongoose";
 
 export interface IReferenceCounter {
   _id: string;
-  prefix: "V" | "L";
+  prefix: "V" | "L" | "RES";
   sequence: number;
 }
 
 const referenceCounterSchema = new Schema<IReferenceCounter>(
   {
     _id: { type: String, required: true },
-    prefix: { type: String, enum: ["V", "L"], required: true },
+    prefix: { type: String, enum: ["V", "L", "RES"], required: true },
     sequence: { type: Number, required: true, default: 0 },
   },
   { timestamps: true }

@@ -151,6 +151,13 @@ export const routeTitles: Record<string, string> = {
 
   // Settings
   "/dashboard/settings": "Paramètres",
+
+  // === Residences ===
+  "/residences": "Résidences",
+  "/residences/[slug]": "Détails de la Résidence",
+  "/dashboard/residences": "Gestion des Résidences",
+  "/dashboard/residences/add": "Nouvelle Résidence",
+  "/dashboard/residences/[id]/edit": "Modifier la Résidence",
 };
 
 export const WILAYAS = ["Oran"];
@@ -274,3 +281,34 @@ export const BLOCK_DURATIONS = [
   { days: 14, label: "2 semaines" },
   { days: 30, label: "1 mois" },
 ] as const;
+
+// ─── Residences ────────────────────────────────────────────────────────────
+
+export const UNIT_TYPES = [
+  "Studio",
+  "Appartement",
+  "Duplex",
+  "Penthouse",
+  "Villa",
+  "Local Commercial",
+  "Autre",
+] as const;
+
+export type UnitTypeValue = (typeof UNIT_TYPES)[number];
+
+export const UNIT_STATUSES = [
+  { value: "AVAILABLE", label: "Disponible", color: "success" },
+  { value: "RESERVED", label: "Réservée", color: "warning" },
+  { value: "SOLD", label: "Vendue", color: "secondary" },
+] as const;
+
+export type UnitStatusValue = (typeof UNIT_STATUSES)[number]["value"];
+
+export const RESIDENCE_COMPLETION_STATUSES = [
+  { value: "PLANNED", label: "Planifié", color: "secondary" },
+  { value: "UNDER_CONSTRUCTION", label: "En construction", color: "warning" },
+  { value: "DELIVERED", label: "Livré", color: "success" },
+] as const;
+
+export type ResidenceCompletionStatusValue =
+  (typeof RESIDENCE_COMPLETION_STATUSES)[number]["value"];

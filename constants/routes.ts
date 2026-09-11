@@ -9,6 +9,9 @@ const ROUTES = {
   LISTING_DETAIL: (id: string) => `/listings/${id}`,
   LISTINGS: "/listings",
 
+  RESIDENCES: "/residences",
+  RESIDENCE_DETAIL: (slug: string) => `/residences/${slug}`,
+
   // Dashboard Items Routes
   DASHBOARD: "/dashboard",
   WISHLIST: "/wishlist",
@@ -50,6 +53,10 @@ const ROUTES = {
   DEMANDES: "/dashboard/demandes",
   // Mes biens
   MES_BIENS: "/dashboard/mes-biens",
+  // Résidences
+  RESIDENCES_DASHBOARD: "/dashboard/residences",
+  RESIDENCE_ADD: "/dashboard/residences/add",
+  RESIDENCE_EDIT: (id: string) => `/dashboard/residences/${id}/edit`,
 };
 
 export default ROUTES;
