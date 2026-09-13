@@ -9,7 +9,7 @@ import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
 import dbConnect from "../mongoose";
 import ROUTES from "@/constants/routes";
-import { hasFullAccess } from "@/constants/values";
+import { isElevatedRole } from "@/constants/values";
 import {
   residenceSchema,
   unitStatusUpdateSchema,
@@ -26,10 +26,10 @@ async function requireResidenceManager() {
     return { error: { message: "Non autorisé", status: 401 } as const };
   }
 
-  if (!hasFullAccess(user.data.role)) {
+  if (!isElevatedRole(user.data.role)) {
     return {
       error: {
-        message: "Accès réservé aux administrateurs et développeurs",
+        message: "Accès réservé aux gérants, administrateurs et développeurs",
         status: 403,
       } as const,
     };

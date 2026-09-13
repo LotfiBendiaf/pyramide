@@ -117,7 +117,7 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Résidences",
-    roles: ["ADMIN", "DEVELOPER"],
+    roles: ["ADMIN", "MANAGER", "DEVELOPER"],
     items: [
       {
         title: "Toutes les résidences",

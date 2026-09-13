@@ -7,7 +7,7 @@ import { PaginationControls } from "@/components/PaginationControls";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ROUTES from "@/constants/routes";
-import { hasFullAccess } from "@/constants/values";
+import { isElevatedRole } from "@/constants/values";
 
 const RESIDENCES_PER_PAGE = 15;
 
@@ -15,7 +15,7 @@ export default async function ResidencesDashboardPage({
   searchParams,
 }: RouteParams) {
   const user = await getUserBySessionEmail();
-  if (!user.data || !hasFullAccess(user.data.role)) {
+  if (!user.data || !isElevatedRole(user.data.role)) {
     redirect(ROUTES.DASHBOARD);
   }
 
