@@ -83,7 +83,8 @@ export async function fetchListingAssignees(): Promise<ActionResponse<User[]>> {
 
     if (
       currentUser.data.role !== "ADMIN" &&
-      currentUser.data.role !== "DEVELOPER"
+      currentUser.data.role !== "DEVELOPER" &&
+      currentUser.data.role !== "AGENT"
     ) {
       return {
         success: false,

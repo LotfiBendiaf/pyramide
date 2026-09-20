@@ -150,7 +150,8 @@ export default async function ListingsPage({
   const user = await getUserBySessionEmail();
   const canViewNewListings = canAccessNewListings(user.data?.role);
   const canAssignAgent = user.data?.role === "ADMIN" || user.data?.role === "DEVELOPER";
-  const assigneesResult = canAssignAgent
+  const canFilterByAgent = canAssignAgent || user.data?.role === "AGENT";
+  const assigneesResult = canFilterByAgent
     ? await fetchListingAssignees()
     : undefined;
   const isArchiveView = params?.view === "archives";
@@ -208,7 +209,11 @@ export default async function ListingsPage({
 
       <Suspense fallback={<TableSkeleton />}>
         <ListingFilterDashboard
-          agents={assigneesResult?.data ?? []}
+          agents={
+            isApprovedView && user.data?.role === "AGENT"
+              ? []
+              : assigneesResult?.data ?? []
+          }
           key={
             isArchiveView
               ? "archives"

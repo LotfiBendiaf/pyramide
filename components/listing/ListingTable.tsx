@@ -334,7 +334,17 @@ export function ListingTable({
                     <span className="text-xs text-muted-foreground">{listing.isPublished ? "Publié" : "Privé"}</span>
                   </div>
                 </div>
-                {canAssignAgent && <div className="mt-2" onClick={(e) => e.stopPropagation()}><ListingAgentSelect listingId={listing._id} agents={agents} value={listing.agent?._id} /></div>}
+                <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                  {canAssignAgent ? (
+                    <ListingAgentSelect listingId={listing._id} agents={agents} value={listing.agent?._id} />
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Responsable : {listing.agent
+                        ? `${listing.agent.firstname ?? ""} ${listing.agent.lastname ?? ""}`.trim()
+                        : "Non affecté"}
+                    </p>
+                  )}
+                </div>
               </article>
             );
           })}
