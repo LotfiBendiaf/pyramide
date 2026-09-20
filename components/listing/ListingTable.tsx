@@ -8,6 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { requestArchive, cancelListingArchiveRequest } from "@/lib/actions/archiveRequest.action";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -159,6 +162,7 @@ export function ListingTable({
     listingId: string;
     currentStatus: boolean;
   } | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
   const [archiveDialog, setArchiveDialog] = useState<{
     open: boolean;
     listingId: string;
@@ -221,18 +225,39 @@ export function ListingTable({
   };
 
   const handleConfirmArchive = async () => {
-    if (!archiveDialog) return;
+    if (!archiveDialog || archiveReason.trim().length < 5) return;
     const { listingId } = archiveDialog;
-    setArchiveDialog(null);
     setValidatingStates((prev) => ({ ...prev, [listingId]: true }));
-    const result = await toggleListingValidation(listingId, true);
+    const result = await requestArchive({ entityType: "LISTING", entityId: listingId, reason: archiveReason.trim() });
     if (result.success) {
-      toast.success("Annonce archivée");
+      toast.success("Demande d’archivage envoyée");
+      setArchiveDialog(null);
+      setArchiveReason("");
+      router.refresh();
     } else {
       toast.error(result.error?.message || "Erreur lors de l'archivage");
     }
     setValidatingStates((prev) => ({ ...prev, [listingId]: false }));
   };
+
+  const handleCancelArchive = async (listingId: string) => {
+    setValidatingStates((prev) => ({ ...prev, [listingId]: true }));
+    const result = await cancelListingArchiveRequest(listingId);
+    if (result.success) {
+      toast.success("Demande d’archivage annulée");
+      router.refresh();
+    } else {
+      toast.error(result.error?.message || "Impossible d’annuler la demande");
+    }
+    setValidatingStates((prev) => ({ ...prev, [listingId]: false }));
+  };
+
+  const renderArchivePending = (listing: Listing) => listing.hasPendingArchiveRequest ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <Badge variant="outline" className="border-amber-300 text-amber-700">Archivage en attente</Badge>
+      {listing.canCancelPendingArchiveRequest && <Button size="sm" variant="outline" disabled={validatingStates[listing._id]} onClick={() => handleCancelArchive(listing._id)}>Annuler la demande</Button>}
+    </div>
+  ) : null;
 
   const renderValidationMenu = (listing: Listing) => {
     const vState = getValidationState(listing);
@@ -249,7 +274,7 @@ export function ListingTable({
           <DropdownMenuItem disabled={vState === "validé"} onClick={() => handleValidate(listing._id)}>Valider</DropdownMenuItem>
           <DropdownMenuItem disabled={vState === "validé" || vState === "approuvé"} onClick={() => handleApprove(listing._id)}>Approuver</DropdownMenuItem>
           <DropdownMenuItem disabled={vState === "neutre"} onClick={() => handleSetNeutre(listing._id)}>Mettre en Neutre</DropdownMenuItem>
-          <DropdownMenuItem disabled={vState === "archivé"} className="text-destructive focus:text-destructive" onClick={() => setArchiveDialog({ open: true, listingId: listing._id })}>Archiver</DropdownMenuItem>
+          <DropdownMenuItem disabled={vState === "archivé" || listing.hasPendingArchiveRequest} className="text-destructive focus:text-destructive" onClick={() => setArchiveDialog({ open: true, listingId: listing._id })}>Archiver</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -297,6 +322,7 @@ export function ListingTable({
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <ValidationBadge state={vState} />
+                  {renderArchivePending(listing)}
                   <Badge variant="outline" className={STATUS_COLORS[listing.status]}>{listing.status}</Badge>
                   {hasNegotiationPipeline(listing) && <Badge variant="purple" className="text-xs"><Radio className="h-3 w-3" />Négociation</Badge>}
                   {documentsCount > 0 && <Badge variant="outline" className="gap-1 text-xs"><FileText className="h-3 w-3" />{documentsCount}</Badge>}
@@ -384,7 +410,7 @@ export function ListingTable({
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
                                 <>
-                                  <ValidationBadge state={vState} />
+                                  {listing.hasPendingArchiveRequest ? <Badge variant="outline">Archivage en attente</Badge> : <ValidationBadge state={vState} />}
                                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                                 </>
                               )}
@@ -421,8 +447,9 @@ export function ListingTable({
                             </Badge>
                             Mettre en Neutre
                           </DropdownMenuItem>
+                          {listing.hasPendingArchiveRequest && <DropdownMenuItem disabled={!listing.canCancelPendingArchiveRequest} onClick={() => handleCancelArchive(listing._id)}>Annuler la demande d’archivage</DropdownMenuItem>}
                           <DropdownMenuItem
-                            disabled={vState === "archivé"}
+                            disabled={vState === "archivé" || listing.hasPendingArchiveRequest}
                             className="text-destructive focus:text-destructive"
                             onClick={() =>
                               setArchiveDialog({
@@ -680,21 +707,25 @@ export function ListingTable({
       {/* Archive confirm dialog */}
       <AlertDialog
         open={archiveDialog?.open || false}
-        onOpenChange={(open) => !open && setArchiveDialog(null)}
+        onOpenChange={(open) => { if (!open && !validatingStates[archiveDialog?.listingId || ""]) { setArchiveDialog(null); setArchiveReason(""); } }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Archiver l&apos;annonce</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette annonce sera archivée et disparaîtra de la liste principale.
-              Vous pourrez la retrouver dans les archives.
+              Indiquez la raison de l’archivage. L’annonce restera active jusqu’à
+              l’approbation de la demande par un responsable.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="listing-archive-reason">Raison d’archivage</Label>
+            <Textarea id="listing-archive-reason" value={archiveReason} onChange={(event) => setArchiveReason(event.target.value)} placeholder="Au moins 5 caractères" />
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmArchive}>
-              Archiver
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={validatingStates[archiveDialog?.listingId || ""]}>Annuler</AlertDialogCancel>
+            <Button onClick={handleConfirmArchive} disabled={archiveReason.trim().length < 5 || validatingStates[archiveDialog?.listingId || ""]}>
+              Envoyer la demande
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

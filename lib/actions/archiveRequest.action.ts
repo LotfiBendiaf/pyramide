@@ -19,20 +19,37 @@ function canReviewArchiveRequests(role: string): boolean {
   return role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
 }
 
+function revalidateListingArchive(id: string) {
+  revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+  revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(id));
+  revalidatePath(ROUTES.MES_BIENS);
+  revalidatePath(ROUTES.LISTINGS);
+  revalidatePath(ROUTES.LISTING_DETAIL(id));
+}
+
+export async function cancelClientArchiveRequest(clientId: string): Promise<ActionResponse> {
+  return cancelArchiveRequest(clientId, "CLIENT");
+}
+
+export async function cancelListingArchiveRequest(listingId: string): Promise<ActionResponse> {
+  return cancelArchiveRequest(listingId, "LISTING");
+}
+
 /* ─────────────────────── Cancel Archive Request ─────────────────────── */
 
-export async function cancelClientArchiveRequest(
-  clientId: string
+async function cancelArchiveRequest(
+  entityId: string,
+  entityType: "CLIENT" | "LISTING"
 ): Promise<ActionResponse> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  if (!Types.ObjectId.isValid(clientId)) {
+  if (!Types.ObjectId.isValid(entityId)) {
     return {
       success: false,
-      error: { message: "ID client invalide" },
+      error: { message: "ID invalide" },
       status: 400,
     };
   }
@@ -41,8 +58,8 @@ export async function cancelClientArchiveRequest(
     await dbConnect();
 
     const filter = {
-      entityType: "CLIENT" as const,
-      entityId: clientId,
+      entityType,
+      entityId: entityId,
       status: "PENDING" as const,
       ...(canReviewArchiveRequests(user.data.role)
         ? {}
@@ -67,7 +84,8 @@ export async function cancelClientArchiveRequest(
     }
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
-    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+    revalidatePath(ROUTES.CLIENT_DETAIL(entityId));
+    revalidateListingArchive(entityId);
     revalidatePath(ROUTES.DEMANDES);
 
     return { success: true, status: 200 };
@@ -103,8 +121,18 @@ export async function requestArchive(
   }
 
   try {
+    const entity = entityType === "CLIENT"
+      ? await Client.findById(entityId).select("archived")
+      : await Listing.findById(entityId).select("archived");
+    if (!entity) {
+      return { success: false, error: { message: "Élément introuvable" }, status: 404 };
+    }
+    if (entity.archived) {
+      return { success: false, error: { message: "Cet élément est déjà archivé" }, status: 409 };
+    }
     // Prevent duplicate pending requests for the same entity
     const existing = await ArchiveRequest.findOne({
+      entityType,
       entityId,
       status: "PENDING",
     });
@@ -126,6 +154,7 @@ export async function requestArchive(
     });
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+    revalidateListingArchive(entityId);
     revalidatePath(ROUTES.DEMANDES);
 
     await notifyManagers({
@@ -214,6 +243,10 @@ export async function approveArchiveRequest(
             archived: true,
             archivedAt: new Date(),
             pipelineStatus: "ARCHIVED",
+            archiveReason: archiveRequest.reason,
+            isValidated: false,
+            isPublished: false,
+            $unset: { validatedAt: 1, validatedBy: 1, publishedAt: 1 },
           });
 
     await Promise.all([
@@ -225,7 +258,7 @@ export async function approveArchiveRequest(
       revalidatePath(ROUTES.CLIENTS_DASHBOARD);
       revalidatePath(ROUTES.CLIENT_DETAIL(archiveRequest.entityId.toString()));
     } else {
-      revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+      revalidateListingArchive(archiveRequest.entityId.toString());
     }
     revalidatePath(ROUTES.DEMANDES);
 
@@ -300,6 +333,7 @@ export async function rejectArchiveRequest(
     archiveRequest.reviewedAt = new Date();
     archiveRequest.managerNote = managerNote;
     await archiveRequest.save();
+    revalidateListingArchive(archiveRequest.entityId.toString());
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);
     revalidatePath(ROUTES.DEMANDES);

@@ -131,6 +131,7 @@ export interface IListing {
 
   archived: boolean;
   archivedAt?: Date;
+  archiveReason?: string;
 
   views: number;
   likes: number;
@@ -305,6 +306,7 @@ const listingSchema = new Schema<IListing>(
     validatedBy: { type: Schema.Types.ObjectId, ref: "User" },
     archived: { type: Boolean, default: false },
     archivedAt: { type: Date },
+    archiveReason: { type: String },
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },

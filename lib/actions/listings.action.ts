@@ -7,6 +7,7 @@ import {
   Visit,
   User,
   ReferenceCounter,
+  ArchiveRequest,
 } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import action from "../handlers/action";
@@ -549,9 +550,28 @@ export async function fetchListings(
       Listing.countDocuments(query),
     ]);
 
+    const pendingRequests = listings.length ? await ArchiveRequest.find({
+      entityType: "LISTING",
+      entityId: { $in: listings.map((listing) => listing._id) },
+      status: "PENDING",
+    }).select("entityId requestedBy").lean() : [];
+    const user = pendingRequests.length ? await getUserBySessionEmail() : null;
+    const pendingById = new Map(pendingRequests.map((request) => [request.entityId.toString(), request]));
+    const listingsWithRequests = listings.map((listing) => {
+      const request = pendingById.get(String(listing._id));
+      return {
+        ...listing,
+        hasPendingArchiveRequest: Boolean(request),
+        canCancelPendingArchiveRequest: Boolean(request && user?.data && (
+          ["ADMIN", "MANAGER", "DEVELOPER"].includes(user.data.role) ||
+          request.requestedBy.toString() === user.data._id.toString()
+        )),
+      };
+    });
+
     return {
       success: true,
-      data: JSON.parse(JSON.stringify(listings)),
+      data: JSON.parse(JSON.stringify(listingsWithRequests)),
       total,
       status: 200,
     };
@@ -1116,23 +1136,10 @@ export async function toggleListingValidation(
         status: 200,
       };
     } else {
-      // — Unvalidate: archive the listing (remove from main list) —
-      await Listing.findByIdAndUpdate(listingId, {
-        isValidated: false,
-        archived: true,
-        archivedAt: new Date(),
-        pipelineStatus: "ARCHIVED",
-        $unset: { validatedAt: 1, validatedBy: 1 },
-      });
-
-      revalidatePath(ROUTES.LISTINGS_DASHBOARD);
-      revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
-      revalidatePath(ROUTES.MES_BIENS);
-
       return {
-        success: true,
-        data: { isValidated: false },
-        status: 200,
+        success: false,
+        error: { message: "Veuillez envoyer une demande d'archivage avec une raison pour validation." },
+        status: 403,
       };
     }
   } catch (error) {

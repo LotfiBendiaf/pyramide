@@ -171,6 +171,8 @@ interface Listing {
 
   archived?: boolean;
   archivedAt?: Date;
+  hasPendingArchiveRequest?: boolean;
+  canCancelPendingArchiveRequest?: boolean;
 
   views: number;
   likes: number;

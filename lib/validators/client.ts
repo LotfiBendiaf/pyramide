@@ -137,7 +137,7 @@ export const phase2RejectionSchema = z.object({
 export const archiveRequestSchema = z.object({
   entityType: z.enum(["CLIENT", "LISTING"]),
   entityId: z.string().min(1),
-  reason: z.string().min(5, "La raison doit contenir au moins 5 caractères"),
+  reason: z.string().trim().min(5, "La raison doit contenir au moins 5 caractères"),
 });
 
 export const archiveReviewSchema = z.object({
