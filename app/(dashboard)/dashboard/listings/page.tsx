@@ -220,7 +220,7 @@ export default async function ListingsPage({
 
       {isSocialView && (
         <p className="text-sm text-muted-foreground">
-          Annonces publiées sur l’application, disponibles à la vente ou à la location, dont le propriétaire autorise la publication sur les réseaux sociaux.
+          Annonces publiées, prêtes à être diffusées sur les réseaux sociaux.
         </p>
       )}
 

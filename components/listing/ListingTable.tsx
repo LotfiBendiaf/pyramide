@@ -62,7 +62,6 @@ import {
 } from "@/lib/utils";
 import {
   toggleListingPublished,
-  setListingSocialPublishingAllowed,
   toggleListingValidation,
   approveListingWithoutReference,
   setListingNeutre,
@@ -155,46 +154,6 @@ export function ListingTable({
   const [publishingStates, setPublishingStates] = useState<
     Record<string, boolean>
   >({});
-  const [socialPublishingStates, setSocialPublishingStates] = useState<Record<string, boolean>>({});
-
-  const handleSocialPermission = async (listing: Listing) => {
-    setSocialPublishingStates((prev) => ({ ...prev, [listing._id]: true }));
-    try {
-      const result = await setListingSocialPublishingAllowed(listing._id, !listing.socialPublishingAllowed);
-      if (result.success) {
-        toast.success(result.data?.socialPublishingAllowed
-          ? "Publication sur les réseaux autorisée"
-          : "Publication sur les réseaux désactivée");
-        router.refresh();
-      } else {
-        toast.error(result.error?.message || "Impossible de modifier l’autorisation");
-      }
-    } catch {
-      toast.error("Impossible de modifier l’autorisation");
-    } finally {
-      setSocialPublishingStates((prev) => ({ ...prev, [listing._id]: false }));
-    }
-  };
-
-  const renderSocialPermissionSwitch = (listing: Listing, compact = false) => (
-    <div
-      className={compact
-        ? "flex items-center gap-2 rounded-md border px-2.5 py-1.5"
-        : "flex items-center gap-2"}
-      onClick={(event) => event.stopPropagation()}
-    >
-      <Switch
-        checked={listing.socialPublishingAllowed ?? false}
-        disabled={socialPublishingStates[listing._id]}
-        aria-label="Autoriser la publication sur les réseaux sociaux"
-        onCheckedChange={() => void handleSocialPermission(listing)}
-      />
-      <span className={compact ? "text-xs text-muted-foreground" : "text-sm text-muted-foreground"}>
-        {listing.socialPublishingAllowed ? "Réseaux autorisés" : "Réseaux désactivés"}
-      </span>
-    </div>
-  );
-
   const [validatingStates, setValidatingStates] = useState<
     Record<string, boolean>
   >({});
@@ -370,12 +329,9 @@ export function ListingTable({
                 </div>
                 <div className="mt-3 flex items-center gap-2 border-t pt-3">
                   <Button className="flex-1" size="sm" onClick={() => window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")}>Ouvrir le bien</Button>
-                  <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5">
                     <Switch checked={listing.isPublished} onCheckedChange={() => openConfirmDialog(listing._id, listing.isPublished)} disabled={publishingStates[listing._id]} aria-label={listing.isPublished ? "Dépublier" : "Publier"} />
                     <span className="text-xs text-muted-foreground">{listing.isPublished ? "Publié" : "Privé"}</span>
-                  </div>
-                  {renderSocialPermissionSwitch(listing, true)}
                   </div>
                 </div>
                 <div className="mt-2" onClick={(e) => e.stopPropagation()}>
@@ -690,7 +646,6 @@ export function ListingTable({
                           )}
                         </span>
                       </div>
-                      {renderSocialPermissionSwitch(listing)}
                       <Badge
                         variant="outline"
                         className={STATUS_COLORS[listing.status]}

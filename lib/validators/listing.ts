@@ -111,7 +111,6 @@ export const listingSchema = z
     coverImage: z.string().url().optional(),
 
     isPublished: z.boolean(),
-    socialPublishingAllowed: z.boolean().optional(),
     isFeatured: z.boolean().optional(),
     isPremium: z.boolean().optional(),
 
