@@ -122,6 +122,7 @@ export interface IListing {
   agent: Schema.Types.ObjectId; // admin or agent
   sellerClient: Schema.Types.ObjectId; // Reference to the seller client created for this listing
   isPublished: boolean;
+  socialPublishingAllowed: boolean;
   publishedAt?: Date;
 
   isValidated: boolean;
@@ -295,6 +296,7 @@ const listingSchema = new Schema<IListing>(
       required: true,
     },
     isPublished: { type: Boolean, default: false },
+    socialPublishingAllowed: { type: Boolean, default: false },
     publishedAt: { type: Date, default: new Date() },
     isValidated: { type: Boolean, default: false },
     validationStatus: {

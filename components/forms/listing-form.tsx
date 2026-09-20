@@ -133,6 +133,7 @@ export default function ListingForm({
           isFeatured: initialData.isFeatured,
           isPremium: initialData.isPremium,
           isPublished: initialData.isPublished,
+          socialPublishingAllowed: initialData.socialPublishingAllowed ?? false,
           sellerFirstName: client?.firstName ?? "",
           sellerLastName: client?.lastName ?? "",
           sellerPhone: client?.phone ?? "",
@@ -175,6 +176,7 @@ export default function ListingForm({
           documents: [],
           isFeatured: false,
           isPublished: false,
+          socialPublishingAllowed: false,
           sellerFirstName: "",
           sellerLastName: "",
           sellerPhone: "",
@@ -1077,7 +1079,7 @@ export default function ListingForm({
                   render={({ field }) => (
                     <FormItem className="flex justify-between items-center border p-3 rounded-lg">
                       <div>
-                        <FormLabel>Publié</FormLabel>
+                        <FormLabel>Publié sur l’application</FormLabel>
                         <FormDescription className="text-xs">
                           Visible sur le site
                         </FormDescription>
@@ -1086,6 +1088,24 @@ export default function ListingForm({
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="socialPublishingAllowed"
+                  render={({ field }) => (
+                    <FormItem className="flex justify-between items-center gap-3 border p-3 rounded-lg">
+                      <div>
+                        <FormLabel>Publication sur les réseaux autorisée</FormLabel>
+                        <FormDescription className="text-xs">
+                          À activer avec l’accord du propriétaire. Une fois publiée sur l’application, cette annonce apparaîtra dans l’onglet « Annonces à publier sur les réseaux ».
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                      </FormControl>
                     </FormItem>
                   )}
                 />

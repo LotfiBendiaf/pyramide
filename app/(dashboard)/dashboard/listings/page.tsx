@@ -58,7 +58,8 @@ async function ListingsContent({
   const isArchiveView = params?.view === "archives";
   const isNeutreView = params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
-  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView;
+  const isSocialView = params?.view === "social";
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView;
 
   const sortBy = params?.sortBy ?? (isActiveView ? "referenceCode" : undefined);
   const sortOrder =
@@ -66,6 +67,7 @@ async function ListingsContent({
     (isActiveView ? "desc" : undefined);
 
   const result = await fetchListings({
+    forSocialPublishing: isSocialView,
     assignedToCurrentUser: isApprovedView && assignedToCurrentUser,
     agentId: params?.agentId,
     search: params?.search,
@@ -118,7 +120,9 @@ async function ListingsContent({
   if (!listings || listings.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-20">
-        {isArchiveView
+        {isSocialView
+          ? "Aucune annonce à publier sur les réseaux."
+          : isArchiveView
           ? "Aucune annonce archivée."
           : isApprovedView
             ? "Aucune annonce approuvée."
@@ -157,7 +161,8 @@ export default async function ListingsPage({
   const isArchiveView = params?.view === "archives";
   const isNeutreView = canViewNewListings && params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
-  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView;
+  const isSocialView = params?.view === "social";
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView;
 
   if (params?.view === "neutre" && !canViewNewListings) {
     redirect(ROUTES.LISTINGS_DASHBOARD);
@@ -178,7 +183,7 @@ export default async function ListingsPage({
         buttonHref={ROUTES.LISTING_ADD}
       />
 
-      <div className="flex gap-2 border-b">
+      <div className="flex flex-wrap gap-2 border-b">
         <Link
           href={ROUTES.LISTINGS_DASHBOARD}
           className={tabClass(isActiveView)}
@@ -190,6 +195,12 @@ export default async function ListingsPage({
           className={tabClass(isApprovedView)}
         >
           Annonces approuvées
+        </Link>
+        <Link
+          href={`${ROUTES.LISTINGS_DASHBOARD}?view=social`}
+          className={tabClass(isSocialView)}
+        >
+          Annonces à publier sur les réseaux
         </Link>
         {canViewNewListings && (
           <Link
@@ -207,6 +218,12 @@ export default async function ListingsPage({
         </Link>
       </div>
 
+      {isSocialView && (
+        <p className="text-sm text-muted-foreground">
+          Annonces publiées sur l’application, disponibles à la vente ou à la location, dont le propriétaire autorise la publication sur les réseaux sociaux.
+        </p>
+      )}
+
       <Suspense fallback={<TableSkeleton />}>
         <ListingFilterDashboard
           agents={
@@ -215,7 +232,9 @@ export default async function ListingsPage({
               : assigneesResult?.data ?? []
           }
           key={
-            isArchiveView
+            isSocialView
+              ? "social"
+              : isArchiveView
               ? "archives"
               : isApprovedView
                 ? "approved"

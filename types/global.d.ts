@@ -162,6 +162,7 @@ interface Listing {
     phone?: string;
   };
   isPublished: boolean;
+  socialPublishingAllowed?: boolean;
   publishedAt?: Date;
 
   isValidated: boolean;

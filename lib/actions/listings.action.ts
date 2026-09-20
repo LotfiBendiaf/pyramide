@@ -282,6 +282,7 @@ interface FetchListingsParams {
   assignedToCurrentUser?: boolean;
   agentId?: string;
   isPublished?: boolean;
+  forSocialPublishing?: boolean;
   isValidated?: boolean;
   validationStatus?: "NEUTRAL" | "APPROVED" | "VALIDATED";
   hasReferenceCode?: boolean;
@@ -339,6 +340,7 @@ export async function fetchListings(
       assignedToCurrentUser,
       agentId,
       isPublished,
+      forSocialPublishing,
       isValidated,
       validationStatus,
       hasReferenceCode,
@@ -424,6 +426,15 @@ export async function fetchListings(
     }
 
     if (status) query.status = status;
+    if (forSocialPublishing) {
+      query.isPublished = true;
+      query.socialPublishingAllowed = true;
+      query.archived = { $ne: true };
+      // Keep unavailable properties out of the social publication list.
+      query.status = status && ["En Vente", "En Location"].includes(status)
+        ? status
+        : { $in: status ? [] : ["En Vente", "En Location"] };
+    }
     if (propertyType) query.propertyType = propertyType;
     if (city) query["location.city"] = city;
     if (isPremium !== undefined) query.isPremium = isPremium;
@@ -1387,6 +1398,37 @@ export async function rebuildAllListingDescriptions(): Promise<
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
 
     return { success: true, data: { updated }, status: 200 };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function setListingSocialPublishingAllowed(
+  listingId: string,
+  allowed: boolean
+): Promise<ActionResponse<{ socialPublishingAllowed: boolean }>> {
+  try {
+    const user = await getUserBySessionEmail();
+    if (!user.data) {
+      return { success: false, error: { message: "Utilisateur non autorisé" }, status: 401 };
+    }
+    if (!Types.ObjectId.isValid(listingId) || typeof allowed !== "boolean") {
+      return { success: false, error: { message: "Paramètres invalides" }, status: 400 };
+    }
+
+    await dbConnect();
+    const listing = await Listing.findByIdAndUpdate(
+      listingId,
+      { $set: { socialPublishingAllowed: allowed } },
+      { new: true }
+    ).select("socialPublishingAllowed");
+    if (!listing) {
+      return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
+    return { success: true, data: { socialPublishingAllowed: listing.socialPublishingAllowed }, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }
