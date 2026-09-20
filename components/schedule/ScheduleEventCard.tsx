@@ -104,10 +104,12 @@ export default function ScheduleEventCard({
           <span className="text-lg font-semibold text-primary">
             {format(startTime, "HH:mm")}
           </span>
+          {endTime.getTime() !== startTime.getTime() && <>
           <span className="text-muted-foreground">-</span>
           <span className="text-sm text-muted-foreground">
             {format(endTime, "HH:mm")}
           </span>
+          </>}
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:justify-end sm:gap-2">
@@ -122,7 +124,7 @@ export default function ScheduleEventCard({
           {/* Type badge */}
           <Badge variant="outline" className={cn("gap-1", config.color)}>
             <TypeIcon className="h-3 w-3" />
-            {config.label}
+            {endTime.getTime() === startTime.getTime() ? "Rappel" : config.label}
           </Badge>
 
           {/* Channel badge */}

@@ -205,7 +205,7 @@ export async function getSchedule(
       const startTime = followUp.startTime || followUp.reminderAt;
       if (!startTime) continue;
 
-      const duration = followUp.duration || 60;
+      const duration = followUp.duration ?? (followUp.channel === "VISIT" ? 30 : 0);
       const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
 
       events.push({
@@ -405,7 +405,8 @@ export async function createManualEvent(data: {
   title: string;
   description?: string;
   startTime: Date;
-  endTime: Date;
+  endTime?: Date;
+  isReminder?: boolean;
   location?: string;
   isAllDay?: boolean;
   reminderMinutes?: number;
@@ -418,6 +419,15 @@ export async function createManualEvent(data: {
     }
 
     await dbConnect();
+
+    const startTime = new Date(data.startTime);
+    const endTime = data.isReminder
+      ? new Date(startTime)
+      : data.endTime ? new Date(data.endTime) : new Date(startTime.getTime() + 30 * 60 * 1000);
+    if (!Number.isFinite(startTime.getTime()) || !Number.isFinite(endTime.getTime()) ||
+        (!data.isReminder && endTime <= startTime)) {
+      return { success: false, error: { message: "Dates de l'événement invalides" } };
+    }
 
     // Check if user has Google Calendar connected
     const hasGoogleConnected = await hasGoogleCalendarConnected(
@@ -432,11 +442,11 @@ export async function createManualEvent(data: {
       agent: session.user.id,
       title: data.title,
       description: data.description,
-      startTime: data.startTime,
-      endTime: data.endTime,
+      startTime,
+      endTime,
       location: data.location,
       isAllDay: data.isAllDay || false,
-      reminderMinutes: data.reminderMinutes || 30,
+      reminderMinutes: data.reminderMinutes ?? (data.isReminder ? 0 : 30),
       sourceType: "MANUAL",
       syncStatus: hasGoogleConnected ? "PENDING" : "SYNCED",
     });

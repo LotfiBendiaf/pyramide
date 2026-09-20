@@ -276,7 +276,7 @@ export async function createCalendarEventFromFollowUp(
   }
 
   const startTime = followUp.startTime || followUp.reminderAt;
-  const duration = followUp.duration || 60;
+  const duration = followUp.duration ?? (followUp.channel === "VISIT" ? 30 : 0);
   const endTime = new Date(startTime!.getTime() + duration * 60 * 1000);
 
   // Create local calendar event
@@ -432,7 +432,7 @@ export async function createCalendarEventFromVisit(
   const listingLabel =
     listing?.title || (visit.isExternalListing ? visit.externalListingRef : "");
   const startTime = visit.scheduledAt;
-  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+  const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
 
   const calendarEvent = await CalendarEvent.create({
     agent: visit.agent,

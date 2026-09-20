@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format, addHours } from "date-fns";
+import { format, addMinutes, startOfHour } from "date-fns";
 import { CalendarIcon, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +57,7 @@ const generateTimeOptions = () => {
 const TIME_OPTIONS = generateTimeOptions();
 
 const eventSchema = z.object({
+  kind: z.enum(["EVENT", "REMINDER"]),
   title: z.string().min(1, "Le titre est requis"),
   description: z.string().optional(),
   date: z.date({ required_error: "La date est requise" }),
@@ -82,14 +83,17 @@ export default function EventCreationDialog({
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
+      kind: "EVENT",
       title: "",
       description: "",
       date: defaultDate,
       startTime: format(new Date(), "HH:00"),
-      endTime: format(addHours(new Date(), 1), "HH:00"),
+      endTime: format(addMinutes(startOfHour(new Date()), 30), "HH:mm"),
       location: "",
     },
   });
+
+  const isReminder = form.watch("kind") === "REMINDER";
 
   // Update form date when selectedDate changes
   useEffect(() => {
@@ -107,10 +111,13 @@ export default function EventCreationDialog({
       const startTime = new Date(values.date);
       startTime.setHours(startHour, startMin, 0, 0);
 
-      const endTime = new Date(values.date);
-      endTime.setHours(endHour, endMin, 0, 0);
+      const endTime = new Date(startTime);
+      if (values.kind === "EVENT") {
+        endTime.setHours(endHour, endMin, 0, 0);
+        if (endTime < startTime) endTime.setDate(endTime.getDate() + 1);
+      }
 
-      if (endTime <= startTime) {
+      if (values.kind === "EVENT" && endTime <= startTime) {
         toast.error("L'heure de fin doit être après l'heure de début");
         setIsSubmitting(false);
         return;
@@ -127,13 +134,14 @@ export default function EventCreationDialog({
         description: values.description || undefined,
         startTime,
         endTime,
+        isReminder: values.kind === "REMINDER",
         location: values.location || undefined,
       });
 
       console.log("Create event result:", result);
 
       if (result.success) {
-        toast.success("Événement créé avec succès");
+        toast.success(isReminder ? "Rappel créé avec succès" : "Événement créé avec succès");
         form.reset();
         setOpen(false);
         onEventCreated?.();
@@ -158,11 +166,28 @@ export default function EventCreationDialog({
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:max-w-[500px] sm:p-6">
         <DialogHeader>
-          <DialogTitle>Créer un événement</DialogTitle>
+          <DialogTitle>Créer un événement ou un rappel</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="kind"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="EVENT">Événement (30 min par défaut)</SelectItem>
+                      <SelectItem value="REMINDER">Rappel ponctuel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="title"
@@ -240,10 +265,16 @@ export default function EventCreationDialog({
                 name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Heure de début</FormLabel>
+                    <FormLabel>{isReminder ? "Heure du rappel" : "Heure de début"}</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        const [hours, minutes] = value.split(":").map(Number);
+                        const start = new Date();
+                        start.setHours(hours, minutes, 0, 0);
+                        form.setValue("endTime", format(addMinutes(start, 30), "HH:mm"));
+                      }}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -263,7 +294,7 @@ export default function EventCreationDialog({
                 )}
               />
 
-              <FormField
+              {!isReminder && <FormField
                 control={form.control}
                 name="endTime"
                 render={({ field }) => (
@@ -271,7 +302,7 @@ export default function EventCreationDialog({
                     <FormLabel>Heure de fin</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -289,7 +320,7 @@ export default function EventCreationDialog({
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              />}
             </div>
 
             <FormField
@@ -315,7 +346,7 @@ export default function EventCreationDialog({
                 Annuler
               </Button>
               <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-                {isSubmitting ? "Création..." : "Créer l'événement"}
+                {isSubmitting ? "Création..." : isReminder ? "Créer le rappel" : "Créer l'événement"}
               </Button>
             </div>
           </form>

@@ -5,6 +5,8 @@ import { getOAuth2Client } from "./tokenManager";
 
 export interface GoogleCalendarEvent {
   summary: string;
+  endTimeUnspecified?: boolean;
+  transparency?: "opaque" | "transparent";
   description?: string;
   location?: string;
   start: {

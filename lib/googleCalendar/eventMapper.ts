@@ -12,10 +12,10 @@ const CHANNEL_LABELS: Record<string, string> = {
 
 // Default durations by channel (in minutes)
 const DEFAULT_DURATIONS: Record<string, number> = {
-  CALL: 30,
-  WHATSAPP: 15,
-  EMAIL: 15,
-  VISIT: 60,
+  CALL: 0,
+  WHATSAPP: 0,
+  EMAIL: 0,
+  VISIT: 30,
 };
 
 // Priority colors for tasks (Google Calendar color IDs)
@@ -151,9 +151,9 @@ export function followUpToGoogleEvent(
   // Use startTime if provided, otherwise use reminderAt
   const startTime = followUp.startTime || followUp.reminderAt || new Date();
   const duration =
-    followUp.duration ||
-    (followUp.channel ? DEFAULT_DURATIONS[followUp.channel] : 30);
-  const endTime = addMinutes(startTime, duration);
+    followUp.duration ??
+    (followUp.channel ? DEFAULT_DURATIONS[followUp.channel] : 0);
+  const endTime = addMinutes(startTime, duration === 0 ? 1 : duration);
 
   // Build description
   const descriptionParts = [];
@@ -182,6 +182,8 @@ export function followUpToGoogleEvent(
       : undefined;
 
   return {
+    endTimeUnspecified: duration === 0,
+    transparency: duration === 0 ? "transparent" : "opaque",
     summary: followUp.title || `${channelLabel} - ${clientName}`,
     description: descriptionParts.join("\n"),
     location,
@@ -199,7 +201,7 @@ export function followUpToGoogleEvent(
     },
     reminders: {
       useDefault: false,
-      overrides: [{ method: "popup", minutes: 30 }],
+      overrides: [{ method: "popup", minutes: duration === 0 ? 0 : 30 }],
     },
     colorId: followUp.type ? FOLLOWUP_TYPE_COLORS[followUp.type] : undefined,
   };
@@ -295,7 +297,10 @@ export function manualEventToGoogleEvent(
     };
   }
 
+  const isReminder = event.startTime.getTime() === event.endTime.getTime();
   return {
+    endTimeUnspecified: isReminder,
+    transparency: isReminder ? "transparent" : "opaque",
     summary: event.title,
     description: event.description,
     location: event.location,
@@ -309,7 +314,7 @@ export function manualEventToGoogleEvent(
     },
     end: {
       dateTime: formatInTimeZone(
-        event.endTime,
+        isReminder ? addMinutes(event.startTime, 1) : event.endTime,
         timezone,
         "yyyy-MM-dd'T'HH:mm:ssXXX"
       ),
@@ -317,7 +322,7 @@ export function manualEventToGoogleEvent(
     },
     reminders: {
       useDefault: false,
-      overrides: [{ method: "popup", minutes: event.reminderMinutes || 30 }],
+      overrides: [{ method: "popup", minutes: event.reminderMinutes ?? (isReminder ? 0 : 30) }],
     },
   };
 }

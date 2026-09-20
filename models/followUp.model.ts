@@ -75,7 +75,11 @@ const FollowUpSchema = new Schema<IFollowUp>(
       type: Schema.Types.ObjectId,
       ref: "CalendarEvent",
     },
-    duration: { type: Number, default: 60 }, // Default 60 minutes
+    duration: {
+      type: Number,
+      min: 0,
+      default: function (this: IFollowUp) { return this.channel === "VISIT" ? 30 : 0; },
+    }, // Zero means a punctual reminder
     startTime: Date,
   },
   { timestamps: true }
