@@ -4,7 +4,7 @@ import { fetchListingsBySellerClient } from "@/lib/actions/listings.action";
 import { fetchClientDealDone } from "@/lib/actions/negotiation.action";
 import { fetchVisitsByClient } from "@/lib/actions/visit.action";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
-import { isElevatedRole } from "@/constants/values";
+import { canWorkClientPipeline, isElevatedRole } from "@/constants/values";
 import { notFound } from "next/navigation";
 import ClientDetailPage from "@/components/clients/ClientDetailPage";
 import ClientMatchingPanel from "@/components/clients/ClientMatchingPanel";
@@ -36,7 +36,7 @@ export default async function ClientDetailRoute({
 
   const client = clientResult.data;
   const isManager = isElevatedRole(user.data?.role ?? "");
-  const canUsePipeline = user.data?.role === "AGENT";
+  const canUsePipeline = canWorkClientPipeline(user.data?.role);
   const visits = visitsResult.data?.visits ?? [];
 
   const sellerListingsResult =
@@ -44,7 +44,7 @@ export default async function ClientDetailRoute({
 
   return (
     <>
-      {/* Pipeline section — agents only, buyers/renters/investors only */}
+      {/* Pipeline section — agents and managers, buyers/renters/investors only */}
       {canUsePipeline && client.type !== "SELLER" && (
         <div className="container pb-6">
           <ClientPipelineSection

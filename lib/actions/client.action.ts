@@ -31,7 +31,7 @@ import {
   Phase2RejectionInput,
 } from "@/types/client";
 import { FilterQuery, Types } from "mongoose";
-import { ClientQualification, isElevatedRole } from "@/constants/values";
+import { CLIENT_AGENT_ROLES, ClientQualification, isElevatedRole } from "@/constants/values";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
@@ -667,7 +667,7 @@ export async function updateClientAssignedAgent(
 
       const agent = await User.findOne({
         _id: normalizedAgentId,
-        role: "AGENT",
+        role: { $in: CLIENT_AGENT_ROLES },
       }).select("_id");
 
       if (!agent) {

@@ -18,6 +18,7 @@ import { PaginationControls } from "@/components/PaginationControls";
 import { PipelineBar } from "@/components/pipeline/PipelineBar";
 import { ClientFilters } from "@/types/client";
 import ROUTES from "@/constants/routes";
+import { canWorkClientPipeline } from "@/constants/values";
 
 const CLIENTS_PER_PAGE = 10;
 
@@ -40,7 +41,7 @@ async function ClientsContent({
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER" || currentUser.data?.role === "DEVELOPER";
-  const canUsePipeline = currentUser.data?.role === "AGENT";
+  const canUsePipeline = canWorkClientPipeline(currentUser.data?.role);
 
   const isArchiveView = searchParams.view === "archives";
   const page = searchParams.page ? Math.max(1, Number(searchParams.page)) : 1;
@@ -123,7 +124,7 @@ export default async function ClientPage({
   const currentUser = await getUserBySessionEmail();
   const isAdmin =
     currentUser.data?.role === "ADMIN" || currentUser.data?.role === "MANAGER" || currentUser.data?.role === "DEVELOPER";
-  const canUsePipeline = currentUser.data?.role === "AGENT";
+  const canUsePipeline = canWorkClientPipeline(currentUser.data?.role);
   const isArchiveView = params?.view === "archives";
 
   const [agentsResult, countsResult, pendingNegotiationVerificationResult] =

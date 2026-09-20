@@ -13,6 +13,7 @@ import {
 } from "../validators/user";
 import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
+import { CLIENT_AGENT_ROLES } from "@/constants/values";
 
 export async function fetchUsers(): Promise<ActionResponse<User[]>> {
   try {
@@ -56,7 +57,7 @@ export async function fetchAgents(): Promise<ActionResponse<User[]>> {
   try {
     await dbConnect();
 
-    const agents = await User.find({ role: "AGENT" })
+    const agents = await User.find({ role: { $in: CLIENT_AGENT_ROLES } })
       .select("firstname lastname email")
       .sort({ createdAt: -1 });
 

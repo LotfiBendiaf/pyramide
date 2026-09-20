@@ -10,6 +10,10 @@ export const ROLES = [
 
 export type Role = (typeof ROLES)[number];
 
+export const CLIENT_AGENT_ROLES = ["AGENT", "MANAGER"] as const;
+export const canWorkClientPipeline = (role?: string): boolean =>
+  (CLIENT_AGENT_ROLES as readonly string[]).includes(role ?? "");
+
 export const ELEVATED_ROLES = ["MANAGER", "ADMIN", "DEVELOPER"] as const;
 export const isElevatedRole = (role: string): boolean =>
   (ELEVATED_ROLES as readonly string[]).includes(role);
