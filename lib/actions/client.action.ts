@@ -1,6 +1,6 @@
 "use server";
 
-import { ArchiveRequest, Client, User } from "@/models";
+import { ArchiveRequest, Client, ReferenceCounter, User } from "@/models";
 import {
   IClient,
   PipelineStage,
@@ -160,19 +160,22 @@ export async function createClient(
           ? providedAgent
           : null;
 
-    // 3️⃣ Generate reference code with retry on duplicate key (race condition)
+    // Allocate by reference prefix: changing a client type does not free its code.
     const prefix = clientPrefix(type);
     const MAX_RETRIES = 5;
     let client = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       const [agg] = await Client.aggregate([
-        { $match: { type } },
+        { $match: { referenceCode: { $regex: `^${prefix}-[0-9]+$` } } },
         {
           $addFields: {
             codeNum: {
-              $toInt: {
-                $arrayElemAt: [{ $split: ["$referenceCode", "-"] }, 1],
+              $convert: {
+                input: { $arrayElemAt: [{ $split: ["$referenceCode", "-"] }, 1] },
+                to: "double",
+                onError: 0,
+                onNull: 0,
               },
             },
           },
@@ -182,9 +185,26 @@ export async function createClient(
         { $project: { codeNum: 1 } },
       ]);
       const lastNum = agg?.codeNum ?? 0;
-      const referenceCode = `${prefix}-${String(lastNum + 1).padStart(5, "0")}`;
 
       try {
+        // Atomically reserve a number, healing missing/stale counters from all
+        // existing codes, including archived clients and clients of other types.
+        const counter = (await ReferenceCounter.findOneAndUpdate(
+          { _id: `client:${prefix}` },
+          [{
+            $set: {
+              prefix,
+              sequence: {
+                $add: [{ $max: [{ $ifNull: ["$sequence", 0] }, lastNum] }, 1],
+              },
+              updatedAt: "$$NOW",
+              createdAt: { $ifNull: ["$createdAt", "$$NOW"] },
+            },
+          }],
+          { upsert: true, new: true }
+        ).lean()) as unknown as { sequence: number };
+        const referenceCode = `${prefix}-${String(counter.sequence).padStart(5, "0")}`;
+
         client = await Client.create({
           ...validationResult.params,
           referenceCode,
@@ -195,14 +215,14 @@ export async function createClient(
         });
         break; // success — exit retry loop
       } catch (err: unknown) {
-        // E11000: duplicate referenceCode — retry with fresh aggregate
+        // Retry a legacy writer collision or simultaneous counter initialization.
         const mongoErr = err as {
           code?: number;
           keyPattern?: Record<string, unknown>;
         };
         if (
           mongoErr?.code === 11000 &&
-          mongoErr?.keyPattern?.referenceCode &&
+          (mongoErr?.keyPattern?.referenceCode || mongoErr?.keyPattern?._id) &&
           attempt < MAX_RETRIES - 1
         ) {
           continue;
