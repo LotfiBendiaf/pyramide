@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -69,7 +69,59 @@ export function NegotiationRequestsList({
 }: {
   requests: NegotiationRequest[];
 }) {
-  if (requests.length === 0) {
+  const router = useRouter();
+  const reviewLock = useRef(false);
+  const [busy, setBusy] = useState(false);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const pendingRequests = requests.filter(
+    (request) => request.status === "PENDING_VERIFICATION" && !completedIds.includes(request._id)
+  );
+
+  async function reviewRequests(
+    requestIds: string[],
+    decision: "approve" | "reject",
+    managerNote?: string
+  ) {
+    if (reviewLock.current || requestIds.length === 0) return false;
+    reviewLock.current = true;
+    setBusy(true);
+    const succeeded: string[] = [];
+    const errors: string[] = [];
+
+    try {
+      const review = decision === "approve" ? approveNegotiation : rejectNegotiation;
+      for (const requestId of requestIds) {
+        try {
+          const result = await review({ negotiationId: requestId, managerNote });
+          if (result.success) {
+            succeeded.push(requestId);
+          } else {
+            errors.push(result.error?.message ?? "Une erreur est survenue.");
+          }
+        } catch {
+          errors.push("Impossible de traiter la demande. Veuillez réessayer.");
+        }
+      }
+      if (succeeded.length > 0) {
+        setCompletedIds((ids) => [...ids, ...succeeded]);
+        toast.success(
+          `${succeeded.length} demande(s) de négociation ${decision === "approve" ? "approuvée(s)" : "refusée(s)"}`
+        );
+      }
+      if (errors.length > 0) {
+        toast.error(`${errors.length} demande(s) non traitée(s)`, {
+          description: errors[0],
+        });
+      }
+      return errors.length === 0;
+    } finally {
+      reviewLock.current = false;
+      setBusy(false);
+      router.refresh();
+    }
+  }
+
+  if (pendingRequests.length === 0) {
     return (
       <div className="rounded-lg border bg-muted/30 py-16 text-center text-sm text-muted-foreground">
         Aucune demande en attente.
@@ -79,7 +131,19 @@ export function NegotiationRequestsList({
 
   return (
     <div className="space-y-3">
-      {requests.map((request) => {
+      <div className="flex flex-wrap justify-end gap-2">
+        <ApproveNegotiationButton
+          bulk
+          disabled={busy}
+          onReview={() => reviewRequests(pendingRequests.map((request) => request._id), "approve")}
+        />
+        <RejectNegotiationDialog
+          bulk
+          disabled={busy}
+          onReview={(reason) => reviewRequests(pendingRequests.map((request) => request._id), "reject", reason)}
+        />
+      </div>
+      {pendingRequests.map((request) => {
         const clientName = request.client
           ? [request.client.firstName, request.client.lastName]
               .filter(Boolean)
@@ -188,8 +252,14 @@ export function NegotiationRequestsList({
                 </div>
 
                 <div className="flex shrink-0 flex-wrap gap-2">
-                  <ApproveNegotiationButton negotiationId={request._id} />
-                  <RejectNegotiationDialog negotiationId={request._id} />
+                  <ApproveNegotiationButton
+                    disabled={busy}
+                    onReview={() => reviewRequests([request._id], "approve")}
+                  />
+                  <RejectNegotiationDialog
+                    disabled={busy}
+                    onReview={(reason) => reviewRequests([request._id], "reject", reason)}
+                  />
                   <Button size="sm" variant="outline" asChild>
                     <Link href={ROUTES.NEGOTIATION_DETAIL(request._id)}>
                       Voir
@@ -205,94 +275,90 @@ export function NegotiationRequestsList({
   );
 }
 
-function ApproveNegotiationButton({ negotiationId }: { negotiationId: string }) {
+interface ReviewButtonProps {
+  bulk?: boolean;
+  disabled: boolean;
+  onReview: (reason?: string) => Promise<boolean>;
+}
+
+function ApproveNegotiationButton({ bulk, disabled, onReview }: ReviewButtonProps) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleApprove() {
     setLoading(true);
-    const result = await approveNegotiation({ negotiationId });
-    setLoading(false);
-
-    if (!result.success) {
-      toast.error("Erreur", { description: result.error?.message });
-      return;
+    try {
+      await onReview();
+    } finally {
+      setLoading(false);
     }
-
-    toast.success("Négociation approuvée");
-    router.refresh();
   }
 
   return (
-    <Button size="sm" onClick={handleApprove} disabled={loading}>
+    <Button size="sm" onClick={handleApprove} disabled={disabled || loading}>
       {loading ? (
         <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
       ) : (
         <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
       )}
-      Approuver
+      {bulk ? "Tout approuver" : "Approuver"}
     </Button>
   );
 }
 
-function RejectNegotiationDialog({ negotiationId }: { negotiationId: string }) {
+function RejectNegotiationDialog({ bulk, disabled, onReview }: ReviewButtonProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleReject() {
     setLoading(true);
-    const result = await rejectNegotiation({
-      negotiationId,
-      managerNote: reason,
-    });
-    setLoading(false);
-
-    if (!result.success) {
-      toast.error("Erreur", { description: result.error?.message });
-      return;
+    try {
+      if (await onReview(reason)) {
+        setOpen(false);
+        setReason("");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    toast.success("Négociation refusée");
-    setOpen(false);
-    setReason("");
-    router.refresh();
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(value) => { if (!loading) setOpen(value); }}>
       <DialogTrigger asChild>
         <Button
           size="sm"
           variant="outline"
+          disabled={disabled || loading}
           className="border-red-200 text-destructive hover:bg-red-50"
         >
           <XCircle className="mr-1.5 h-3.5 w-3.5" />
-          Refuser
+          {bulk ? "Tout refuser" : "Refuser"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Refuser la négociation</DialogTitle>
+          <DialogTitle>
+            {bulk ? "Refuser toutes les demandes de négociation" : "Refuser la négociation"}
+          </DialogTitle>
         </DialogHeader>
         <Textarea
           rows={4}
           value={reason}
+          disabled={loading}
           onChange={(event) => setReason(event.target.value)}
-          placeholder="Raison du refus (optionnel)"
+          placeholder={bulk ? "Raison du refus pour toutes les demandes (optionnel)" : "Raison du refus (optionnel)"}
         />
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
             Annuler
           </Button>
           <Button
             variant="destructive"
             onClick={handleReject}
-            disabled={loading}
+            disabled={disabled || loading}
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Refuser
+            {bulk ? "Tout refuser" : "Refuser"}
           </Button>
         </DialogFooter>
       </DialogContent>
