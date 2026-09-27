@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import {
   Phone,
@@ -23,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScheduleEvent } from "@/lib/actions/calendar.action";
+import { retryCalendarEventSync, ScheduleEvent } from "@/lib/actions/calendar.action";
 
 interface ScheduleEventCardProps {
   event: ScheduleEvent;
@@ -80,6 +83,21 @@ export default function ScheduleEventCard({
   onMarkComplete,
   onDelete,
 }: ScheduleEventCardProps) {
+  const router = useRouter();
+  const [isRetrying, setIsRetrying] = useState(false);
+  const retrySync = async () => {
+    setIsRetrying(true);
+    try {
+      const result = await retryCalendarEventSync(event._id);
+      if (result.success) toast.success("Événement synchronisé");
+      else toast.error(result.error?.message || "Échec de synchronisation");
+      router.refresh();
+    } catch {
+      toast.error("Impossible de réessayer la synchronisation");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
   const config = typeConfig[event.type];
   const TypeIcon = config.icon;
   const channelInfo = event.channel ? channelConfig[event.channel] : null;
@@ -173,6 +191,17 @@ export default function ScheduleEventCard({
           </DropdownMenu>
         </div>
       </div>
+
+      {event.syncStatus === "FAILED" && (
+        <div className="mb-3 space-y-2" role="status">
+          <p className="text-sm text-destructive break-words">
+            {event.syncError || "La synchronisation avec Google Calendar a échoué."}
+          </p>
+          <Button variant="outline" size="sm" disabled={isRetrying} onClick={retrySync}>
+            {isRetrying ? "Synchronisation…" : "Réessayer la synchronisation"}
+          </Button>
+        </div>
+      )}
 
       {/* Title */}
       <h3 className="break-words font-medium text-foreground mb-2">{event.title}</h3>

@@ -4,12 +4,6 @@ import { google } from "googleapis";
 import dbConnect from "@/lib/mongoose";
 import { Account } from "@/models";
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.AUTH_GOOGLE_ID,
-  process.env.AUTH_GOOGLE_SECRET,
-  `${process.env.NEXTAUTH_URL}/api/auth/callback/google`
-);
-
 /**
  * Get a valid access token for a user, refreshing if necessary
  */
@@ -33,7 +27,7 @@ export async function getValidAccessToken(
     ? new Date(account.tokenExpiresAt)
     : null;
   const isExpiringSoon =
-    expiresAt && expiresAt.getTime() - now.getTime() < 5 * 60 * 1000;
+    !expiresAt || expiresAt.getTime() - now.getTime() < 5 * 60 * 1000;
 
   if (isExpiringSoon && account.refreshToken) {
     try {
@@ -51,11 +45,14 @@ export async function getValidAccessToken(
         );
         return newTokens.accessToken;
       }
+      return null;
     } catch (error) {
       console.error("Failed to refresh access token:", error);
       return null;
     }
   }
+
+  if (expiresAt && expiresAt.getTime() <= now.getTime()) return null;
 
   return account.accessToken;
 }
@@ -68,6 +65,11 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
   expiresAt: Date;
 } | null> {
   try {
+    // Keep refresh credentials isolated between concurrent users.
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.AUTH_GOOGLE_ID,
+      process.env.AUTH_GOOGLE_SECRET
+    );
     oauth2Client.setCredentials({ refresh_token: refreshToken });
     const { credentials } = await oauth2Client.refreshAccessToken();
 
@@ -110,7 +112,7 @@ export async function hasGoogleCalendarConnected(
 export async function getOAuth2Client(userId: string) {
   const accessToken = await getValidAccessToken(userId);
   if (!accessToken) {
-    throw new Error("No valid access token available");
+    throw new Error("Connexion Google expirée. Reconnectez Google Calendar puis réessayez la synchronisation.");
   }
 
   const client = new google.auth.OAuth2(

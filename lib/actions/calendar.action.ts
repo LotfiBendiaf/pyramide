@@ -36,6 +36,7 @@ interface CalendarEventLean {
   client?: PopulatedClient;
   listing?: PopulatedListing;
   syncStatus?: string;
+  syncError?: string;
   googleEventId?: string;
 }
 
@@ -100,6 +101,7 @@ export interface ScheduleEvent {
     title: string;
   };
   syncStatus?: string;
+  syncError?: string;
   googleEventId?: string;
 }
 
@@ -196,6 +198,7 @@ export async function getSchedule(
             }
           : undefined,
         syncStatus: event.syncStatus,
+        syncError: event.syncError,
         googleEventId: event.googleEventId,
       });
     }
@@ -510,5 +513,32 @@ export async function deleteCalendarEvent(
       success: false,
       error: { message: "Erreur lors de la suppression" },
     };
+  }
+}
+
+export async function retryCalendarEventSync(
+  eventId: string
+): Promise<ActionResponse<null>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: { message: "Non autorisé" } };
+    }
+    await dbConnect();
+    const event = await CalendarEvent.findOne({
+      _id: eventId,
+      agent: session.user.id,
+      syncStatus: { $in: ["FAILED", "PENDING"] },
+    });
+    if (!event) {
+      return { success: false, error: { message: "Événement à synchroniser non trouvé" } };
+    }
+    const result = await syncEventToGoogle(event._id.toString());
+    revalidatePath("/dashboard/schedule");
+    return result.success
+      ? { success: true, data: null }
+      : { success: false, error: { message: result.error || "Échec de synchronisation" } };
+  } catch {
+    return { success: false, error: { message: "Impossible de réessayer la synchronisation" } };
   }
 }

@@ -180,8 +180,8 @@ export async function syncEventToGoogle(
             googleEventId: newEventId || event.googleEventId,
             syncStatus: "SYNCED",
             lastSyncedAt: new Date(),
-            syncError: undefined,
           },
+          $unset: { syncError: "" },
         }
       );
       return { success: true };
