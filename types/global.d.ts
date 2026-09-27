@@ -163,6 +163,7 @@ interface Listing {
   };
   isPublished: boolean;
   publishedAt?: Date;
+  isPublishedOnSocials?: boolean;
 
   isValidated: boolean;
   validationStatus?: "NEUTRAL" | "APPROVED" | "VALIDATED";

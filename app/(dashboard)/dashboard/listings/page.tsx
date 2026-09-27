@@ -141,6 +141,7 @@ async function ListingsContent({
         listings={listings}
         agents={assignees}
         canAssignAgent={canAssignAgent}
+        showSocialPublishingStatus={isSocialView}
       />
       <PaginationControls currentPage={page} totalPages={totalPages} />
     </>
@@ -220,7 +221,7 @@ export default async function ListingsPage({
 
       {isSocialView && (
         <p className="text-sm text-muted-foreground">
-          Annonces publiées, prêtes à être diffusées sur les réseaux sociaux.
+          Cochez une annonce après sa publication sur les réseaux sociaux.
         </p>
       )}
 

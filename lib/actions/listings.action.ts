@@ -1420,6 +1420,54 @@ export async function toggleListingPublished(
   }
 }
 
+export async function setListingPublishedOnSocials(
+  listingId: string,
+  isPublishedOnSocials: boolean
+): Promise<ActionResponse<{ isPublishedOnSocials: boolean }>> {
+  try {
+    const user = await getUserBySessionEmail();
+    if (!user.data) {
+      return {
+        success: false,
+        error: { message: "Utilisateur non autorisé" },
+        status: 401,
+      };
+    }
+
+    if (!Types.ObjectId.isValid(listingId)) {
+      return {
+        success: false,
+        error: { message: "ID d'annonce invalide" },
+        status: 400,
+      };
+    }
+
+    await dbConnect();
+    const listing = await Listing.findOneAndUpdate(
+      { _id: listingId, isPublished: true },
+      { $set: { isPublishedOnSocials } },
+      { new: true }
+    ).select("isPublishedOnSocials");
+
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce publiée introuvable" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    return {
+      success: true,
+      data: { isPublishedOnSocials: listing.isPublishedOnSocials },
+      status: 200,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
 export async function setListingFeatured(
   listingId: string,
   isFeatured: boolean
