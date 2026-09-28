@@ -19,7 +19,6 @@ type Props = {
 };
 
 const isAlaaRadi = (user: User) =>
-  user.role === "ADMIN" &&
   user.firstname.trim().toLocaleLowerCase() === "alaa" &&
   user.lastname.trim().toLocaleLowerCase() === "radi";
 

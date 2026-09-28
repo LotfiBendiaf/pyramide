@@ -651,13 +651,16 @@ export async function updateListingAgent(
 
     const agent = await User.findOne({
       _id: agentId,
-      role: { $in: ["AGENT", "ADMIN"] },
+      $or: [
+        { role: { $in: ["AGENT", "ADMIN"] } },
+        { firstname: /^alaa$/i, lastname: /^radi$/i },
+      ],
     }).select("_id");
 
     if (!agent) {
       return {
         success: false,
-        error: { message: "Veuillez sélectionner un agent ou un admin valide" },
+        error: { message: "Veuillez sélectionner un responsable valide" },
         status: 400,
       };
     }

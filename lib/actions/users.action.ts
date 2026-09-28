@@ -96,7 +96,12 @@ export async function fetchListingAssignees(): Promise<ActionResponse<User[]>> {
 
     await dbConnect();
 
-    const assignees = await User.find({ role: { $in: ["AGENT", "ADMIN"] } })
+    const assignees = await User.find({
+      $or: [
+        { role: { $in: ["AGENT", "ADMIN"] } },
+        { firstname: /^alaa$/i, lastname: /^radi$/i },
+      ],
+    })
       .select("firstname lastname email role")
       .sort({ role: 1, firstname: 1, lastname: 1 })
       .lean();
