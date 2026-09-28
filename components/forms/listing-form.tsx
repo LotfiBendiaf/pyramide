@@ -58,6 +58,7 @@ interface ListingFormProps {
   initialData?: Listing;
   listingId?: string;
   client?: Client;
+  canManagePublication?: boolean;
 }
 
 const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
@@ -70,6 +71,7 @@ export default function ListingForm({
   initialData,
   listingId,
   client,
+  canManagePublication = false,
 }: ListingFormProps) {
   const [isPending, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<CountryId>("DZ");
@@ -1065,8 +1067,8 @@ export default function ListingForm({
               </CardContent>
             </Card>
 
-            {/* Status */}
-            <Card>
+            {/* Publication is an administrator-only decision. */}
+            {canManagePublication && <Card>
               <CardHeader>
                 <CardTitle>Publication</CardTitle>
               </CardHeader>
@@ -1104,7 +1106,7 @@ export default function ListingForm({
                   )}
                 />
               </CardContent>
-            </Card>
+            </Card>}
           </div>
         </div>
 
@@ -1119,10 +1121,10 @@ export default function ListingForm({
             {isPending ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                <span>{isEditMode ? "Mise à jour..." : "Publication..."}</span>
+                <span>{isEditMode ? "Mise à jour..." : "Création..."}</span>
               </div>
             ) : (
-              <span>{isEditMode ? "Mettre à jour" : "Publier l'annonce"}</span>
+              <span>{isEditMode ? "Mettre à jour" : "Créer l'annonce"}</span>
             )}
           </Button>
         </div>

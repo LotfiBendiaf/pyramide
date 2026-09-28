@@ -65,6 +65,7 @@ interface ListingInput {
   }>;
   isFeatured?: boolean;
   isPublished: boolean;
+  publicationRequested?: boolean;
 }
 
 interface PhotoVisitInput {

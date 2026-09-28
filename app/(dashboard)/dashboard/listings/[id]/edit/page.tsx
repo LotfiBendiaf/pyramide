@@ -9,6 +9,7 @@ import { fetchListingDealDone } from "@/lib/actions/negotiation.action";
 import { ArrowRight, CheckCircle2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 
 export default async function EditListingPage({
   params,
@@ -23,6 +24,8 @@ export default async function EditListingPage({
   }
 
   const listing = result.data;
+  const user = await getUserBySessionEmail();
+  const canManagePublication = user.data?.role === "ADMIN" || user.data?.role === "DEVELOPER";
   const clientId = listing.sellerClient?._id;
 
   const [clientResult, dealDoneResult] = await Promise.all([
@@ -95,6 +98,7 @@ export default async function EditListingPage({
         initialData={listing}
         listingId={id}
         client={clientResult?.success ? clientResult.data : undefined}
+        canManagePublication={canManagePublication}
       />
     </div>
   );

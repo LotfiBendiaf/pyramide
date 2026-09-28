@@ -45,6 +45,9 @@ type ListingsContentProps = ListingsSectionProps & {
   assignees?: User[];
   canAssignAgent?: boolean;
   assignedToCurrentUser?: boolean;
+  canPublish?: boolean;
+  canRequestPublication?: boolean;
+  currentUserId?: string;
 };
 
 async function ListingsContent({
@@ -52,6 +55,9 @@ async function ListingsContent({
   assignees = [],
   canAssignAgent = false,
   assignedToCurrentUser = false,
+  canPublish = false,
+  canRequestPublication = false,
+  currentUserId,
 }: ListingsContentProps) {
   const params = await searchParams;
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
@@ -59,7 +65,8 @@ async function ListingsContent({
   const isNeutreView = params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
   const isSocialView = params?.view === "social";
-  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView;
+  const isPublishingView = params?.view === "publishing";
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView && !isPublishingView;
 
   const sortBy = params?.sortBy ?? (isActiveView ? "referenceCode" : undefined);
   const sortOrder =
@@ -67,6 +74,8 @@ async function ListingsContent({
     (isActiveView ? "desc" : undefined);
 
   const result = await fetchListings({
+    publicationRequested: isPublishingView ? true : undefined,
+    isPublished: isPublishingView ? false : undefined,
     forSocialPublishing: isSocialView,
     assignedToCurrentUser: isApprovedView && assignedToCurrentUser,
     agentId: params?.agentId,
@@ -122,6 +131,8 @@ async function ListingsContent({
       <div className="text-center text-muted-foreground py-20">
         {isSocialView
           ? "Aucune annonce à publier sur les réseaux."
+          : isPublishingView
+            ? "Aucune annonce en attente de publication."
           : isArchiveView
           ? "Aucune annonce archivée."
           : isApprovedView
@@ -142,6 +153,9 @@ async function ListingsContent({
         agents={assignees}
         canAssignAgent={canAssignAgent}
         showSocialPublishingStatus={isSocialView}
+        canPublish={canPublish}
+        canRequestPublication={canRequestPublication}
+        currentUserId={currentUserId}
       />
       <PaginationControls currentPage={page} totalPages={totalPages} />
     </>
@@ -155,6 +169,8 @@ export default async function ListingsPage({
   const user = await getUserBySessionEmail();
   const canViewNewListings = canAccessNewListings(user.data?.role);
   const canAssignAgent = user.data?.role === "ADMIN" || user.data?.role === "DEVELOPER";
+  const canPublish = canAssignAgent;
+  const canRequestPublication = user.data?.role === "AGENT";
   const canFilterByAgent = canAssignAgent || user.data?.role === "AGENT";
   const assigneesResult = canFilterByAgent
     ? await fetchListingAssignees()
@@ -163,9 +179,13 @@ export default async function ListingsPage({
   const isNeutreView = canViewNewListings && params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
   const isSocialView = params?.view === "social";
-  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView;
+  const isPublishingView = canPublish && params?.view === "publishing";
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView && !isPublishingView;
 
   if (params?.view === "neutre" && !canViewNewListings) {
+    redirect(ROUTES.LISTINGS_DASHBOARD);
+  }
+  if (params?.view === "publishing" && !canPublish) {
     redirect(ROUTES.LISTINGS_DASHBOARD);
   }
 
@@ -203,6 +223,14 @@ export default async function ListingsPage({
         >
           Annonces à publier sur les réseaux
         </Link>
+        {canPublish && (
+          <Link
+            href={`${ROUTES.LISTINGS_DASHBOARD}?view=publishing`}
+            className={tabClass(isPublishingView)}
+          >
+            Annonces à publier
+          </Link>
+        )}
         {canViewNewListings && (
           <Link
             href={`${ROUTES.LISTINGS_DASHBOARD}?view=neutre`}
@@ -235,6 +263,8 @@ export default async function ListingsPage({
           key={
             isSocialView
               ? "social"
+              : isPublishingView
+                ? "publishing"
               : isArchiveView
               ? "archives"
               : isApprovedView
@@ -249,6 +279,9 @@ export default async function ListingsPage({
           assignees={assigneesResult?.data ?? []}
           canAssignAgent={canAssignAgent}
           assignedToCurrentUser={user.data?.role === "AGENT"}
+          canPublish={canPublish}
+          canRequestPublication={canRequestPublication}
+          currentUserId={user.data?._id?.toString()}
         />
       </Suspense>
     </section>

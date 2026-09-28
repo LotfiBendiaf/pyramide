@@ -44,8 +44,6 @@ import {
   Bed,
   Car,
   ChevronDown,
-  Eye,
-  EyeOff,
   FileText,
   Loader2,
   ShowerHead,
@@ -63,6 +61,7 @@ import {
 } from "@/lib/utils";
 import {
   toggleListingPublished,
+  requestListingPublication,
   setListingPublishedOnSocials,
   toggleListingValidation,
   approveListingWithoutReference,
@@ -79,6 +78,9 @@ interface ListingTableProps {
   agents?: User[];
   canAssignAgent?: boolean;
   showSocialPublishingStatus?: boolean;
+  canPublish?: boolean;
+  canRequestPublication?: boolean;
+  currentUserId?: string;
 }
 
 type ValidationState = "validé" | "approuvé" | "neutre" | "archivé";
@@ -125,6 +127,9 @@ export function ListingTable({
   agents = [],
   canAssignAgent = false,
   showSocialPublishingStatus = false,
+  canPublish = false,
+  canRequestPublication = false,
+  currentUserId,
 }: ListingTableProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -195,6 +200,58 @@ export function ListingTable({
     }
     setPublishingStates((prev) => ({ ...prev, [listingId]: false }));
     setConfirmDialog(null);
+  };
+
+  const handleRequestPublication = async (listingId: string) => {
+    setPublishingStates((prev) => ({ ...prev, [listingId]: true }));
+    const result = await requestListingPublication(listingId);
+    if (result.success) {
+      toast.success("Annonce envoyée à l’administrateur pour publication");
+      router.refresh();
+    } else {
+      toast.error(result.error?.message || "Impossible d’envoyer la demande");
+    }
+    setPublishingStates((prev) => ({ ...prev, [listingId]: false }));
+  };
+
+  const renderPublicationControl = (listing: Listing) => {
+    if (canPublish) {
+      return (
+        <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5">
+          <Switch
+            checked={listing.isPublished}
+            onCheckedChange={() => openConfirmDialog(listing._id, listing.isPublished)}
+            disabled={publishingStates[listing._id]}
+            aria-label={listing.isPublished ? "Dépublier" : "Publier"}
+          />
+          <span className="text-xs text-muted-foreground">
+            {listing.isPublished ? "Publié" : listing.publicationRequested ? "À publier" : "Non publié"}
+          </span>
+        </div>
+      );
+    }
+
+    if (
+      canRequestPublication &&
+      !listing.isPublished &&
+      listing.agent?._id === currentUserId
+    ) {
+      return listing.publicationRequested ? (
+        <Badge variant="outline" className="border-amber-300 text-amber-700">À publier</Badge>
+      ) : (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={publishingStates[listing._id]}
+          onClick={() => void handleRequestPublication(listing._id)}
+        >
+          {publishingStates[listing._id] && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          Marquer « À publier »
+        </Button>
+      );
+    }
+
+    return <Badge variant="outline">{listing.isPublished ? "Publié" : "Non publié"}</Badge>;
   };
 
   const openConfirmDialog = (listingId: string, currentStatus: boolean) => {
@@ -405,10 +462,7 @@ export function ListingTable({
                 )}
                 <div className="mt-3 flex items-center gap-2 border-t pt-3">
                   <Button className="flex-1" size="sm" onClick={() => window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")}>Ouvrir le bien</Button>
-                  <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5">
-                    <Switch checked={listing.isPublished} onCheckedChange={() => openConfirmDialog(listing._id, listing.isPublished)} disabled={publishingStates[listing._id]} aria-label={listing.isPublished ? "Dépublier" : "Publier"} />
-                    <span className="text-xs text-muted-foreground">{listing.isPublished ? "Publié" : "Privé"}</span>
-                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>{renderPublicationControl(listing)}</div>
                 </div>
                 <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                   {canAssignAgent ? (
@@ -709,28 +763,7 @@ export function ListingTable({
 
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex flex-col items-start gap-2">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={listing.isPublished}
-                          onCheckedChange={() => {
-                            openConfirmDialog(listing._id, listing.isPublished);
-                          }}
-                          disabled={publishingStates[listing._id]}
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {listing.isPublished ? (
-                            <span className="flex items-center gap-1">
-                              <Eye className="h-3 w-3" />
-                              Publié
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1">
-                              <EyeOff className="h-3 w-3" />
-                              Non publié
-                            </span>
-                          )}
-                        </span>
-                      </div>
+                      {renderPublicationControl(listing)}
                       <Badge
                         variant="outline"
                         className={STATUS_COLORS[listing.status]}

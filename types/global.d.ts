@@ -163,6 +163,9 @@ interface Listing {
   };
   isPublished: boolean;
   publishedAt?: Date;
+  publicationRequested?: boolean;
+  publicationRequestedAt?: Date;
+  publicationRequestedBy?: string;
   isPublishedOnSocials?: boolean;
 
   isValidated: boolean;

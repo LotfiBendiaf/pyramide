@@ -26,7 +26,7 @@ import {
 import dbConnect from "../mongoose";
 import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
-import { PropertyStatus, isElevatedRole } from "@/constants/values";
+import { PropertyStatus, hasFullAccess, isElevatedRole } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { clientPrefix, formatPriceAlgeria } from "../utils";
 
@@ -245,6 +245,9 @@ export async function createListing(
 
     const listing = await Listing.create({
       ...parsedParams,
+      // Agents submit publication requests separately; they cannot publish via
+      // a crafted form payload.
+      isPublished: hasFullAccess(user.data.role) && parsedParams.isPublished,
       description,
       propertyTypeCustom: normalizedPropertyTypeCustom,
       evaluation,
@@ -264,7 +267,7 @@ export async function createListing(
     }
 
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
-    if (parsedParams.isPublished) {
+    if (listing.isPublished) {
       revalidatePath(ROUTES.LISTINGS);
     }
 
@@ -282,6 +285,7 @@ interface FetchListingsParams {
   assignedToCurrentUser?: boolean;
   agentId?: string;
   isPublished?: boolean;
+  publicationRequested?: boolean;
   forSocialPublishing?: boolean;
   isValidated?: boolean;
   validationStatus?: "NEUTRAL" | "APPROVED" | "VALIDATED";
@@ -340,6 +344,7 @@ export async function fetchListings(
       assignedToCurrentUser,
       agentId,
       isPublished,
+      publicationRequested,
       forSocialPublishing,
       isValidated,
       validationStatus,
@@ -372,6 +377,17 @@ export async function fetchListings(
 
     await dbConnect();
 
+    if (publicationRequested !== undefined) {
+      const user = await getUserBySessionEmail();
+      if (!user.data || !hasFullAccess(user.data.role)) {
+        return {
+          success: false,
+          error: { message: "Liste réservée aux administrateurs" },
+          status: user.data ? 403 : 401,
+        };
+      }
+    }
+
     if (assignedToCurrentUser) {
       const user = await getUserBySessionEmail();
 
@@ -390,6 +406,9 @@ export async function fetchListings(
 
     if (isPublished !== undefined) {
       query.isPublished = isPublished;
+    }
+    if (publicationRequested !== undefined) {
+      query.publicationRequested = publicationRequested;
     }
 
     if (isValidated === true) {
@@ -987,11 +1006,12 @@ export async function updateListing(
         : undefined;
 
     const existingListing = (await Listing.findById(listingId)
-      .select("referenceCode validationStatus sellerClient")
+      .select("referenceCode validationStatus sellerClient isPublished")
       .lean()) as {
       referenceCode?: string;
       validationStatus?: string;
       sellerClient?: Types.ObjectId;
+      isPublished?: boolean;
     } | null;
 
     // Only VALIDATED listings carry a referenceCode — APPROVED ones don't
@@ -1013,6 +1033,9 @@ export async function updateListing(
       listingId,
       {
         ...parsedParams,
+        isPublished: hasFullAccess(user.data.role)
+          ? parsedParams.isPublished
+          : existingListing?.isPublished ?? false,
         description,
         referenceCode,
         ...(referenceGeneratedAt && { referenceGeneratedAt }),
@@ -1403,18 +1426,90 @@ export async function toggleListingPublished(
   currentStatus: boolean
 ): Promise<ActionResponse<{ isPublished: boolean }>> {
   try {
+    const user = await getUserBySessionEmail();
+    if (!user.data || !hasFullAccess(user.data.role)) {
+      return {
+        success: false,
+        error: { message: "Seul un administrateur peut publier une annonce" },
+        status: user.data ? 403 : 401,
+      };
+    }
+    if (!Types.ObjectId.isValid(listingId)) {
+      return { success: false, error: { message: "ID d'annonce invalide" }, status: 400 };
+    }
     await dbConnect();
     const newStatus = !currentStatus;
-    await Listing.findByIdAndUpdate(listingId, {
-      isPublished: newStatus,
-      publishedAt: newStatus ? new Date() : undefined,
-    });
+    const publicationUpdate = newStatus
+      ? {
+          $set: {
+            isPublished: true,
+            publishedAt: new Date(),
+            publicationRequested: false,
+          },
+          $unset: { publicationRequestedAt: 1, publicationRequestedBy: 1 },
+        }
+      : {
+          $set: { isPublished: false },
+          $unset: { publishedAt: 1 },
+        };
+    const listing = await Listing.findByIdAndUpdate(
+      listingId,
+      publicationUpdate,
+      { new: true }
+    );
+    if (!listing) {
+      return { success: false, error: { message: "Annonce introuvable" }, status: 404 };
+    }
     revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    revalidatePath(ROUTES.LISTINGS);
+    revalidatePath(ROUTES.LISTING_DETAIL_DASHBOARD(listingId));
     return {
       success: true,
       data: { isPublished: newStatus },
       status: 200,
     };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+}
+
+export async function requestListingPublication(
+  listingId: string
+): Promise<ActionResponse<{ publicationRequested: boolean }>> {
+  try {
+    const user = await getUserBySessionEmail();
+    if (!user.data) {
+      return { success: false, error: { message: "Utilisateur non autorisé" }, status: 401 };
+    }
+    if (user.data.role !== "AGENT") {
+      return { success: false, error: { message: "Action réservée aux agents" }, status: 403 };
+    }
+    if (!Types.ObjectId.isValid(listingId)) {
+      return { success: false, error: { message: "ID d'annonce invalide" }, status: 400 };
+    }
+
+    await dbConnect();
+    const listing = await Listing.findOneAndUpdate(
+      { _id: listingId, agent: user.data._id, isPublished: { $ne: true } },
+      {
+        $set: {
+          publicationRequested: true,
+          publicationRequestedAt: new Date(),
+          publicationRequestedBy: user.data._id,
+        },
+      },
+      { new: true }
+    );
+    if (!listing) {
+      return {
+        success: false,
+        error: { message: "Annonce introuvable, déjà publiée ou non attribuée à cet agent" },
+        status: 404,
+      };
+    }
+
+    revalidatePath(ROUTES.LISTINGS_DASHBOARD);
+    return { success: true, data: { publicationRequested: true }, status: 200 };
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }
