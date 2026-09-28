@@ -508,6 +508,21 @@ export async function updateClientQualification(
         };
       }
 
+      if (user.data.role === "ADMIN") {
+        await Client.findByIdAndUpdate(clientId, {
+          qualificationStatus: "ARCHIVED",
+          pipelineStage: "ARCHIVED",
+          archived: true,
+          archivedAt: new Date(),
+          archiveReason: trimmedArchiveReason,
+        });
+
+        revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+        revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+        return { success: true, status: 200 };
+      }
+
       const existing = await ArchiveRequest.findOne({
         entityType: "CLIENT",
         entityId: clientId,
@@ -990,6 +1005,21 @@ export async function archiveClient(
         error: { message: "Client introuvable" },
         status: 404,
       };
+    }
+
+    if (user.data.role === "ADMIN") {
+      await Client.findByIdAndUpdate(clientId, {
+        archived: true,
+        archivedAt: new Date(),
+        archiveReason: trimmedArchiveReason,
+        qualificationStatus: "ARCHIVED",
+        pipelineStage: "ARCHIVED",
+      });
+
+      revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+      revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+
+      return { success: true, status: 200 };
     }
 
     const existing = await ArchiveRequest.findOne({

@@ -130,6 +130,38 @@ export async function requestArchive(
     if (entity.archived) {
       return { success: false, error: { message: "Cet élément est déjà archivé" }, status: 409 };
     }
+
+    if (user.data.role === "ADMIN") {
+      const archivedAt = new Date();
+      const entityUpdate = entityType === "CLIENT"
+        ? Client.findByIdAndUpdate(entityId, {
+            archived: true,
+            archivedAt,
+            archiveReason: reason,
+            qualificationStatus: "ARCHIVED",
+            pipelineStage: "ARCHIVED",
+          })
+        : Listing.findByIdAndUpdate(entityId, {
+            archived: true,
+            archivedAt,
+            archiveReason: reason,
+            pipelineStatus: "ARCHIVED",
+            isValidated: false,
+            isPublished: false,
+            $unset: { validatedAt: 1, validatedBy: 1, publishedAt: 1 },
+          });
+
+      await entityUpdate;
+      revalidatePath(ROUTES.CLIENTS_DASHBOARD);
+      if (entityType === "CLIENT") {
+        revalidatePath(ROUTES.CLIENT_DETAIL(entityId));
+      } else {
+        revalidateListingArchive(entityId);
+      }
+
+      return { success: true, status: 200 };
+    }
+
     // Prevent duplicate pending requests for the same entity
     const existing = await ArchiveRequest.findOne({
       entityType,

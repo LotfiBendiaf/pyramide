@@ -284,7 +284,9 @@ export default function ClientQualificationAndNegotiationSelect({
       return;
     }
 
-    toast.success("Demande d'archivage envoyée");
+    toast.success(
+      result.status === 200 ? "Client archivé" : "Demande d'archivage envoyée"
+    );
     setArchiveDialogOpen(false);
     setArchiveReason("");
     router.refresh();

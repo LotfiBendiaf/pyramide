@@ -129,9 +129,16 @@ export default function ClientDetailPage({
       return;
     }
 
-    toast.success("Demande d'archivage envoyée", {
-      description: `${client.firstName} ${client.lastName} attend une validation.`,
-    });
+    toast.success(
+      result.status === 200
+        ? "Client archivé"
+        : "Demande d'archivage envoyée",
+      result.status === 200
+        ? undefined
+        : {
+            description: `${client.firstName} ${client.lastName} attend une validation.`,
+          }
+    );
     setArchiveOpen(false);
     setArchiveReason("");
     router.refresh();

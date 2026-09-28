@@ -301,7 +301,7 @@ export function ListingTable({
     setValidatingStates((prev) => ({ ...prev, [listingId]: true }));
     const result = await requestArchive({ entityType: "LISTING", entityId: listingId, reason: archiveReason.trim() });
     if (result.success) {
-      toast.success("Demande d’archivage envoyée");
+      toast.success(result.status === 200 ? "Annonce archivée" : "Demande d’archivage envoyée");
       setArchiveDialog(null);
       setArchiveReason("");
       router.refresh();
