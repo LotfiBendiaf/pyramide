@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { Loader2, ShieldCheck, UserRound } from "lucide-react";
+import { Building2, Loader2, ShieldCheck, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -18,10 +18,16 @@ type Props = {
   value?: string;
 };
 
-const ROLE_GROUPS = [
+const isAlaaRadi = (user: User) =>
+  user.role === "ADMIN" &&
+  user.firstname.trim().toLocaleLowerCase() === "alaa" &&
+  user.lastname.trim().toLocaleLowerCase() === "radi";
+
+const ASSIGNEE_GROUPS = [
   {
-    role: "AGENT",
+    key: "agents",
     label: "Agents",
+    matches: (user: User) => user.role === "AGENT",
     icon: UserRound,
     iconClassName: "text-green-600",
     triggerClassName: "border-green-200 bg-green-50 text-green-700",
@@ -29,15 +35,26 @@ const ROLE_GROUPS = [
       "bg-green-50 text-green-700 focus:bg-green-100 focus:text-green-800",
   },
   {
-    role: "ADMIN",
+    key: "agency",
     label: "Agence",
-    icon: ShieldCheck,
+    matches: (user: User) => user.role === "ADMIN" && !isAlaaRadi(user),
+    icon: Building2,
     iconClassName: "text-purple-600",
     triggerClassName: "border-purple-200 bg-purple-50 text-purple-700",
     selectedClassName:
       "bg-purple-50 text-purple-700 focus:bg-purple-100 focus:text-purple-800",
   },
-] as const;
+  {
+    key: "alaa-radi",
+    label: "Administrateur",
+    matches: isAlaaRadi,
+    icon: ShieldCheck,
+    iconClassName: "text-amber-600",
+    triggerClassName: "border-amber-200 bg-amber-50 text-amber-700",
+    selectedClassName:
+      "bg-amber-50 text-amber-700 focus:bg-amber-100 focus:text-amber-800",
+  },
+];
 
 export default function ListingAgentSelect({ listingId, agents, value }: Props) {
   const [currentValue, setCurrentValue] = useState(value);
@@ -65,16 +82,16 @@ export default function ListingAgentSelect({ listingId, agents, value }: Props) 
   };
 
   const selectedAgent = agents.find((agent) => agent._id === currentValue);
-  const selectedRole = ROLE_GROUPS.find(
-    (group) => group.role === selectedAgent?.role
-  );
+  const selectedRole = selectedAgent
+    ? ASSIGNEE_GROUPS.find((group) => group.matches(selectedAgent))
+    : undefined;
   const SelectedIcon = selectedRole?.icon ?? UserRound;
   const selectedName = selectedAgent
     ? `${selectedAgent.firstname} ${selectedAgent.lastname}`.trim()
     : "Choisir un responsable";
-  const visibleRoleGroups = ROLE_GROUPS.map((group) => ({
+  const visibleRoleGroups = ASSIGNEE_GROUPS.map((group) => ({
     ...group,
-    members: agents.filter((agent) => agent.role === group.role),
+    members: agents.filter(group.matches),
   })).filter((group) => group.members.length > 0);
 
   return (
@@ -112,7 +129,7 @@ export default function ListingAgentSelect({ listingId, agents, value }: Props) 
           const GroupIcon = group.icon;
 
           return (
-            <Fragment key={group.role}>
+            <Fragment key={group.key}>
               {index > 0 && <div className="my-1 h-px bg-border" />}
               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                 {group.label}
