@@ -120,7 +120,7 @@ const clientSchema = new Schema<IClient>(
         "NOT_RELEVANT",
         "ARCHIVED",
       ],
-      default: "NEUTRAL",
+      default: "NEW",
     },
     qualificationNotes: String,
 

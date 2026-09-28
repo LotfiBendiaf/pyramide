@@ -208,7 +208,7 @@ export async function createClient(
         client = await Client.create({
           ...validationResult.params,
           referenceCode,
-          qualificationStatus: "NEUTRAL",
+          qualificationStatus: "NEW",
           archived: false,
           createdBy: user.data._id,
           assignedAgent,
