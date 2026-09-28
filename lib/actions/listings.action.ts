@@ -377,17 +377,6 @@ export async function fetchListings(
 
     await dbConnect();
 
-    if (publicationRequested !== undefined) {
-      const user = await getUserBySessionEmail();
-      if (!user.data || !hasFullAccess(user.data.role)) {
-        return {
-          success: false,
-          error: { message: "Liste réservée aux administrateurs" },
-          status: user.data ? 403 : 401,
-        };
-      }
-    }
-
     if (assignedToCurrentUser) {
       const user = await getUserBySessionEmail();
 
@@ -402,6 +391,28 @@ export async function fetchListings(
       query.agent = user.data._id;
     } else if (agentId && Types.ObjectId.isValid(agentId)) {
       query.agent = agentId;
+    }
+
+    if (publicationRequested !== undefined) {
+      const user = await getUserBySessionEmail();
+      if (!user.data) {
+        return {
+          success: false,
+          error: { message: "Utilisateur non autorisé" },
+          status: 401,
+        };
+      }
+      if (user.data.role === "AGENT") {
+        // An agent's publication queue must never expose another agent's work,
+        // even if a crafted request supplies a different agentId.
+        query.agent = user.data._id;
+      } else if (!hasFullAccess(user.data.role)) {
+        return {
+          success: false,
+          error: { message: "Liste non autorisée" },
+          status: 403,
+        };
+      }
     }
 
     if (isPublished !== undefined) {

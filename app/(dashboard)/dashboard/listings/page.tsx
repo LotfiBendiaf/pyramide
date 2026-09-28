@@ -64,9 +64,8 @@ async function ListingsContent({
   const isArchiveView = params?.view === "archives";
   const isNeutreView = params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
-  const isSocialView = params?.view === "social";
   const isPublishingView = params?.view === "publishing";
-  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView && !isPublishingView;
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isPublishingView;
 
   const sortBy = params?.sortBy ?? (isActiveView ? "referenceCode" : undefined);
   const sortOrder =
@@ -76,8 +75,8 @@ async function ListingsContent({
   const result = await fetchListings({
     publicationRequested: isPublishingView ? true : undefined,
     isPublished: isPublishingView ? false : undefined,
-    forSocialPublishing: isSocialView,
-    assignedToCurrentUser: isApprovedView && assignedToCurrentUser,
+    assignedToCurrentUser:
+      (isApprovedView || isPublishingView) && assignedToCurrentUser,
     agentId: params?.agentId,
     search: params?.search,
     city: params?.city,
@@ -129,9 +128,7 @@ async function ListingsContent({
   if (!listings || listings.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-20">
-        {isSocialView
-          ? "Aucune annonce à publier sur les réseaux."
-          : isPublishingView
+        {isPublishingView
             ? "Aucune annonce en attente de publication."
           : isArchiveView
           ? "Aucune annonce archivée."
@@ -152,10 +149,10 @@ async function ListingsContent({
         listings={listings}
         agents={assignees}
         canAssignAgent={canAssignAgent}
-        showSocialPublishingStatus={isSocialView}
         canPublish={canPublish}
         canRequestPublication={canRequestPublication}
         currentUserId={currentUserId}
+        publicationReviewMode={isPublishingView}
       />
       <PaginationControls currentPage={page} totalPages={totalPages} />
     </>
@@ -178,14 +175,17 @@ export default async function ListingsPage({
   const isArchiveView = params?.view === "archives";
   const isNeutreView = canViewNewListings && params?.view === "neutre";
   const isApprovedView = params?.view === "approved";
-  const isSocialView = params?.view === "social";
-  const isPublishingView = canPublish && params?.view === "publishing";
-  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isSocialView && !isPublishingView;
+  const canViewPublishingQueue = canPublish || canRequestPublication;
+  const isPublishingView = canViewPublishingQueue && params?.view === "publishing";
+  const isActiveView = !isArchiveView && !isNeutreView && !isApprovedView && !isPublishingView;
 
   if (params?.view === "neutre" && !canViewNewListings) {
     redirect(ROUTES.LISTINGS_DASHBOARD);
   }
-  if (params?.view === "publishing" && !canPublish) {
+  if (params?.view === "publishing" && !canViewPublishingQueue) {
+    redirect(ROUTES.LISTINGS_DASHBOARD);
+  }
+  if (params?.view === "social") {
     redirect(ROUTES.LISTINGS_DASHBOARD);
   }
 
@@ -217,13 +217,7 @@ export default async function ListingsPage({
         >
           Annonces approuvées
         </Link>
-        <Link
-          href={`${ROUTES.LISTINGS_DASHBOARD}?view=social`}
-          className={tabClass(isSocialView)}
-        >
-          Annonces à publier sur les réseaux
-        </Link>
-        {canPublish && (
+        {canViewPublishingQueue && (
           <Link
             href={`${ROUTES.LISTINGS_DASHBOARD}?view=publishing`}
             className={tabClass(isPublishingView)}
@@ -247,12 +241,6 @@ export default async function ListingsPage({
         </Link>
       </div>
 
-      {isSocialView && (
-        <p className="text-sm text-muted-foreground">
-          Cochez une annonce après sa publication sur les réseaux sociaux.
-        </p>
-      )}
-
       <Suspense fallback={<TableSkeleton />}>
         <ListingFilterDashboard
           agents={
@@ -261,9 +249,7 @@ export default async function ListingsPage({
               : assigneesResult?.data ?? []
           }
           key={
-            isSocialView
-              ? "social"
-              : isPublishingView
+            isPublishingView
                 ? "publishing"
               : isArchiveView
               ? "archives"

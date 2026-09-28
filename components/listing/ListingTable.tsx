@@ -62,7 +62,6 @@ import {
 import {
   toggleListingPublished,
   requestListingPublication,
-  setListingPublishedOnSocials,
   toggleListingValidation,
   approveListingWithoutReference,
   setListingNeutre,
@@ -77,10 +76,10 @@ interface ListingTableProps {
   listings: Listing[];
   agents?: User[];
   canAssignAgent?: boolean;
-  showSocialPublishingStatus?: boolean;
   canPublish?: boolean;
   canRequestPublication?: boolean;
   currentUserId?: string;
+  publicationReviewMode?: boolean;
 }
 
 type ValidationState = "validé" | "approuvé" | "neutre" | "archivé";
@@ -126,10 +125,10 @@ export function ListingTable({
   listings,
   agents = [],
   canAssignAgent = false,
-  showSocialPublishingStatus = false,
   canPublish = false,
   canRequestPublication = false,
   currentUserId,
+  publicationReviewMode = false,
 }: ListingTableProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -161,12 +160,6 @@ export function ListingTable({
       : ArrowDownUp;
 
   const [publishingStates, setPublishingStates] = useState<
-    Record<string, boolean>
-  >({});
-  const [socialPublishingStates, setSocialPublishingStates] = useState<
-    Record<string, boolean>
-  >({});
-  const [socialPublishedValues, setSocialPublishedValues] = useState<
     Record<string, boolean>
   >({});
   const [validatingStates, setValidatingStates] = useState<
@@ -216,6 +209,21 @@ export function ListingTable({
 
   const renderPublicationControl = (listing: Listing) => {
     if (canPublish) {
+      if (publicationReviewMode) {
+        return (
+          <label className="flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5">
+            <Checkbox
+              checked={false}
+              disabled={publishingStates[listing._id]}
+              onCheckedChange={(checked) => {
+                if (checked) openConfirmDialog(listing._id, false);
+              }}
+              aria-label="Confirmer la publication"
+            />
+            <span className="text-xs text-muted-foreground">Publier</span>
+          </label>
+        );
+      }
       return (
         <div className="flex items-center gap-2 rounded-md border px-2.5 py-1.5">
           <Switch
@@ -256,67 +264,6 @@ export function ListingTable({
 
   const openConfirmDialog = (listingId: string, currentStatus: boolean) => {
     setConfirmDialog({ open: true, listingId, currentStatus });
-  };
-
-  const handleSocialPublishedChange = async (
-    listing: Listing,
-    checked: boolean
-  ) => {
-    setSocialPublishingStates((prev) => ({ ...prev, [listing._id]: true }));
-    setSocialPublishedValues((prev) => ({ ...prev, [listing._id]: checked }));
-
-    try {
-      const result = await setListingPublishedOnSocials(listing._id, checked);
-      if (result.success) {
-        toast.success(
-          checked
-            ? "Annonce marquée comme publiée sur les réseaux"
-            : "Publication sur les réseaux décochée"
-        );
-        router.refresh();
-        return;
-      }
-
-      setSocialPublishedValues((prev) => ({
-        ...prev,
-        [listing._id]: listing.isPublishedOnSocials ?? false,
-      }));
-      toast.error(result.error?.message || "Impossible de modifier le statut");
-    } catch {
-      setSocialPublishedValues((prev) => ({
-        ...prev,
-        [listing._id]: listing.isPublishedOnSocials ?? false,
-      }));
-      toast.error("Impossible de modifier le statut");
-    } finally {
-      setSocialPublishingStates((prev) => ({ ...prev, [listing._id]: false }));
-    }
-  };
-
-  const renderSocialPublishedCheckbox = (listing: Listing) => {
-    const checked =
-      socialPublishedValues[listing._id] ??
-      listing.isPublishedOnSocials ??
-      false;
-
-    return (
-      <label
-        className="flex cursor-pointer items-center gap-2"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <Checkbox
-          checked={checked}
-          disabled={socialPublishingStates[listing._id]}
-          onCheckedChange={(value) =>
-            void handleSocialPublishedChange(listing, value === true)
-          }
-          aria-label="Publié sur les réseaux sociaux"
-        />
-        <span className="text-sm">
-          {checked ? "Publié sur les réseaux" : "À publier"}
-        </span>
-      </label>
-    );
   };
 
   const handleValidate = async (listingId: string) => {
@@ -455,11 +402,6 @@ export function ListingTable({
                   {hasNegotiationPipeline(listing) && <Badge variant="purple" className="text-xs"><Radio className="h-3 w-3" />Négociation</Badge>}
                   {documentsCount > 0 && <Badge variant="outline" className="gap-1 text-xs"><FileText className="h-3 w-3" />{documentsCount}</Badge>}
                 </div>
-                {showSocialPublishingStatus && (
-                  <div className="mt-3 rounded-md border p-3">
-                    {renderSocialPublishedCheckbox(listing)}
-                  </div>
-                )}
                 <div className="mt-3 flex items-center gap-2 border-t pt-3">
                   <Button className="flex-1" size="sm" onClick={() => window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")}>Ouvrir le bien</Button>
                   <div onClick={(e) => e.stopPropagation()}>{renderPublicationControl(listing)}</div>
@@ -498,9 +440,6 @@ export function ListingTable({
               <TableHead>Prix</TableHead>
               <TableHead>Specs</TableHead>
               <TableHead>Agent</TableHead>
-              {showSocialPublishingStatus && (
-                <TableHead className="w-[190px]">Réseaux sociaux</TableHead>
-              )}
               <TableHead className="w-[170px]">État</TableHead>
               <TableHead className="w-[140px]">Validation / ajout</TableHead>
             </TableRow>
@@ -754,12 +693,6 @@ export function ListingTable({
                       <span className="text-sm text-muted-foreground">-</span>
                     )}
                   </TableCell>
-
-                  {showSocialPublishingStatus && (
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      {renderSocialPublishedCheckbox(listing)}
-                    </TableCell>
-                  )}
 
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex flex-col items-start gap-2">
