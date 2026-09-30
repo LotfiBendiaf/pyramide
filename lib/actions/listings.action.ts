@@ -26,7 +26,12 @@ import {
 import dbConnect from "../mongoose";
 import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
-import { PropertyStatus, hasFullAccess, isElevatedRole } from "@/constants/values";
+import {
+  PropertyStatus,
+  canManageListingPublication,
+  hasFullAccess,
+  isElevatedRole,
+} from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { clientPrefix, formatPriceAlgeria } from "../utils";
 
@@ -406,7 +411,7 @@ export async function fetchListings(
         // An agent's publication queue must never expose another agent's work,
         // even if a crafted request supplies a different agentId.
         query.agent = user.data._id;
-      } else if (!hasFullAccess(user.data.role)) {
+      } else if (!canManageListingPublication(user.data.role)) {
         return {
           success: false,
           error: { message: "Liste non autorisée" },
@@ -1441,10 +1446,12 @@ export async function toggleListingPublished(
 ): Promise<ActionResponse<{ isPublished: boolean }>> {
   try {
     const user = await getUserBySessionEmail();
-    if (!user.data || !hasFullAccess(user.data.role)) {
+    if (!user.data || !canManageListingPublication(user.data.role)) {
       return {
         success: false,
-        error: { message: "Seul un administrateur peut publier une annonce" },
+        error: {
+          message: "Seuls un administrateur ou un assistant peuvent publier une annonce",
+        },
         status: user.data ? 403 : 401,
       };
     }

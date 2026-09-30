@@ -10,6 +10,7 @@ import ListingFilterDashboard from "@/components/ListingFilterDashboard";
 import { PaginationControls } from "@/components/PaginationControls";
 import ROUTES from "@/constants/routes";
 import { fetchListingAssignees } from "@/lib/actions/users.action";
+import { canManageListingPublication } from "@/constants/values";
 
 const LISTINGS_PER_PAGE = 15;
 
@@ -166,7 +167,7 @@ export default async function ListingsPage({
   const user = await getUserBySessionEmail();
   const canViewNewListings = canAccessNewListings(user.data?.role);
   const canAssignAgent = user.data?.role === "ADMIN" || user.data?.role === "DEVELOPER";
-  const canPublish = canAssignAgent;
+  const canPublish = canManageListingPublication(user.data?.role);
   const canRequestPublication = user.data?.role === "AGENT";
   const canFilterByAgent = canAssignAgent || user.data?.role === "AGENT";
   const assigneesResult = canFilterByAgent

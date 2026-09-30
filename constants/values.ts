@@ -24,6 +24,14 @@ export const FULL_ACCESS_ROLES = ["ADMIN", "DEVELOPER"] as const;
 export const hasFullAccess = (role: string): boolean =>
   (FULL_ACCESS_ROLES as readonly string[]).includes(role);
 
+export const LISTING_PUBLICATION_ROLES = [
+  "ADMIN",
+  "ASSISTANT",
+  "DEVELOPER",
+] as const;
+export const canManageListingPublication = (role?: string): boolean =>
+  (LISTING_PUBLICATION_ROLES as readonly string[]).includes(role ?? "");
+
 export const MANAGER_NOTIFICATION_ROLES = ["MANAGER", "ADMIN"] as const;
 
 export const ROLE_LABELS = {
