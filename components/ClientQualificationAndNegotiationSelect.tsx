@@ -92,6 +92,15 @@ const OPTIONS: {
     category: "qualification",
   },
   {
+    value: "WARM",
+    label: "Très chaud",
+    icon: Circle,
+    className: "text-red-600",
+    triggerClassName: "border-red-300 bg-red-50 text-red-800",
+    selectedClassName: "bg-red-50 text-red-800 focus:bg-red-100",
+    category: "qualification",
+  },
+  {
     value: "HOT",
     label: "Chaud",
     icon: Circle,

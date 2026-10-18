@@ -4,6 +4,7 @@ const qualificationStatusSchema = z.enum([
   "NEUTRAL",
   "NEW",
   "QUALIFIED",
+  "WARM",
   "HOT",
   "COLD",
   "NO_RESPONSE",

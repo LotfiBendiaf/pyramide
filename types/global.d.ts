@@ -217,6 +217,7 @@ interface Client {
     | "NEUTRAL"
     | "NEW"
     | "QUALIFIED"
+    | "WARM"
     | "HOT"
     | "COLD"
     | "NO_RESPONSE"

@@ -5,6 +5,7 @@ export type QualificationStatus =
   | "NEUTRAL"
   | "NEW"
   | "QUALIFIED"
+  | "WARM"
   | "HOT"
   | "COLD"
   | "NO_RESPONSE"
@@ -114,6 +115,7 @@ const clientSchema = new Schema<IClient>(
         "NEUTRAL",
         "NEW",
         "QUALIFIED",
+        "WARM",
         "HOT",
         "COLD",
         "NO_RESPONSE",

@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
       }),
       Client.countDocuments({
         ...clientFilter,
-        qualificationStatus: { $in: ["QUALIFIED", "HOT", "COLD"] },
+        qualificationStatus: { $in: ["QUALIFIED", "WARM", "HOT", "COLD"] },
         type: { $in: ["BUYER", "RENTER"] },
       }),
       Client.countDocuments({
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
       }),
       Client.countDocuments({
         ...clientFilter,
-        qualificationStatus: { $in: ["QUALIFIED", "HOT", "COLD"] },
+        qualificationStatus: { $in: ["QUALIFIED", "WARM", "HOT", "COLD"] },
         type: { $in: ["BUYER", "RENTER"] },
         createdAt: { $gte: startOfMonth },
       }),
@@ -325,7 +325,7 @@ export async function GET(request: NextRequest) {
               Client.countDocuments({
                 assignedAgent: agent._id,
                 archived: { $ne: true },
-                qualificationStatus: { $in: ["QUALIFIED", "HOT", "COLD"] },
+                qualificationStatus: { $in: ["QUALIFIED", "WARM", "HOT", "COLD"] },
               }),
               FollowUp.countDocuments({ agent: agent._id }),
               FollowUp.countDocuments({ agent: agent._id, status: "OVERDUE" }),
@@ -549,10 +549,13 @@ export async function GET(request: NextRequest) {
 
     // Clients by status
     type ClientStatusSafe =
+      | "NEUTRAL"
       | "NEW"
       | "QUALIFIED"
+      | "WARM"
       | "HOT"
       | "COLD"
+      | "NO_RESPONSE"
       | "NOT_RELEVANT"
       | "ARCHIVED";
 

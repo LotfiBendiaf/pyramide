@@ -56,8 +56,8 @@ function stageFilterForQualificationStage(stage: PipelineStage) {
             { pipelineStage: null },
           ],
         },
-        { qualificationStatus: { $nin: ["QUALIFIED", "HOT", "COLD"] } },
-        { clientTemperature: { $nin: ["HOT", "COLD"] } },
+        { qualificationStatus: { $nin: ["QUALIFIED", "WARM", "HOT", "COLD"] } },
+        { clientTemperature: { $nin: ["WARM", "HOT", "COLD"] } },
       ],
     };
   }
@@ -68,10 +68,10 @@ function stageFilterForQualificationStage(stage: PipelineStage) {
         { pipelineStage: { $nin: AUTO_PIPELINE_STAGES } },
         {
           $or: [
-            { qualificationStatus: "HOT" },
+            { qualificationStatus: { $in: ["WARM", "HOT"] } },
             {
               $and: [
-                { clientTemperature: "HOT" },
+                { clientTemperature: { $in: ["WARM", "HOT"] } },
                 { qualificationStatus: { $ne: "COLD" } },
               ],
             },
@@ -308,7 +308,11 @@ export async function fetchClients(
 
     if (type) filter.type = type;
     if (qualificationStatus) {
-      if (qualificationStatus === "HOT" || qualificationStatus === "COLD") {
+      if (
+        qualificationStatus === "WARM" ||
+        qualificationStatus === "HOT" ||
+        qualificationStatus === "COLD"
+      ) {
         filter.$and = [
           ...(filter.$and ?? []),
           {
@@ -320,7 +324,7 @@ export async function fetchClients(
         ];
       } else if (qualificationStatus === "QUALIFIED") {
         filter.qualificationStatus = qualificationStatus;
-        filter.clientTemperature = { $nin: ["HOT", "COLD"] };
+        filter.clientTemperature = { $nin: ["WARM", "HOT", "COLD"] };
         filter.pipelineStage = { $nin: AUTO_PIPELINE_STAGES };
       } else {
         filter.qualificationStatus = qualificationStatus;
@@ -461,6 +465,7 @@ export async function updateClientQualification(
     ![
       "NEW",
       "QUALIFIED",
+      "WARM",
       "HOT",
       "COLD",
       "NO_RESPONSE",
@@ -567,11 +572,11 @@ export async function updateClientQualification(
     }
 
     const update =
-      qualificationStatus === "HOT"
+      qualificationStatus === "WARM" || qualificationStatus === "HOT"
         ? {
             $set: {
               qualificationStatus,
-              clientTemperature: "HOT",
+              clientTemperature: qualificationStatus,
               pipelineStage: "ACTIVE_SEARCH",
               archived: false,
             },
@@ -864,8 +869,8 @@ export async function updateClient(
 
     const qualificationStatus = validationResult.params?.qualificationStatus;
     const pipelineUpdate =
-      qualificationStatus === "HOT"
-        ? { pipelineStage: "ACTIVE_SEARCH", clientTemperature: "HOT" }
+      qualificationStatus === "WARM" || qualificationStatus === "HOT"
+        ? { pipelineStage: "ACTIVE_SEARCH", clientTemperature: qualificationStatus }
         : qualificationStatus === "COLD"
           ? { pipelineStage: "FOLLOW_UP", clientTemperature: "COLD" }
           : qualificationStatus === "NEW"
@@ -1633,7 +1638,9 @@ export async function setClientNegotiationStage(
     }
 
     const neutralStage =
+      existing.qualificationStatus === "WARM" ||
       existing.qualificationStatus === "HOT" ||
+      existing.clientTemperature === "WARM" ||
       existing.clientTemperature === "HOT"
         ? "ACTIVE_SEARCH"
         : existing.qualificationStatus === "COLD" ||

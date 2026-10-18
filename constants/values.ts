@@ -63,6 +63,7 @@ export const CLIENT_QUALIFICATIONS = [
   { value: "NEUTRAL", label: "Neutre", color: "secondary" },
   { value: "NEW", label: "Nouveau", color: "secondary" },
   { value: "QUALIFIED", label: "Qualifié", color: "success" },
+  { value: "WARM", label: "Très chaud", color: "warning" },
   { value: "HOT", label: "Chaud", color: "destructive" },
   { value: "COLD", label: "Froid", color: "secondary" },
   { value: "NO_RESPONSE", label: "N'a pas répondu", color: "warning" },
@@ -251,8 +252,8 @@ export const PIPELINE_STAGES = [
 export type PipelineStageValue = (typeof PIPELINE_STAGES)[number]["value"];
 
 export const CLIENT_TEMPERATURES = [
+  { value: "WARM", label: "Très chaud", color: "warning", followUpDays: 1 },
   { value: "HOT", label: "Chaud", color: "destructive", followUpDays: 2 },
-  { value: "WARM", label: "Normal", color: "warning", followUpDays: 7 },
   { value: "COLD", label: "Froid", color: "secondary", followUpDays: 180 },
 ] as const;
 

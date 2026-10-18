@@ -21,6 +21,7 @@ const DOT_COLORS: Record<ClientQualification, string> = {
   NEUTRAL: "bg-slate-400",
   NEW: "bg-blue-500",
   QUALIFIED: "bg-green-500",
+  WARM: "bg-red-600",
   NO_RESPONSE: "bg-yellow-500",
   NOT_RELEVANT: "bg-yellow-500",
   ARCHIVED: "bg-gray-400",
