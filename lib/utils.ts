@@ -85,6 +85,7 @@ export function clientPrefix(type: ClientType) {
     RENTER: "RENT",
     SELLER: "SELL",
     INVESTOR: "INV",
+    INTERMEDIARY: "INT",
   }[type];
 }
 

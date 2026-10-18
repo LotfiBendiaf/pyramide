@@ -190,7 +190,7 @@ interface Client {
   _id: string;
 
   referenceCode: string; // BUY-00032
-  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
+  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR" | "INTERMEDIARY";
 
   firstName?: string;
   lastName?: string;

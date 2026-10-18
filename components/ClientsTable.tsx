@@ -37,6 +37,7 @@ const TYPE_LABELS: Record<string, string> = {
   SELLER: "Vendeur",
   RENTER: "Loueur",
   INVESTOR: "Investisseur",
+  INTERMEDIARY: "Intermédiaire",
 };
 
 const TYPE_COLORS: Record<string, "default" | "secondary" | "outline"> = {
@@ -44,6 +45,7 @@ const TYPE_COLORS: Record<string, "default" | "secondary" | "outline"> = {
   SELLER: "secondary",
   RENTER: "outline",
   INVESTOR: "secondary",
+  INTERMEDIARY: "outline",
 };
 
 const PIPELINE_STATUS_LABELS: Record<string, string> = {

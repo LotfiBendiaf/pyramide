@@ -12,7 +12,7 @@ const qualificationStatusSchema = z.enum([
 ]);
 
 export const clientSchema = z.object({
-  type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]),
+  type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR", "INTERMEDIARY"]),
 
   firstName: z.string().optional(),
   lastName: z.string().optional(),
@@ -46,7 +46,7 @@ export const clientSchema = z.object({
 });
 
 export const fetchClientsSchema = z.object({
-  type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]).optional(),
+  type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR", "INTERMEDIARY"]).optional(),
   qualificationStatus: qualificationStatusSchema.optional(),
   wantedPropertyType: z.string().optional(),
   agentId: z.string().optional(),
@@ -58,7 +58,7 @@ export const fetchClientsSchema = z.object({
 });
 
 export const updateClientSchema = z.object({
-  type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR"]),
+  type: z.enum(["BUYER", "SELLER", "RENTER", "INVESTOR", "INTERMEDIARY"]),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phone: z

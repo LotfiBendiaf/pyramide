@@ -11,7 +11,7 @@ export type PipelineStage =
   | "ARCHIVED";
 
 export type ClientInput = {
-  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
+  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR" | "INTERMEDIARY";
 
   firstName?: string;
   lastName?: string;
@@ -34,7 +34,7 @@ export type ClientInput = {
 };
 
 export type ClientUpdateInput = {
-  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
+  type: "BUYER" | "SELLER" | "RENTER" | "INVESTOR" | "INTERMEDIARY";
   firstName?: string;
   lastName?: string;
   phone: string;
@@ -64,7 +64,7 @@ export type ClientUpdateInput = {
 };
 
 export type ClientFilters = {
-  type?: "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
+  type?: "BUYER" | "SELLER" | "RENTER" | "INVESTOR" | "INTERMEDIARY";
   qualificationStatus?:
     | "NEUTRAL"
     | "NEW"

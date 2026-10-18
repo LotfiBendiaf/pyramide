@@ -122,6 +122,7 @@ export default function ClientsFilter({
             <SelectItem value="SELLER">Vendeur</SelectItem>
             <SelectItem value="RENTER">Loueur</SelectItem>
             <SelectItem value="INVESTOR">Investisseur</SelectItem>
+            <SelectItem value="INTERMEDIARY">Intermédiaire</SelectItem>
           </SelectContent>
         </Select>
 

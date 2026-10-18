@@ -1,6 +1,6 @@
 import { Schema, model, models } from "mongoose";
 
-export type ClientType = "BUYER" | "SELLER" | "RENTER" | "INVESTOR";
+export type ClientType = "BUYER" | "SELLER" | "RENTER" | "INVESTOR" | "INTERMEDIARY";
 export type QualificationStatus =
   | "NEUTRAL"
   | "NEW"
@@ -82,7 +82,7 @@ const clientSchema = new Schema<IClient>(
     referenceCode: { type: String, unique: true },
     type: {
       type: String,
-      enum: ["BUYER", "SELLER", "RENTER", "INVESTOR"],
+      enum: ["BUYER", "SELLER", "RENTER", "INVESTOR", "INTERMEDIARY"],
       required: true,
     },
 
