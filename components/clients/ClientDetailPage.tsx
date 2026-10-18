@@ -71,12 +71,14 @@ interface ClientDetailPageProps {
   client: Client;
   followUps: FollowUp[];
   dealDone?: ClientDealDoneSummary | null;
+  canArchiveDirectly?: boolean;
 }
 
 export default function ClientDetailPage({
   client,
   followUps,
   dealDone,
+  canArchiveDirectly = false,
 }: ClientDetailPageProps) {
   const router = useRouter();
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -113,7 +115,7 @@ export default function ClientDetailPage({
 
   const handleArchive = async () => {
     const trimmedReason = archiveReason.trim();
-    if (trimmedReason.length < 5) {
+    if (!canArchiveDirectly && trimmedReason.length < 5) {
       toast.error("Raison requise", {
         description: "La raison doit contenir au moins 5 caractères.",
       });
@@ -121,7 +123,10 @@ export default function ClientDetailPage({
     }
 
     setIsWorking(true);
-    const result = await archiveClient(client._id, trimmedReason);
+    const result = await archiveClient(
+      client._id,
+      canArchiveDirectly ? "Archivage direct par l’administrateur" : trimmedReason
+    );
     setIsWorking(false);
 
     if (!result.success) {
@@ -440,14 +445,12 @@ export default function ClientDetailPage({
           <DialogHeader>
             <DialogTitle>Archiver le client</DialogTitle>
             <DialogDescription>
-              Cette action enverra une demande d&apos;archivage pour{" "}
-              <strong>
-                {client.firstName} {client.lastName}
-              </strong>
-              . Le client restera actif jusqu&apos;à validation.
+              {canArchiveDirectly ? "Confirmez l’archivage immédiat de " : "Cette action enverra une demande d’archivage pour "}
+              <strong>{client.firstName} {client.lastName}</strong>
+              {canArchiveDirectly ? "." : ". Le client restera actif jusqu’à validation."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
+          {!canArchiveDirectly && <div className="space-y-2">
             <Label htmlFor={archiveReasonId}>Raison d&apos;archivage</Label>
             <Textarea
               id={archiveReasonId}
@@ -457,7 +460,7 @@ export default function ClientDetailPage({
               className="min-h-28"
               disabled={isWorking}
             />
-          </div>
+          </div>}
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={isWorking}>
@@ -467,9 +470,9 @@ export default function ClientDetailPage({
             <Button
               variant="destructive"
               onClick={handleArchive}
-              disabled={isWorking || archiveReason.trim().length < 5}
+              disabled={isWorking || (!canArchiveDirectly && archiveReason.trim().length < 5)}
             >
-              {isWorking ? "En cours…" : "Envoyer la demande"}
+              {isWorking ? "En cours…" : canArchiveDirectly ? "Confirmer l’archivage" : "Envoyer la demande"}
             </Button>
           </DialogFooter>
         </DialogContent>

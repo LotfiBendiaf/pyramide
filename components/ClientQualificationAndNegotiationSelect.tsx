@@ -51,6 +51,7 @@ type Props = {
   pipelineStage?: string;
   listings: NegotiationListingOption[];
   canUseRestrictedStatuses?: boolean;
+  canArchiveDirectly?: boolean;
 };
 
 const OPTIONS: {
@@ -173,6 +174,7 @@ export default function ClientQualificationAndNegotiationSelect({
   pipelineStage,
   listings,
   canUseRestrictedStatuses = false,
+  canArchiveDirectly = false,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -262,7 +264,7 @@ export default function ClientQualificationAndNegotiationSelect({
 
   const handleArchiveClient = async () => {
     const trimmedReason = archiveReason.trim();
-    if (trimmedReason.length < 5) {
+    if (!canArchiveDirectly && trimmedReason.length < 5) {
       toast.error("Raison requise", {
         description: "La raison doit contenir au moins 5 caractères.",
       });
@@ -273,7 +275,7 @@ export default function ClientQualificationAndNegotiationSelect({
     const result = await updateClientQualification(
       clientId,
       "ARCHIVED",
-      trimmedReason
+      canArchiveDirectly ? "Archivage direct par l’administrateur" : trimmedReason
     );
     setLoading(false);
 
@@ -650,12 +652,13 @@ export default function ClientQualificationAndNegotiationSelect({
           <DialogHeader>
             <DialogTitle>Archiver le client</DialogTitle>
             <DialogDescription>
-              Indiquez la raison de l&apos;archivage. Le client restera actif
-              jusqu&apos;à validation.
+              {canArchiveDirectly
+                ? "Confirmez l’archivage de ce client. Il sera immédiatement retiré des clients actifs."
+                : "Indiquez la raison de l’archivage. Le client restera actif jusqu’à validation."}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
+          {!canArchiveDirectly && <div className="space-y-2">
             <Label htmlFor={archiveReasonId}>Raison d&apos;archivage</Label>
             <Textarea
               id={archiveReasonId}
@@ -665,7 +668,7 @@ export default function ClientQualificationAndNegotiationSelect({
               className="min-h-28"
               disabled={loading}
             />
-          </div>
+          </div>}
 
           <DialogFooter>
             <Button
@@ -678,7 +681,7 @@ export default function ClientQualificationAndNegotiationSelect({
             <Button
               variant="destructive"
               onClick={handleArchiveClient}
-              disabled={loading || archiveReason.trim().length < 5}
+              disabled={loading || (!canArchiveDirectly && archiveReason.trim().length < 5)}
             >
               {loading ? (
                 <>
@@ -686,7 +689,7 @@ export default function ClientQualificationAndNegotiationSelect({
                   Envoi...
                 </>
               ) : (
-                "Envoyer la demande"
+                canArchiveDirectly ? "Confirmer l’archivage" : "Envoyer la demande"
               )}
             </Button>
           </DialogFooter>

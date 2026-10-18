@@ -59,6 +59,7 @@ export default async function ClientDetailRoute({
         client={client}
         followUps={followUpsResult.data ?? []}
         dealDone={dealDoneResult.success ? dealDoneResult.data : null}
+        canArchiveDirectly={user.data?.role === "ADMIN"}
       />
 
       {/* Visit history */}

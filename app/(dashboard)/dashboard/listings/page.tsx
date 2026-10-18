@@ -50,6 +50,7 @@ type ListingsContentProps = ListingsSectionProps & {
   canPublish?: boolean;
   canRequestPublication?: boolean;
   currentUserId?: string;
+  canArchiveDirectly?: boolean;
 };
 
 async function ListingsContent({
@@ -60,6 +61,7 @@ async function ListingsContent({
   canPublish = false,
   canRequestPublication = false,
   currentUserId,
+  canArchiveDirectly = false,
 }: ListingsContentProps) {
   const params = await searchParams;
   const page = params?.page ? Math.max(1, Number(params.page)) : 1;
@@ -155,6 +157,7 @@ async function ListingsContent({
         canRequestPublication={canRequestPublication}
         currentUserId={currentUserId}
         publicationReviewMode={isPublishingView}
+        canArchiveDirectly={canArchiveDirectly}
       />
       <PaginationControls currentPage={page} totalPages={totalPages} />
     </>
@@ -282,6 +285,7 @@ export default async function ListingsPage({
           canPublish={canPublish}
           canRequestPublication={canRequestPublication}
           currentUserId={user.data?._id?.toString()}
+          canArchiveDirectly={user.data?.role === "ADMIN"}
         />
       </Suspense>
     </section>

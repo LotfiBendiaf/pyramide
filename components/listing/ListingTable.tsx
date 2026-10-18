@@ -80,6 +80,7 @@ interface ListingTableProps {
   canRequestPublication?: boolean;
   currentUserId?: string;
   publicationReviewMode?: boolean;
+  canArchiveDirectly?: boolean;
 }
 
 type ValidationState = "validé" | "approuvé" | "neutre" | "archivé";
@@ -129,6 +130,7 @@ export function ListingTable({
   canRequestPublication = false,
   currentUserId,
   publicationReviewMode = false,
+  canArchiveDirectly = false,
 }: ListingTableProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -306,10 +308,14 @@ export function ListingTable({
   };
 
   const handleConfirmArchive = async () => {
-    if (!archiveDialog || archiveReason.trim().length < 5) return;
+    if (!archiveDialog || (!canArchiveDirectly && archiveReason.trim().length < 5)) return;
     const { listingId } = archiveDialog;
     setValidatingStates((prev) => ({ ...prev, [listingId]: true }));
-    const result = await requestArchive({ entityType: "LISTING", entityId: listingId, reason: archiveReason.trim() });
+    const result = await requestArchive({
+      entityType: "LISTING",
+      entityId: listingId,
+      reason: canArchiveDirectly ? "Archivage direct par l’administrateur" : archiveReason.trim(),
+    });
     if (result.success) {
       toast.success(result.status === 200 ? "Annonce archivée" : "Demande d’archivage envoyée");
       setArchiveDialog(null);
@@ -784,18 +790,19 @@ export function ListingTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Archiver l&apos;annonce</AlertDialogTitle>
             <AlertDialogDescription>
-              Indiquez la raison de l’archivage. L’annonce restera active jusqu’à
-              l’approbation de la demande par un responsable.
+              {canArchiveDirectly
+                ? "Confirmez l’archivage de ce bien. Il sera immédiatement retiré des annonces actives."
+                : "Indiquez la raison de l’archivage. L’annonce restera active jusqu’à l’approbation de la demande par un responsable."}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2">
+          {!canArchiveDirectly && <div className="space-y-2">
             <Label htmlFor="listing-archive-reason">Raison d’archivage</Label>
             <Textarea id="listing-archive-reason" value={archiveReason} onChange={(event) => setArchiveReason(event.target.value)} placeholder="Au moins 5 caractères" />
-          </div>
+          </div>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={validatingStates[archiveDialog?.listingId || ""]}>Annuler</AlertDialogCancel>
-            <Button onClick={handleConfirmArchive} disabled={archiveReason.trim().length < 5 || validatingStates[archiveDialog?.listingId || ""]}>
-              Envoyer la demande
+            <Button variant="destructive" onClick={handleConfirmArchive} disabled={(!canArchiveDirectly && archiveReason.trim().length < 5) || validatingStates[archiveDialog?.listingId || ""]}>
+              {canArchiveDirectly ? "Confirmer l’archivage" : "Envoyer la demande"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
