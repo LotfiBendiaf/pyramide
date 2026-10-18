@@ -280,8 +280,11 @@ export async function GET(request: NextRequest) {
     let agentPerformance: Array<{
       agent: { _id: string; name: string; profileImage?: string; role: string };
       listingsCount: number;
+      activeListingsCount: number;
       clientsCount: number;
+      qualifiedClientsCount: number;
       followUpsCount: number;
+      overdueFollowUpsCount: number;
       salesCount: number;
     }> = [];
 
@@ -292,11 +295,30 @@ export async function GET(request: NextRequest) {
 
       agentPerformance = await Promise.all(
         agents.map(async (agent) => {
-          const [listingsCount, clientsCount, followUpsCount, salesCount] =
+          const [
+            listingsCount,
+            activeListingsCount,
+            clientsCount,
+            qualifiedClientsCount,
+            followUpsCount,
+            overdueFollowUpsCount,
+            salesCount,
+          ] =
             await Promise.all([
-              Listing.countDocuments({ agent: agent._id }),
-              Client.countDocuments({ assignedAgent: agent._id }),
+              Listing.countDocuments({ agent: agent._id, archived: { $ne: true } }),
+              Listing.countDocuments({
+                agent: agent._id,
+                archived: { $ne: true },
+                status: { $in: ["En Vente", "En Location"] },
+              }),
+              Client.countDocuments({ assignedAgent: agent._id, archived: { $ne: true } }),
+              Client.countDocuments({
+                assignedAgent: agent._id,
+                archived: { $ne: true },
+                qualificationStatus: { $in: ["QUALIFIED", "HOT", "COLD"] },
+              }),
               FollowUp.countDocuments({ agent: agent._id }),
+              FollowUp.countDocuments({ agent: agent._id, status: "OVERDUE" }),
               Listing.countDocuments({
                 agent: agent._id,
                 status: { $in: ["Vendu", "Loué"] },
@@ -311,8 +333,11 @@ export async function GET(request: NextRequest) {
               role: agent.role,
             },
             listingsCount,
+            activeListingsCount,
             clientsCount,
+            qualifiedClientsCount,
             followUpsCount,
+            overdueFollowUpsCount,
             salesCount,
           };
         })
