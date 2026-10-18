@@ -11,6 +11,7 @@ import { PaginationControls } from "@/components/PaginationControls";
 import ROUTES from "@/constants/routes";
 import { fetchListingAssignees } from "@/lib/actions/users.action";
 import { canManageListingPublication } from "@/constants/values";
+import { CircleAlert } from "lucide-react";
 
 const LISTINGS_PER_PAGE = 15;
 
@@ -206,6 +207,14 @@ export default async function ListingsPage({
       />
 
       <div className="flex flex-wrap gap-2 border-b">
+        {canViewNewListings && (
+          <Link
+            href={`${ROUTES.LISTINGS_DASHBOARD}?view=neutre`}
+            className={tabClass(isNeutreView)}
+          >
+            Nouvelles annonces
+          </Link>
+        )}
         <Link
           href={ROUTES.LISTINGS_DASHBOARD}
           className={tabClass(isActiveView)}
@@ -226,14 +235,6 @@ export default async function ListingsPage({
             Annonces à publier
           </Link>
         )}
-        {canViewNewListings && (
-          <Link
-            href={`${ROUTES.LISTINGS_DASHBOARD}?view=neutre`}
-            className={tabClass(isNeutreView)}
-          >
-            Nouvelles annonces
-          </Link>
-        )}
         <Link
           href={`${ROUTES.LISTINGS_DASHBOARD}?view=archives`}
           className={tabClass(isArchiveView)}
@@ -241,6 +242,18 @@ export default async function ListingsPage({
           Annonces archivées
         </Link>
       </div>
+
+      {isNeutreView && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+          <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-medium">Annonces à qualifier</p>
+            <p className="text-amber-800 dark:text-amber-200/80">
+              Les nouvelles annonces sont classées de la plus récente à la plus ancienne. Vérifiez les informations, affectez un agent, puis approuvez ou validez le bien.
+            </p>
+          </div>
+        </div>
+      )}
 
       <Suspense fallback={<TableSkeleton />}>
         <ListingFilterDashboard

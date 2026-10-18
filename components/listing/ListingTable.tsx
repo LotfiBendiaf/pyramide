@@ -208,6 +208,12 @@ export function ListingTable({
   };
 
   const renderPublicationControl = (listing: Listing) => {
+    // Publication is a downstream concern: an unqualified listing must first be
+    // reviewed and validated before the team has to decide whether to publish it.
+    if (!listing.isValidated || listing.validationStatus !== "VALIDATED") {
+      return null;
+    }
+
     if (canPublish) {
       if (publicationReviewMode) {
         return (
@@ -404,7 +410,11 @@ export function ListingTable({
                 </div>
                 <div className="mt-3 flex items-center gap-2 border-t pt-3">
                   <Button className="flex-1" size="sm" onClick={() => window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")}>Ouvrir le bien</Button>
-                  <div onClick={(e) => e.stopPropagation()}>{renderPublicationControl(listing)}</div>
+                  {renderPublicationControl(listing) && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      {renderPublicationControl(listing)}
+                    </div>
+                  )}
                 </div>
                 <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                   {canAssignAgent ? (
