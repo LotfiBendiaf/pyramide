@@ -66,6 +66,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function DashboardCharts({ data }: DashboardChartsProps) {
   const { salesData, propertyTypeData, clientStatusData } = data;
+  const hasSalesData = salesData.some((item) => item.sales > 0 || item.revenue > 0);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -78,7 +79,12 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
           </p>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
+          {!hasSalesData && (
+            <p className="mb-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+              Aucune transaction finalisée sur cette période. Le graphique reste affiché pour suivre les prochains mois.
+            </p>
+          )}
+          <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={salesData}>
               <defs>
                 <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -122,7 +128,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 }}
                 formatter={(value: number, name: string) => {
                   if (name === "revenue") {
-                    return [`${value.toFixed(2)}M DA`, "Revenu"];
+                    return [`${Number(value).toFixed(2)} M DA`, "Valeur des transactions"];
                   }
                   return [value, "Ventes"];
                 }}
@@ -144,7 +150,7 @@ export function DashboardCharts({ data }: DashboardChartsProps) {
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorRevenue)"
-                name="Revenu (M DA)"
+                name="Valeur (M DA)"
               />
             </AreaChart>
           </ResponsiveContainer>

@@ -8,8 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { hasPermission } from "@/lib/roleCheck";
-import { Chart } from "@/components/dashboard/ChartAreaInteractive";
 import { SectionCards } from "@/components/dashboard/CardsSection";
+import { DashboardCharts } from "@/components/dashboard/Charts";
 
 async function getDashboardData() {
   const user = await getUserBySessionEmail();
@@ -95,6 +95,7 @@ async function DashboardContent() {
     todayEvents,
     agentPerformance,
     recentActivities,
+    charts,
     role,
     userName,
   } = response.data
@@ -150,16 +151,29 @@ async function DashboardContent() {
         subtitle="Vue d'ensemble de votre activité immobilière"
       />
 
-      {/* Global KPI cards — admin/manager only */}
+      <div>
+        <h2 className="mb-1 text-lg font-semibold">Synthèse de l’agence</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Résultats commerciaux et évolution par rapport au mois précédent.
+        </p>
+      </div>
       <SectionCards stats={stats} />
 
-      <hr className="border-muted-foreground" />
-
-      {/* Stats Cards — scoped by role via API */}
+      <div className="border-t pt-6">
+        <h2 className="mb-1 text-lg font-semibold">Indicateurs opérationnels</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Biens, clients et suivis nécessitant l’attention de l’équipe.
+        </p>
+      </div>
       <DashboardStatsCards stats={stats} />
 
-      {/* Interactive chart — global (hardcoded demo data) */}
-      <Chart />
+      <div className="border-t pt-6">
+        <h2 className="mb-1 text-lg font-semibold">Analyse de l’activité</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Données réelles de l’agence sur les six derniers mois et répartition du portefeuille.
+        </p>
+        <DashboardCharts data={charts} />
+      </div>
 
       {/* Activity feed + Agent performance */}
       <div className="grid gap-6 lg:grid-cols-5">
