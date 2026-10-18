@@ -30,7 +30,7 @@ const layout = async ({ children }: { children: ReactNode }) => {
           <header>
             <SiteHeader />
           </header>
-          <div className="w-full p-5">{children}</div>
+          <div className="w-full bg-[#fcfbf9] p-4 sm:p-6 lg:p-8 dark:bg-background">{children}</div>
         </main>
       </BreadcrumbTitleProvider>
     </SidebarProvider>

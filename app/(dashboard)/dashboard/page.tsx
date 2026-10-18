@@ -153,46 +153,43 @@ async function DashboardContent() {
 
   // Admin/Manager dashboard
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <SectionHeader
-        title="Tableau de Bord"
-        subtitle="Vue d'ensemble de votre activité immobilière"
-      />
-
-      <div>
-        <h2 className="mb-1 text-lg font-semibold">Synthèse de l’agence</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Résultats commerciaux et évolution par rapport au mois précédent.
+    <div className="mx-auto max-w-[1600px] space-y-7 pb-8">
+      <div className="flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <SectionHeader
+          title="Vue d’ensemble"
+          subtitle="Les chiffres qui comptent, les actions qui demandent votre attention."
+        />
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          Activité de l’agence
         </p>
       </div>
-      <SectionCards stats={stats} />
 
-      <div className="border-t pt-6">
-        <h2 className="mb-1 text-lg font-semibold">Indicateurs opérationnels</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Biens, clients et suivis nécessitant l’attention de l’équipe.
-        </p>
-      </div>
-      <DashboardStatsCards stats={stats} />
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold">En un coup d’œil</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Performance commerciale et priorités actuelles.</p>
+        </div>
+        <SectionCards stats={stats} />
+      </section>
 
-      <div className="border-t pt-6">
-        <h2 className="mb-1 text-lg font-semibold">Analyse de l’activité</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Données réelles de l’agence sur les six derniers mois et répartition du portefeuille.
-        </p>
-        <DashboardCharts data={charts} />
-      </div>
+      <section className="grid items-start gap-6 xl:grid-cols-12">
+        <div className="xl:col-span-8">
+          <DashboardCharts data={charts} />
+        </div>
+        <div className="xl:col-span-4">
+          <DashboardStatsCards stats={stats} />
+        </div>
+      </section>
 
       {/* Activity feed + Agent performance */}
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+      <section className="grid items-start gap-6 xl:grid-cols-12">
+        <div className="xl:col-span-7">
           <RecentActivity activities={recentActivities} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-5">
           <AgentPerformance agents={agentPerformance} />
         </div>
-      </div>
+      </section>
     </div>
   );
 }
