@@ -33,9 +33,13 @@ async function getDashboardData() {
   }
 
   const role = user.data?.role || "";
-  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
   const requestHeaders = await headers();
   const cookie = requestHeaders.get("cookie") ?? "";
+  const vercelUrl = process.env.VERCEL_URL;
+  const configuredUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+  const baseUrl = vercelUrl
+    ? `https://${vercelUrl}`
+    : configuredUrl?.replace(/\/$/, "") || "http://localhost:3000";
 
   const res = await fetch(`${baseUrl}/api/dashboard/stats`, {
     cache: "no-store",
@@ -46,7 +50,15 @@ async function getDashboardData() {
   });
 
   if (!res.ok) {
-    throw new Error("Échec du chargement des statistiques");
+    const responseBody = await res.text();
+    console.error("Dashboard statistics request failed", {
+      status: res.status,
+      statusText: res.statusText,
+      responseBody: responseBody.slice(0, 500),
+    });
+    throw new Error(
+      `Échec du chargement des statistiques (${res.status})`
+    );
   }
 
   const data = await res.json();
