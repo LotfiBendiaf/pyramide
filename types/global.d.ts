@@ -23,6 +23,8 @@ interface User {
   name: string;
   email: string;
   role: Role;
+  accountRole?: Role;
+  activeProfile?: "ADMIN" | "AGENT";
   profileImage?: string;
   phone?: string;
   twoFactorEnabled: boolean;

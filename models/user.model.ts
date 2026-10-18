@@ -16,6 +16,7 @@ export interface IUser {
   name: string;
   email: string;
   role: Role;
+  activeProfile?: "ADMIN" | "AGENT";
   profileImage?: string;
   phone?: string;
   twoFactorEnabled: boolean;
@@ -51,6 +52,11 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ROLES,
       default: "VIEWER",
+    },
+    activeProfile: {
+      type: String,
+      enum: ["ADMIN", "AGENT"],
+      default: "ADMIN",
     },
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: { type: String },

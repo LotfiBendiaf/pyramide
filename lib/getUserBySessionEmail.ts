@@ -16,5 +16,14 @@ export async function getUserBySessionEmail(): Promise<ActionResponse<User>> {
   const normalizedEmail = session.user.email.toLowerCase();
   const user = await User.findOne({ email: normalizedEmail }).lean();
 
-  return { success: true, data: JSON.parse(JSON.stringify(user)) };
+  if (!user) return { success: false };
+
+  const serializedUser = JSON.parse(JSON.stringify(user)) as User;
+  if (serializedUser.role === "MANAGER") {
+    serializedUser.accountRole = "MANAGER";
+    serializedUser.activeProfile = serializedUser.activeProfile ?? "ADMIN";
+    serializedUser.role = serializedUser.activeProfile;
+  }
+
+  return { success: true, data: serializedUser };
 }

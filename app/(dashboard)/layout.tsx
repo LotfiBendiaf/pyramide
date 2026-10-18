@@ -4,6 +4,7 @@ import { BreadcrumbTitleProvider } from "@/components/navigation/BreadcrumbTitle
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Metadata } from "next";
 import React, { ReactNode } from "react";
+import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 
 export async function generateMetadata(): Promise<Metadata> {
   const title = "Pyramide - Tableau de bord";
@@ -15,11 +16,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const layout = ({ children }: { children: ReactNode }) => {
+const layout = async ({ children }: { children: ReactNode }) => {
+  const user = await getUserBySessionEmail();
   return (
     <SidebarProvider>
       <BreadcrumbTitleProvider>
-        <AppSidebar />
+        <AppSidebar
+          effectiveRole={user.data?.role}
+          accountRole={user.data?.accountRole}
+          activeProfile={user.data?.activeProfile}
+        />
         <main className="w-full overflow-hidden">
           <header>
             <SiteHeader />

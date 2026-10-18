@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 import {
@@ -54,9 +54,13 @@ import {
   Lock,
   Star,
   Landmark,
+  ShieldCheck,
+  Briefcase,
 } from "lucide-react";
 import { Role, ROLE_LABELS } from "@/constants/values";
 import ROUTES from "@/constants/routes";
+import { switchManagerProfile } from "@/lib/actions/profile.action";
+import { toast } from "sonner";
 
 type SidebarItem = {
   title: string;
@@ -100,6 +104,7 @@ const sidebarConfig: SidebarGroup[] = [
         title: "Liste des biens",
         url: ROUTES.LISTINGS_DASHBOARD,
         icon: Building2,
+        roles: ["ADMIN", "MANAGER", "ASSISTANT", "DEVELOPER", "VIEWER"],
       },
       {
         title: "Ajouter un bien",
@@ -256,10 +261,12 @@ function canAccess(userRole: Role | undefined, allowedRoles?: Role[]): boolean {
   return allowedRoles.includes(userRole);
 }
 
-export function AppSidebar() {
+export function AppSidebar({ effectiveRole, accountRole, activeProfile }: { effectiveRole?: Role; accountRole?: Role; activeProfile?: "ADMIN" | "AGENT" }) {
   const { data, status } = useSession();
   const user = data?.user;
-  const userRole = user?.role as Role | undefined;
+  const userRole = effectiveRole ?? (user?.role as Role | undefined);
+  const router = useRouter();
+  const [switchingProfile, setSwitchingProfile] = useState(false);
   const pathname = usePathname();
   const [loadingUrl, setLoadingUrl] = useState<string | null>(null);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -285,6 +292,38 @@ export function AppSidebar() {
         <Logo />
       </SidebarHeader>
       <SidebarContent>
+        {accountRole === "MANAGER" && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Profil du gérant</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="grid grid-cols-2 gap-2 px-2">
+                {(["ADMIN", "AGENT"] as const).map((profile) => {
+                  const Icon = profile === "ADMIN" ? ShieldCheck : Briefcase;
+                  return (
+                    <button
+                      key={profile}
+                      type="button"
+                      disabled={switchingProfile}
+                      onClick={async () => {
+                        if (profile === activeProfile) return;
+                        setSwitchingProfile(true);
+                        const result = await switchManagerProfile(profile);
+                        setSwitchingProfile(false);
+                        if (!result.success) return toast.error(result.error?.message || "Impossible de changer de profil");
+                        router.push(ROUTES.DASHBOARD);
+                        router.refresh();
+                      }}
+                      className={`flex items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium transition-colors ${activeProfile === profile ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                    >
+                      {switchingProfile ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
+                      {profile === "ADMIN" ? "Administrateur" : "Agent"}
+                    </button>
+                  );
+                })}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         {sidebarConfig.map((group) => {
           // Filter items based on user role
           const visibleItems = group.items.filter((item) =>
