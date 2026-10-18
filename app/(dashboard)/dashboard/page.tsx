@@ -10,7 +10,7 @@ import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { hasPermission } from "@/lib/roleCheck";
 import { SectionCards } from "@/components/dashboard/CardsSection";
 import { DashboardCharts } from "@/components/dashboard/Charts";
-import { headers } from "next/headers";
+import { GET as getDashboardStats } from "@/app/api/dashboard/stats/route";
 
 async function getDashboardData() {
   const user = await getUserBySessionEmail();
@@ -33,21 +33,7 @@ async function getDashboardData() {
   }
 
   const role = user.data?.role || "";
-  const requestHeaders = await headers();
-  const cookie = requestHeaders.get("cookie") ?? "";
-  const vercelUrl = process.env.VERCEL_URL;
-  const configuredUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-  const baseUrl = vercelUrl
-    ? `https://${vercelUrl}`
-    : configuredUrl?.replace(/\/$/, "") || "http://localhost:3000";
-
-  const res = await fetch(`${baseUrl}/api/dashboard/stats`, {
-    cache: "no-store",
-    headers: {
-      "Content-Type": "application/json",
-      cookie,
-    },
-  });
+  const res = await getDashboardStats();
 
   if (!res.ok) {
     const responseBody = await res.text();
