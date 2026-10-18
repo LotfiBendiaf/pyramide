@@ -10,6 +10,7 @@ import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { hasPermission } from "@/lib/roleCheck";
 import { SectionCards } from "@/components/dashboard/CardsSection";
 import { DashboardCharts } from "@/components/dashboard/Charts";
+import { headers } from "next/headers";
 
 async function getDashboardData() {
   const user = await getUserBySessionEmail();
@@ -32,16 +33,17 @@ async function getDashboardData() {
   }
 
   const role = user.data?.role || "";
-  const userId = user.data?._id || "";
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3000";
+  const requestHeaders = await headers();
+  const cookie = requestHeaders.get("cookie") ?? "";
 
-  const res = await fetch(
-    `${baseUrl}/api/dashboard/stats?role=${role}&userId=${userId}`,
-    {
-      cache: "no-store",
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  const res = await fetch(`${baseUrl}/api/dashboard/stats`, {
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      cookie,
+    },
+  });
 
   if (!res.ok) {
     throw new Error("Échec du chargement des statistiques");

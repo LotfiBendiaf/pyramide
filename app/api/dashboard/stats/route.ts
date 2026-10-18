@@ -1,17 +1,27 @@
 "use server";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import dbConnect from "@/lib/mongoose";
 import { Listing, Client, FollowUp, User, Negotiation } from "@/models";
+import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await dbConnect();
 
-    // 1. Extract role / userId from query params
-    const role = request.nextUrl.searchParams.get("role") || "";
-    const userId = request.nextUrl.searchParams.get("userId") || "";
+    // Derive identity and permissions from the authenticated account. Never
+    // trust role or userId query parameters for access control.
+    const currentUser = await getUserBySessionEmail();
+    if (!currentUser.data?._id) {
+      return NextResponse.json(
+        { success: false, error: { message: "Non autorisé" } },
+        { status: 401 }
+      );
+    }
+
+    const role = currentUser.data.role;
+    const userId = currentUser.data._id.toString();
     const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
     const isAssistant = role === "ASSISTANT";
     const userObjectId = Types.ObjectId.isValid(userId)

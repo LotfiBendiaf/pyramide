@@ -398,10 +398,10 @@ export function AppSidebar({ effectiveRole, accountRole, activeProfile }: { effe
                     <span className="truncate text-sm font-semibold text-sidebar-foreground">
                       {status === "loading" ? "Chargement..." : user?.name}
                     </span>
-                    {user?.role && (
+                    {userRole && (
                       <span className="inline-flex w-fit max-w-full items-center gap-1 rounded-full border border-primary/15 bg-primary/10 px-1 py-0.5 text-[11px] font-medium text-primary">
                         <BadgeCheck className="h-3 w-3 shrink-0" />
-                        {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
+                        {ROLE_LABELS[userRole]}
                       </span>
                     )}
                   </div>
@@ -438,10 +438,10 @@ export function AppSidebar({ effectiveRole, accountRole, activeProfile }: { effe
                       <p className="truncate text-xs text-muted-foreground">
                         {user?.email}
                       </p>
-                      {user?.role && (
+                      {userRole && (
                         <span className="mt-0.5 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1 py-0.5 text-[11px] font-medium text-primary">
                           <BadgeCheck className="h-3 w-3" />
-                          {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]}
+                          {ROLE_LABELS[userRole]}
                         </span>
                       )}
                     </div>
