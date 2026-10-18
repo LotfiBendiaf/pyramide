@@ -103,9 +103,12 @@ async function ListingsContent({
     bedrooms: params?.bedrooms ? Number(params.bedrooms) : undefined,
     propertyType: params?.propertyType,
     isPremium: params?.isPremium,
-    isValidated:
-      isActiveView || isApprovedView ? true : isNeutreView ? false : undefined,
-    validationStatus: isActiveView
+    isValidated: params?.search
+      ? undefined
+      : isActiveView || isApprovedView ? true : isNeutreView ? false : undefined,
+    validationStatus: params?.search
+      ? undefined
+      : isActiveView
       ? "VALIDATED"
       : isApprovedView
         ? "APPROVED"
@@ -113,6 +116,7 @@ async function ListingsContent({
           ? "NEUTRAL"
           : undefined,
     archived: isArchiveView ? true : undefined,
+    includeArchived: Boolean(params?.search) && !isArchiveView,
     page,
     limit: LISTINGS_PER_PAGE,
     sortBy,

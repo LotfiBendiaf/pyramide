@@ -50,6 +50,7 @@ async function ClientsContent({
     page,
     limit: CLIENTS_PER_PAGE,
     archived: isArchiveView ? true : undefined,
+    includeArchived: Boolean(searchParams.search) && !isArchiveView,
   };
 
   if (searchParams.agentId && searchParams.agentId !== "__all__") {

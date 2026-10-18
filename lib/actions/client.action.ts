@@ -282,13 +282,16 @@ export async function fetchClients(
       page = 1,
       limit = 10,
       archived,
+      includeArchived,
     } = validationResult.params as ClientFilters;
 
     // 3. Build MongoDB filter
     const filter: FilterQuery<Client> = { type: { $ne: "SELLER" } };
 
     // Archive filtering: by default exclude archived clients
-    if (archived === true) {
+    if (includeArchived) {
+      // Cross-status search intentionally covers active and archived records.
+    } else if (archived === true) {
       filter.archived = true;
     } else {
       filter.archived = { $ne: true };

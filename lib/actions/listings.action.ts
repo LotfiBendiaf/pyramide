@@ -296,6 +296,7 @@ interface FetchListingsParams {
   validationStatus?: "NEUTRAL" | "APPROVED" | "VALIDATED";
   hasReferenceCode?: boolean;
   archived?: boolean;
+  includeArchived?: boolean;
   status?: ListingInput["status"];
   city?: string;
   propertyType?: string;
@@ -355,6 +356,7 @@ export async function fetchListings(
       validationStatus,
       hasReferenceCode,
       archived,
+      includeArchived,
       status,
       city,
       propertyType,
@@ -454,7 +456,9 @@ export async function fetchListings(
     }
 
     // By default exclude archived listings; pass archived: true to fetch only archived
-    if (archived === true) {
+    if (includeArchived) {
+      // Search can resolve a reference regardless of its archive state.
+    } else if (archived === true) {
       query.archived = true;
     } else {
       query.archived = { $ne: true };

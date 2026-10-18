@@ -84,6 +84,7 @@ export type ClientFilters = {
   page?: number;
   limit?: number;
   archived?: boolean;
+  includeArchived?: boolean;
 };
 
 export type Phase1ApprovalInput = {
