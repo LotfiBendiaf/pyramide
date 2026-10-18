@@ -19,6 +19,7 @@ import {
   Handshake,
   CircleDollarSign,
   Trophy,
+  Users,
 } from "lucide-react";
 import ROUTES from "@/constants/routes";
 import { format } from "date-fns";
@@ -27,6 +28,7 @@ import { formatPriceAlgeria } from "@/lib/utils";
 
 interface AgentDashboardProps {
   userName: string;
+  role?: string;
   stats: {
     myClients: number;
     myListings: number;
@@ -85,6 +87,24 @@ const QUICK_ACTIONS = [
   },
 ];
 
+const ASSISTANT_ACTIONS = [
+  QUICK_ACTIONS[0],
+  {
+    title: "Consulter les biens",
+    description: "Voir les biens disponibles et leurs responsables",
+    icon: Building2,
+    href: ROUTES.LISTINGS_DASHBOARD,
+    color: "bg-green-500/10 text-green-600",
+  },
+  {
+    title: "Consulter les clients",
+    description: "Voir les clients et leurs responsables",
+    icon: Users,
+    href: ROUTES.CLIENTS_DASHBOARD,
+    color: "bg-sky-500/10 text-sky-600",
+  },
+];
+
 const EVENT_TYPE_STYLES = {
   followup: "bg-blue-100 text-blue-700 border-blue-200",
   task: "bg-amber-100 text-amber-700 border-amber-200",
@@ -99,11 +119,13 @@ const EVENT_TYPE_LABELS = {
 
 export function AgentDashboard({
   userName,
+  role,
   stats,
   todayEvents,
   recentActivities,
 }: AgentDashboardProps) {
   const greeting = getGreeting();
+  const isAssistant = role === "ASSISTANT";
   const today = format(new Date(), "EEEE d MMMM", { locale: fr });
   const totalCommission = stats.totalGainedAmount ?? 0;
   const monthlyCommission = stats.monthlyGainedAmount ?? 0;
@@ -177,9 +199,24 @@ export function AgentDashboard({
         </div>
       </div>
 
-      {/* Performance metrics */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        {performanceCards.map((metric) => (
+      {isAssistant ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="rounded-lg bg-blue-500/10 p-3 text-blue-600"><Users className="h-5 w-5" /></div>
+              <div><p className="text-2xl font-semibold">{stats.myClients}</p><p className="text-sm text-muted-foreground">Clients enregistrés</p></div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="rounded-lg bg-green-500/10 p-3 text-green-600"><Building2 className="h-5 w-5" /></div>
+              <div><p className="text-2xl font-semibold">{stats.myListings}</p><p className="text-sm text-muted-foreground">Biens disponibles</p></div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-3">
+          {performanceCards.map((metric) => (
           <Card key={metric.label} className={`border ${metric.className}`}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-4">
@@ -198,14 +235,15 @@ export function AgentDashboard({
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Actions rapides</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {QUICK_ACTIONS.map((action) => (
+          {(isAssistant ? ASSISTANT_ACTIONS : QUICK_ACTIONS).map((action) => (
             <Link key={action.href} href={action.href}>
               <Card className="group cursor-pointer border transition-all hover:border-primary/30 hover:shadow-sm">
                 <CardContent className="p-4">

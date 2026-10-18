@@ -110,6 +110,7 @@ async function DashboardContent() {
     return (
       <AgentDashboard
         userName={userName || ""}
+        role={role}
         stats={
           agentStats || {
             myClients: 0,

@@ -13,19 +13,20 @@ export async function GET(request: NextRequest) {
     const role = request.nextUrl.searchParams.get("role") || "";
     const userId = request.nextUrl.searchParams.get("userId") || "";
     const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "DEVELOPER";
+    const isAssistant = role === "ASSISTANT";
     const userObjectId = Types.ObjectId.isValid(userId)
       ? new Types.ObjectId(userId)
       : null;
 
     // Base filters scoped to the current user when not admin
-    const listingFilter = isAdmin ? {} : { agent: userId };
-    const clientFilter = isAdmin
+    const listingFilter = isAdmin || isAssistant ? { archived: { $ne: true } } : { agent: userId };
+    const clientFilter = isAdmin || isAssistant
       ? { archived: false }
       : {
           archived: false,
           $or: [{ assignedAgent: userId }, { createdBy: userId }],
         };
-    const allClientsFilter = isAdmin
+    const allClientsFilter = isAdmin || isAssistant
       ? {}
       : { $or: [{ assignedAgent: userId }, { createdBy: userId }] };
     const followUpFilter = isAdmin ? {} : { agent: userId };
