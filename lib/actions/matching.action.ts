@@ -3,6 +3,8 @@
 import { Client, Listing } from "@/models";
 import dbConnect from "@/lib/mongoose";
 import handleError from "@/lib/handlers/error";
+import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
+import { isElevatedRole } from "@/constants/values";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -189,9 +191,17 @@ export async function matchClientToListings(
   try {
     await dbConnect();
 
+    const currentUser = await getUserBySessionEmail();
+    if (!currentUser.data) return { success: false, error: { message: "Non autorisé" }, status: 401 };
+
     const client = await Client.findById(clientId).lean<Client>();
     if (!client) {
       return { success: false, error: { message: "Client introuvable" } };
+    }
+    const assignedAgentId = client.assignedAgent?.toString();
+    if (!assignedAgentId) return { success: true, data: [] };
+    if (!isElevatedRole(currentUser.data.role) && assignedAgentId !== currentUser.data._id.toString()) {
+      return { success: false, error: { message: "Ce client ne vous est pas attribué" }, status: 403 };
     }
 
     const statusFilter = getListingStatusForClient(client);
@@ -200,9 +210,13 @@ export async function matchClientToListings(
       return { success: true, data: [] };
     }
 
-    const listings = await Listing.find({ status: statusFilter })
+    const listings = await Listing.find({
+      status: statusFilter,
+      agent: client.assignedAgent,
+      archived: { $ne: true },
+    })
       .select(
-        "referenceCode title propertyType status location price features.bedrooms features.area evaluation.finalScore isPublished"
+        "referenceCode title propertyType status location price features.bedrooms features.area evaluation.finalScore isPublished images coverImage"
       )
       .lean<Listing[]>();
 
@@ -246,9 +260,17 @@ export async function matchListingToClients(
   try {
     await dbConnect();
 
+    const currentUser = await getUserBySessionEmail();
+    if (!currentUser.data) return { success: false, error: { message: "Non autorisé" }, status: 401 };
+
     const listing = await Listing.findById(listingId).lean<Listing>();
     if (!listing) {
       return { success: false, error: { message: "Annonce introuvable" } };
+    }
+    const assignedAgentId = listing.agent?.toString();
+    if (!assignedAgentId) return { success: true, data: [] };
+    if (!isElevatedRole(currentUser.data.role) && assignedAgentId !== currentUser.data._id.toString()) {
+      return { success: false, error: { message: "Ce bien ne vous est pas attribué" }, status: 403 };
     }
 
     const typeFilter = getClientTypesForListing(listing);
@@ -260,6 +282,7 @@ export async function matchListingToClients(
     const clients = await Client.find({
       archived: false,
       type: { $in: typeFilter },
+      assignedAgent: listing.agent,
     })
       .select(
         "referenceCode firstName lastName type city wantedPropertyType rooms budgetMin budgetMax phone"

@@ -24,6 +24,7 @@ import {
   MatchedClient,
 } from "@/lib/actions/matching.action";
 import { formatPriceAlgeria } from "@/lib/utils";
+import Image from "next/image";
 
 const TYPE_LABELS: Record<string, string> = {
   BUYER: "Acheteur",
@@ -263,13 +264,21 @@ export default function MatchingView({ clients, listings }: Props) {
                   {matchedListings.map((listing) => (
                     <li key={listing._id}>
                       <Link
-                        href={ROUTES.LISTING_DETAIL(listing._id)}
+                        href={ROUTES.LISTING_DETAIL_DASHBOARD(listing._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
                       >
                         <ScoreBadge score={listing.matchScore} />
+                        <Image
+                          src={listing.images?.[0]?.url || listing.coverImage || "/placeholder.png"}
+                          alt={listing.title || "Bien correspondant"}
+                          width={64}
+                          height={48}
+                          className="h-12 w-16 shrink-0 rounded-md object-cover"
+                        />
                         <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{listing.title || `${listing.propertyType} à ${listing.location.city}`}</p>
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-muted-foreground font-mono">
                               {listing.referenceCode}
@@ -348,6 +357,9 @@ export default function MatchingView({ clients, listings }: Props) {
                           <div className="flex items-center justify-between gap-2">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
+                                <span className="max-w-[220px] truncate text-sm font-medium">
+                                  {listing.title || `${listing.propertyType} à ${listing.location.city}`}
+                                </span>
                                 <span className="text-xs text-muted-foreground font-mono">
                                   {listing.referenceCode}
                                 </span>
