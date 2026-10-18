@@ -279,6 +279,20 @@ export async function generateDocument(
       };
     }
 
+    const missingFields = template.variables
+      .filter((variable) => variable.required)
+      .filter((variable) => {
+        const value = data[variable.key];
+        return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+      });
+    if (missingFields.length > 0) {
+      return {
+        success: false,
+        error: { message: `Champs obligatoires manquants : ${missingFields.map((field) => field.label).join(", ")}` },
+        status: 400,
+      };
+    }
+
     // 3. Prepare directories
     const templatesDir = path.join(process.cwd(), "public", "templates");
     const outputDir = path.join(
@@ -331,6 +345,15 @@ export async function generateDocument(
     });
 
     doc.render(templateData);
+
+    const unresolved = doc.getFullText().match(/\{\{[^}]+\}\}/g);
+    if (unresolved?.length) {
+      return {
+        success: false,
+        error: { message: `Le modèle contient des champs non résolus : ${unresolved.join(", ")}` },
+        status: 422,
+      };
+    }
 
     // 8. Generate output file
     const buffer = doc.getZip().generate({

@@ -128,7 +128,7 @@ export function DocumentGenerationForm({
             : z.union([z.number(), z.string().length(0)]).optional();
           break;
         case "date":
-          fieldSchema = z.date();
+          fieldSchema = variable.required ? z.date() : z.date().optional();
           break;
         case "textarea":
         case "text":
@@ -137,7 +137,9 @@ export function DocumentGenerationForm({
         case "agent":
         case "select":
         default:
-          fieldSchema = z.string();
+          fieldSchema = variable.required
+            ? z.string().trim().min(1, `${variable.label} est obligatoire`)
+            : z.string();
           break;
       }
 
@@ -265,6 +267,8 @@ export function DocumentGenerationForm({
         const result = await generateDocument({
           templateId: template.id,
           data,
+          clientId: selectedClientId || undefined,
+          listingId: selectedListingId || undefined,
         });
 
         if (!result.success || !result.data) {
@@ -388,7 +392,7 @@ export function DocumentGenerationForm({
                             onValueChange={(value) => {
                               field.onChange(getAgentLabel(value));
                             }}
-                            value={(field.value as string) || ""}
+                            value={agents.find((agent) => agent.label === field.value)?.value || ""}
                           >
                             <FormControl>
                               <SelectTrigger>
