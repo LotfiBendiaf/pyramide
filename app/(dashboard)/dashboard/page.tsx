@@ -132,11 +132,17 @@ async function DashboardContent() {
             title: string;
             description: string;
             timestamp: string;
+            entityId?: string;
           }) => ({
             id: activity.type + activity.timestamp,
             action: activity.title,
             target: activity.description,
             createdAt: activity.timestamp,
+            href: activity.entityId
+              ? activity.type === "listing" || activity.type === "sale"
+                ? `/dashboard/listings/${activity.entityId}`
+                : `/dashboard/clients/${activity.entityId}`
+              : undefined,
           })
         )}
       />

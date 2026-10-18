@@ -53,6 +53,7 @@ interface AgentDashboardProps {
     action: string;
     target: string;
     createdAt: string;
+    href?: string;
   }>;
 }
 
@@ -389,9 +390,10 @@ export function AgentDashboard({
           <CardContent>
             <div className="space-y-3">
               {recentActivities.slice(0, 5).map((activity) => (
-                <div
+                <Link
                   key={activity.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
+                  href={activity.href ?? "#"}
+                  className="flex items-center justify-between rounded-md py-2 border-b last:border-0 transition-colors hover:bg-muted/50"
                 >
                   <div>
                     <p className="text-sm">
@@ -404,7 +406,7 @@ export function AgentDashboard({
                   <span className="text-xs text-muted-foreground">
                     {formatRelativeTime(activity.createdAt)}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </CardContent>

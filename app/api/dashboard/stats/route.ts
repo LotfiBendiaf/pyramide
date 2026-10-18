@@ -33,6 +33,15 @@ export async function GET(request: NextRequest) {
     const negotiationFilter = isAdmin
       ? {}
       : { agent: userObjectId ?? new Types.ObjectId() };
+    const activityListingFilter = isAdmin
+      ? {}
+      : { agent: userId };
+    const activityClientFilter = isAdmin
+      ? { archived: { $ne: true } }
+      : isAssistant
+        ? { createdBy: userId, archived: { $ne: true } }
+        : clientFilter;
+    const activityFollowUpFilter = isAdmin ? {} : { agent: userId };
 
     // 2. Calculate date ranges
     const now = new Date();
@@ -390,23 +399,23 @@ export async function GET(request: NextRequest) {
     // 7. Get recent activities (scoped by role)
     const [recentListings, recentClients, recentFollowUps, recentSales] =
       await Promise.all([
-        Listing.find(listingFilter)
+        Listing.find(activityListingFilter)
           .sort({ createdAt: -1 })
           .limit(3)
           .populate("agent", "name profileImage")
           .lean(),
-        Client.find(clientFilter)
+        Client.find(activityClientFilter)
           .sort({ createdAt: -1 })
           .limit(3)
           .populate("createdBy", "name profileImage")
           .lean(),
-        FollowUp.find(followUpFilter)
+        FollowUp.find(activityFollowUpFilter)
           .sort({ createdAt: -1 })
           .limit(3)
           .populate("agent", "name profileImage")
           .populate("client", "firstName lastName")
           .lean(),
-        Listing.find({ ...listingFilter, status: { $in: ["Vendu", "Loué"] } })
+        Listing.find({ ...activityListingFilter, status: { $in: ["Vendu", "Loué"] } })
           .sort({ updatedAt: -1 })
           .limit(3)
           .populate("agent", "name profileImage")
@@ -432,6 +441,7 @@ export async function GET(request: NextRequest) {
 
         return {
           type: "client" as const,
+          entityId: String(c._id),
           title: "Nouveau client",
           description: `${c.firstName} ${c.lastName} - ${c.type}`,
           timestamp: c.createdAt,
@@ -447,6 +457,7 @@ export async function GET(request: NextRequest) {
     const recentActivities = [
       ...recentListings.map((l) => ({
         type: "listing" as const,
+        entityId: String(l._id),
         title: "Nouvelle annonce ajoutée",
         description: l.title || `${l.propertyType} à ${l.location.city}`,
         timestamp: l.createdAt,
@@ -459,6 +470,7 @@ export async function GET(request: NextRequest) {
       ...clientActivitiesWithLateCheck,
       ...recentFollowUps.map((f) => ({
         type: "followup" as const,
+        entityId: f.client?._id?.toString(),
         title: "Suivi créé",
         description: f.client
           ? `${f.client.firstName} ${f.client.lastName} - ${f.type}`
@@ -472,6 +484,7 @@ export async function GET(request: NextRequest) {
       })),
       ...recentSales.map((s) => ({
         type: "sale" as const,
+        entityId: String(s._id),
         title: "Vente réalisée",
         description: s.title || `${s.propertyType} à ${s.location.city}`,
         timestamp: s.updatedAt,

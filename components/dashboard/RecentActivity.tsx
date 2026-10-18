@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import Link from "next/link";
+import ROUTES from "@/constants/routes";
 
 interface Activity {
   type: "listing" | "client" | "followup" | "sale";
@@ -26,6 +28,7 @@ interface Activity {
     profileImage?: string;
   };
   isLate?: boolean;
+  entityId?: string;
 }
 
 interface RecentActivityProps {
@@ -55,9 +58,14 @@ const activityLabels: Record<Activity["type"], string> = {
 
 function ActivityItem({ activity }: { activity: Activity }) {
   const Icon = activityIcons[activity.type];
+  const href = activity.entityId
+    ? activity.type === "listing" || activity.type === "sale"
+      ? ROUTES.LISTING_DETAIL_DASHBOARD(activity.entityId)
+      : ROUTES.CLIENT_DETAIL(activity.entityId)
+    : null;
 
-  return (
-    <div className="flex items-start gap-4 py-4 group border-b last:border-0">
+  const content = (
+    <div className="flex items-start gap-4 rounded-lg px-2 py-4 group border-b last:border-0 transition-colors group-hover:bg-muted/50">
       {/* Icon */}
       <div
         className={cn(
@@ -117,6 +125,8 @@ function ActivityItem({ activity }: { activity: Activity }) {
       </div>
     </div>
   );
+
+  return href ? <Link href={href}>{content}</Link> : content;
 }
 
 export function RecentActivity({ activities }: RecentActivityProps) {
