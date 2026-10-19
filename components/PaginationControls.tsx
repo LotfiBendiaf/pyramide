@@ -7,11 +7,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface PaginationControlsProps {
   currentPage: number;
   totalPages: number;
+  pageParam?: string;
 }
 
 export function PaginationControls({
   currentPage,
   totalPages,
+  pageParam = "page",
 }: PaginationControlsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -21,7 +23,7 @@ export function PaginationControls({
 
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(page));
+    params.set(pageParam, String(page));
     router.push(`${pathname}?${params.toString()}`);
   };
 

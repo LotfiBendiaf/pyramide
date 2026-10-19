@@ -7,11 +7,25 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { ListingsSkeleton } from "@/components/skeletons/ListingsSkeleton";
 import { MyActiveListings } from "@/components/listings/MyActiveListings";
 import { MyApprovedListings } from "@/components/listings/MyApprovedListings";
+import { PaginationControls } from "@/components/PaginationControls";
 
-async function MesBiensContent() {
+const ITEMS_PER_PAGE = 10;
+
+function parsePage(value?: string) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+async function MesBiensContent({
+  approvedPage,
+  activePage,
+}: {
+  approvedPage: number;
+  activePage: number;
+}) {
   const [approvedResult, activeResult] = await Promise.all([
-    fetchMyApprovedListings(),
-    fetchMyActiveListings(),
+    fetchMyApprovedListings({ page: approvedPage, limit: ITEMS_PER_PAGE }),
+    fetchMyActiveListings({ page: activePage, limit: ITEMS_PER_PAGE }),
   ]);
 
   return (
@@ -25,6 +39,11 @@ async function MesBiensContent() {
           </p>
         </div>
         <MyApprovedListings listings={approvedResult.data ?? []} />
+        <PaginationControls
+          currentPage={approvedPage}
+          totalPages={Math.ceil((approvedResult.total ?? 0) / ITEMS_PER_PAGE)}
+          pageParam="approvedPage"
+        />
       </section>
 
       <section className="space-y-4">
@@ -37,12 +56,25 @@ async function MesBiensContent() {
           </p>
         </div>
         <MyActiveListings listings={activeResult.data ?? []} />
+        <PaginationControls
+          currentPage={activePage}
+          totalPages={Math.ceil((activeResult.total ?? 0) / ITEMS_PER_PAGE)}
+          pageParam="activePage"
+        />
       </section>
     </div>
   );
 }
 
-export default function MesBiensPage() {
+export default async function MesBiensPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ approvedPage?: string; activePage?: string }>;
+}) {
+  const params = await searchParams;
+  const approvedPage = parsePage(params?.approvedPage);
+  const activePage = parsePage(params?.activePage);
+
   return (
     <section className="container py-6 space-y-6">
       <SectionHeader
@@ -50,7 +82,7 @@ export default function MesBiensPage() {
         subtitle="Vos annonces affectées et leur suivi"
       />
       <Suspense fallback={<ListingsSkeleton />}>
-        <MesBiensContent />
+        <MesBiensContent approvedPage={approvedPage} activePage={activePage} />
       </Suspense>
     </section>
   );

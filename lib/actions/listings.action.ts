@@ -1870,6 +1870,7 @@ export interface ActiveListingWithVisits {
 
 export interface MyApprovedListing {
   _id: string;
+  referenceCode?: string;
   title?: string;
   pipelineStatus: string;
   photoVisitScheduledAt?: string | Date;
@@ -1877,7 +1878,10 @@ export interface MyApprovedListing {
   propertyType?: string;
 }
 
-export async function fetchMyApprovedListings(): Promise<
+export async function fetchMyApprovedListings({
+  page = 1,
+  limit = 10,
+}: { page?: number; limit?: number } = {}): Promise<
   ActionResponse<MyApprovedListing[]>
 > {
   const user = await getUserBySessionEmail();
@@ -1888,21 +1892,30 @@ export async function fetchMyApprovedListings(): Promise<
   try {
     await dbConnect();
 
-    const listings = await Listing.find({
+    const filter = {
       agent: user.data._id,
       isValidated: true,
       archived: { $ne: true },
       pipelineStatus: "PHOTO_VISIT_PENDING",
-    })
+    };
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(limit, 50));
+    const [listings, total] = await Promise.all([
+      Listing.find(filter)
       .select(
-        "title pipelineStatus photoVisitScheduledAt location propertyType"
+        "referenceCode title pipelineStatus photoVisitScheduledAt location propertyType"
       )
       .sort({ validatedAt: -1, createdAt: -1 })
-      .lean();
+      .skip((safePage - 1) * safeLimit)
+      .limit(safeLimit)
+      .lean(),
+      Listing.countDocuments(filter),
+    ]);
 
     return {
       success: true,
       data: JSON.parse(JSON.stringify(listings)),
+      total,
       status: 200,
     };
   } catch (error) {
@@ -1910,7 +1923,10 @@ export async function fetchMyApprovedListings(): Promise<
   }
 }
 
-export async function fetchMyActiveListings(): Promise<
+export async function fetchMyActiveListings({
+  page = 1,
+  limit = 10,
+}: { page?: number; limit?: number } = {}): Promise<
   ActionResponse<ActiveListingWithVisits[]>
 > {
   const user = await getUserBySessionEmail();
@@ -1940,18 +1956,27 @@ export async function fetchMyActiveListings(): Promise<
           }
         : { agent: user.data._id };
 
-    const listings = await Listing.find({
+    const filter = {
       ...ownershipFilter,
       pipelineStatus: { $in: ["ACTIVE", "UNDER_NEGOTIATION", "CLOSING"] },
       archived: { $ne: true },
-    })
+    };
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(limit, 50));
+    const [listings, total] = await Promise.all([
+      Listing.find(filter)
       .select(
         "referenceCode title pipelineStatus blockedUntil location propertyType price"
       )
-      .lean();
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .skip((safePage - 1) * safeLimit)
+      .limit(safeLimit)
+      .lean(),
+      Listing.countDocuments(filter),
+    ]);
 
     if (!listings.length) {
-      return { success: true, data: [], status: 200 };
+      return { success: true, data: [], total, status: 200 };
     }
 
     const listingIds = listings.map((l) => l._id);
@@ -1986,6 +2011,7 @@ export async function fetchMyActiveListings(): Promise<
     return {
       success: true,
       data: JSON.parse(JSON.stringify(data)),
+      total,
       status: 200,
     };
   } catch (error) {
