@@ -101,10 +101,17 @@ const sidebarConfig: SidebarGroup[] = [
     label: "Biens Immobiliers",
     items: [
       {
-        title: "Liste des biens",
+        title: "Tous les biens",
         url: ROUTES.LISTINGS_DASHBOARD,
         icon: Building2,
-        roles: ["ADMIN", "MANAGER", "ASSISTANT", "DEVELOPER", "VIEWER"],
+        roles: [
+          "ADMIN",
+          "MANAGER",
+          "AGENT",
+          "ASSISTANT",
+          "DEVELOPER",
+          "VIEWER",
+        ],
       },
       {
         title: "Ajouter un bien",
