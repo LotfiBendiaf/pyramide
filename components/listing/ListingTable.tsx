@@ -414,6 +414,11 @@ export function ListingTable({
                   {hasNegotiationPipeline(listing) && <Badge variant="purple" className="text-xs"><Radio className="h-3 w-3" />Négociation</Badge>}
                   {documentsCount > 0 && <Badge variant="outline" className="gap-1 text-xs"><FileText className="h-3 w-3" />{documentsCount}</Badge>}
                 </div>
+                {listing.createdAt && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Bien ajouté le {formatDate(listing.createdAt)}
+                  </p>
+                )}
                 <div className="mt-3 flex items-center gap-2 border-t pt-3">
                   <Button className="flex-1" size="sm" onClick={() => window.open(ROUTES.LISTING_DETAIL_DASHBOARD(listing._id), "_blank")}>Ouvrir le bien</Button>
                   {renderPublicationControl(listing) && (

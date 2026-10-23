@@ -405,7 +405,7 @@ export async function fetchAllFollowUps(
         .populate("agent", "firstname lastname name")
         .populate(
           "client",
-          "firstName lastName referenceCode phone extraNotes preferredLocation budgetMin budgetMax priceCurrency wantedPropertyType rooms"
+          "firstName lastName referenceCode phone extraNotes preferredLocation budgetMin budgetMax priceCurrency wantedPropertyType rooms createdAt"
         )
         .populate("listing", "title referenceCode description price images")
         .sort({ createdAt: -1 })

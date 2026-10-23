@@ -214,6 +214,7 @@ export function FollowUpFeed({ followUps, total, userRole }: FollowUpFeedProps) 
                             priceCurrency={f.client.priceCurrency}
                             wantedPropertyType={f.client.wantedPropertyType}
                             rooms={f.client.rooms}
+                            clientCreatedAt={f.client.createdAt}
                           />
                         )}
                       </div>

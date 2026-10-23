@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   ArrowRight,
   Loader2,
+  CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { updateClientNotes } from "@/lib/actions/client.action";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import ClientFollowUpsDialog from "./ClientFollowUpsDialog";
 
 interface ClientNotesDialogProps {
@@ -35,6 +37,7 @@ interface ClientNotesDialogProps {
   priceCurrency?: string;
   wantedPropertyType?: string;
   rooms?: number;
+  clientCreatedAt?: string | Date;
 }
 
 export default function ClientNotesDialog({
@@ -47,6 +50,7 @@ export default function ClientNotesDialog({
   priceCurrency,
   wantedPropertyType,
   rooms,
+  clientCreatedAt,
 }: ClientNotesDialogProps) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
@@ -92,16 +96,31 @@ export default function ClientNotesDialog({
           <span className="truncate">{hasNotes ? "Rédigé" : "À remplir"}</span>
         </Button>
       </DialogTrigger>
-      <DialogContent onClick={(e) => e.stopPropagation()}>
+      <DialogContent
+        className="max-h-[calc(100dvh-1rem)] overflow-y-auto p-4 sm:max-h-[calc(100dvh-2rem)] sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle>Compte rendu — {clientName}</DialogTitle>
         </DialogHeader>
-        {(preferredLocation ||
+        {(clientCreatedAt ||
+          preferredLocation ||
           budgetMin ||
           budgetMax ||
           wantedPropertyType ||
           rooms !== undefined) && (
           <div className="rounded-lg border bg-muted/30 p-3 grid grid-cols-2 gap-2 text-sm">
+            {clientCreatedAt && (
+              <div className="col-span-2 flex items-start gap-2">
+                <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="mb-0.5 text-xs leading-none text-muted-foreground">
+                    Client ajouté le
+                  </p>
+                  <p className="font-medium">{formatDate(clientCreatedAt)}</p>
+                </div>
+              </div>
+            )}
             {preferredLocation && (
               <div className="flex items-start gap-2 col-span-2">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
