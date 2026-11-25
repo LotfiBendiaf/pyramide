@@ -30,7 +30,7 @@ import {
   CancelNegotiationInput,
 } from "../validators/negotiation";
 import { NegotiationFilters } from "@/types/negotiation";
-import { isElevatedRole } from "@/constants/values";
+import { canManageAgentVisits, isElevatedRole } from "@/constants/values";
 import { Types } from "mongoose";
 import dbConnect from "../mongoose";
 import { revalidatePath } from "next/cache";
@@ -249,6 +249,10 @@ export async function openNegotiation(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
+  if (!canManageAgentVisits(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé : rôle agent ou gérant requis" }, status: 403 };
+  }
+
   const {
     listingId,
     clientId,
@@ -281,6 +285,11 @@ export async function openNegotiation(
   }
 
   try {
+    const accessibleClient = await Client.exists({
+      _id: clientId, archived: { $ne: true },
+      ...(isElevatedRole(user.data.role) ? {} : { assignedAgent: user.data._id }),
+    });
+    if (!accessibleClient) return { success: false, error: { message: "Client introuvable dans vos dossiers accessibles" }, status: 403 };
     const listing = await Listing.findById(listingId)
       .select("pipelineStatus")
       .lean<{ pipelineStatus: string }>();

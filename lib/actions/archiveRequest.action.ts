@@ -1,5 +1,6 @@
 "use server";
 
+import { canUseAssistantOperations, isElevatedRole } from "@/constants/values";
 import { ArchiveRequest, Client, Listing } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
@@ -114,6 +115,8 @@ export async function requestArchive(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
+  if (!canUseAssistantOperations(user.data.role)) return { success: false, error: { message: "Accès refusé" }, status: 403 };
+
   const { entityType, entityId, reason } = validationResult.params;
 
   if (!Types.ObjectId.isValid(entityId)) {
@@ -121,9 +124,10 @@ export async function requestArchive(
   }
 
   try {
+    const agency = isElevatedRole(user.data.role);
     const entity = entityType === "CLIENT"
-      ? await Client.findById(entityId).select("archived")
-      : await Listing.findById(entityId).select("archived");
+      ? await Client.findOne({ _id: entityId, ...(agency ? {} : user.data.role === "ASSISTANT" ? { $or: [{ assignedAgent: user.data._id }, { createdBy: user.data._id }] } : { assignedAgent: user.data._id }) }).select("archived")
+      : await Listing.findOne({ _id: entityId, ...(agency ? {} : { agent: user.data._id }) }).select("archived");
     if (!entity) {
       return { success: false, error: { message: "Élément introuvable" }, status: 404 };
     }
