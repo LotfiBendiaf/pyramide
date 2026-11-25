@@ -42,10 +42,11 @@ function useAssistantState(role: Role) {
         if (!response.ok) throw new Error();
         const data = await response.json() as { conversations: Conversation[]; briefing: Briefing | null };
         if (abort.signal.aborted) return;
-        setThreads(data.conversations);
+        setThreads(data.conversations.slice(0, 1));
+        setActiveId(data.conversations[0]?.id);
         setBriefing(data.briefing);
       } catch {
-        if (!abort.signal.aborted) setHistoryError("Impossible de charger l’historique.");
+        if (!abort.signal.aborted) setHistoryError("Impossible de charger la conversation.");
       } finally {
         if (!abort.signal.aborted) setLoading(false);
       }
@@ -56,14 +57,14 @@ function useAssistantState(role: Role) {
 
   function select(id?: string) {
     if (sending.current) return;
-    setActiveId(id);
+    setActiveId(threads[0]?.id ?? id);
     setError("");
   }
 
   async function send(text: string, conversationId?: string): Promise<boolean> {
     const question = text.trim();
     if (!question || loading || sending.current) return false;
-    const id = conversationId ?? activeId ?? crypto.randomUUID();
+    const id = activeId ?? threads[0]?.id ?? conversationId ?? crypto.randomUUID();
     sending.current = true;
     setPending(true);
     setError("");
@@ -73,19 +74,20 @@ function useAssistantState(role: Role) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, conversationId: id }),
       });
-      const result = await response.json() as Reply & { error?: string; historySaved?: boolean };
+      const result = await response.json() as Reply & { error?: string; historySaved?: boolean; conversationId?: string };
       if (!response.ok) throw new Error(result.error || "Impossible d’obtenir une réponse.");
+      const savedId = result.conversationId ?? id;
       setThreads((previous) => {
-        const thread = previous.find((item) => item.id === id);
+        const thread = previous.find((item) => item.id === savedId);
         return [{
-          id,
+          id: savedId,
           title: thread?.title ?? question.slice(0, 100),
           updatedAt: new Date().toISOString(),
           messages: [...(thread?.messages ?? []), { ...result, question }],
-        }, ...previous.filter((item) => item.id !== id)].slice(0, 5);
+        }];
       });
-      setActiveId(id);
-      if (!result.historySaved) setError("Réponse reçue, mais l’historique n’a pas pu être enregistré.");
+      setActiveId(savedId);
+      if (!result.historySaved) setError("Réponse reçue, mais la conversation n’a pas pu être enregistrée.");
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Impossible d’obtenir une réponse.");

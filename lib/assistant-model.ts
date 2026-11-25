@@ -15,7 +15,7 @@ export function providerRetryDelay(value: string | null, now = Date.now()) {
   return Number.isFinite(at) ? Math.max(1, Math.ceil((at - now) / 1000)) : undefined;
 }
 
-export async function askModel(system: string, input: object, json = true): Promise<string> {
+export async function askModel(system: string, input: object, json = true, schema?: { name: string; schema: Record<string, unknown> }): Promise<string> {
   const openAI = Boolean(process.env.OPENAI_API_KEY);
   const key = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY;
   if (!key) throw new AssistantUnavailable("configuration");
@@ -24,7 +24,7 @@ export async function askModel(system: string, input: object, json = true): Prom
     model: openAI ? process.env.OPENAI_MODEL || "gpt-4.1-mini" : process.env.GROQ_MODEL || "openai/gpt-oss-120b",
     max_completion_tokens: 1600,
     temperature: 0,
-    ...(json ? { response_format: { type: "json_object" } } : {}),
+    ...(schema ? { response_format: { type: "json_schema", json_schema: { ...schema, strict: true } } } : json ? { response_format: { type: "json_object" } } : {}),
     messages: [{ role: "system", content: system }, { role: "user", content: JSON.stringify(input) }],
   });
   try {

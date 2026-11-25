@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { PipelineContext } from "@/lib/assistant-pipeline";
 import type { VisitProposal } from "@/lib/assistant-proposals";
 import type { CreationDraft } from "@/lib/assistant-creation";
@@ -57,8 +58,28 @@ async function readStored(owner: string) {
   }).slice(0, 5);
 }
 
-export async function readConversations(owner: string) {
+export async function continuousConversationId(owner: string) {
+  const mongoose = await dbConnect();
+  const sessions = mongoose.connection.db!.collection<{ _id: string; conversationId: string }>("assistant_sessions");
+  const existing = await sessions.findOne({ _id: owner });
+  if (existing) return existing.conversationId;
   const threads = await readStored(owner);
+  const hash = createHash("sha256").update("assistant-conversation:" + owner).digest("hex");
+  const generated = `${hash.slice(0,8)}-${hash.slice(8,12)}-4${hash.slice(13,16)}-a${hash.slice(17,20)}-${hash.slice(20,32)}`;
+  const id = threads[0]?.id ?? generated;
+  try {
+    await sessions.updateOne({ _id: owner }, { $setOnInsert: { conversationId: id } }, { upsert: true });
+  } catch (error) {
+    if (!(typeof error === "object" && error && "code" in error && error.code === 11000)) throw error;
+  }
+  return (await sessions.findOne({ _id: owner }))!.conversationId;
+}
+
+export async function readConversations(owner: string) {
+  const id = await continuousConversationId(owner);
+  const stored = await readStored(owner);
+  const threads = stored.filter(thread => thread.id === id);
+  if (!threads.length) threads.push({ id, title: "Votre conversation", updatedAt: new Date(), messages: [] });
   return threads.map((thread) => ({
     ...thread,
     messages: thread.messages.map(({ question, answer, interpretation, verifiedReport, visitMessage, records, proposals, groups }) =>
@@ -67,14 +88,16 @@ export async function readConversations(owner: string) {
 }
 
 export async function recentConversation(owner: string, id: string) {
+  id = await continuousConversationId(owner);
   const threads = await readStored(owner);
   const messages = threads.find((thread) => thread.id === id)?.messages ?? [];
   const recent = messages.slice(-4);
   const newestFirst = [...messages].reverse();
   const clientId = newestFirst.find((message) => message.clientContextId)?.clientContextId;
   const visit = newestFirst.find((message) => message.visitContext)?.visitContext;
+  const pipeline = newestFirst.find((message) => message.pipelineContext !== undefined)?.pipelineContext ?? undefined;
   return {
-    pipeline: newestFirst.find((message) => message.pipelineContext !== undefined)?.pipelineContext ?? undefined,
+    pipeline: pipeline?.clientId && clientId && pipeline.clientId !== clientId ? undefined : pipeline,
     creation: newestFirst.find((message) => message.creationContext !== undefined)?.creationContext ?? undefined,
     questions: recent.map((message) => message.question),
     clientId,
@@ -83,8 +106,11 @@ export async function recentConversation(owner: string, id: string) {
 }
 
 export async function saveAssistantMessage(owner: string, id: string, message: AssistantMessage) {
+  id = await continuousConversationId(owner);
   const collection = await conversations();
   const legacy = await readStored(owner);
+  const mongoose = await dbConnect();
+  await mongoose.connection.db!.collection("assistant_message_archive").insertOne({ owner, conversationId: id, createdAt: new Date(), message });
   const update = [
     { $set: { owner: { $literal: owner }, threads: { $ifNull: ["$threads", { $literal: legacy }] } } },
     { $set: {

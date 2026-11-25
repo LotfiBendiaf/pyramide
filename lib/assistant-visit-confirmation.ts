@@ -29,6 +29,7 @@ export type VisitContext = {
   visitId?: string;
   cancelPending?: boolean;
   reschedulePending?: boolean;
+  reassignPending?: boolean;
   date?: string;
   time?: string;
   choices?: { listingId: string; title: string; reference?: string }[];
@@ -39,7 +40,7 @@ const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"
 
 function findVisitAgents(agentName?: string, agentId?: string) {
   return User.find({
-    role: "AGENT",
+    role: { $in: ["AGENT", "MANAGER", "ADMIN"] },
     ...(agentName ? { $or: [
       { firstname: agentName }, { lastname: agentName }, { username: agentName },
       { $expr: { $eq: [
@@ -396,4 +397,72 @@ export async function rescheduleAssistantVisit(
     clientContextId: nextContext.clientId,
     visitContext: { ...nextContext, reschedulePending: false, date: undefined, time: undefined },
   };
+}
+
+
+/** Transfer an existing appointment; never creates a second Visit. */
+export async function reassignAssistantVisit(
+  scope: AssistantScope,
+  identity: string | null | undefined,
+  selected: z.infer<typeof rescheduleVisitInput> | null | undefined,
+  context: VisitContext | undefined,
+  language: "fr" | "en" | "ar" | "darija",
+  requestedAgent?: string | null,
+) {
+  const say = (fr: string, en: string, ar: string, darija: string) => ({ fr, en, ar, darija })[language];
+  if (!isAgencyScope(scope)) return { answer: say("Seul le gérant peut réattribuer une visite.", "Only a manager can reassign a visit.", "المدير فقط يمكنه تغيير الوكيل.", "Ghir le gérant y9der ybeddel l’agent.") };
+  const targeted = Boolean(identity || selected?.listing || selected?.date || selected?.time);
+  const matches = await findAssistantVisits(scope, identity, selected, targeted ? undefined : context, !targeted && Boolean(context?.visitId), false);
+  if (matches.length !== 1) return { answer: say("Quelle visite souhaitez-vous réattribuer ? Précisez le client et le créneau si nécessaire.", "Which scheduled visit should I reassign? Specify the client and slot.", "أي زيارة تريد إسنادها؟ حدد الزبون والموعد.", "Anhi visite ? 3tini client w créneau."), visitContext: { ...context, reassignPending: true } };
+  const visit = matches[0];
+  const id = String(visit._id);
+  const nextContext: VisitContext = { visitId: id, clientId: visit.client?._id ? String(visit.client._id) : undefined, listingId: visit.listing?._id ? String(visit.listing._id) : undefined, agentId: String(visit.agent), reassignPending: true };
+  const agents = requestedAgent ? await findVisitAgents(requestedAgent.trim()) : [];
+  if (agents.length !== 1) return { answer: say("À quel agent ? Indiquez son nom complet si nécessaire.", "Which agent? Give the full name if necessary.", "إلى أي وكيل؟ حدد اسمه.", "L’anhi agent ? 3tini l’esm."), visitContext: nextContext };
+  const target = String(agents[0]._id);
+  const source = String(visit.agent);
+  const name = [agents[0].firstname, agents[0].lastname].filter(Boolean).join(" ");
+  try {
+    await withVisitSlotLock(`transfer:${id}`, async () => {
+      const keys = [...new Set([source, target])].sort();
+      const update = async () => {
+        const current = await Visit.findOne({ _id: id, agent: source, scheduledAt: visit.scheduledAt, status: "SCHEDULED" });
+        if (!current) throw new VisitSlotConflict("La visite a changé. Consultez son état actuel.");
+        await assertVisitSlotFree(target, visit.scheduledAt, id);
+        const events = await CalendarEvent.find({ sourceType: "VISIT", sourceId: id, syncStatus: { $ne: "DELETED" } });
+        // A remote event must be migrated explicitly, rather than orphaned in the old account.
+        if (source !== target && events.some(event => event.googleEventId)) throw new VisitSlotConflict("Cette visite est synchronisée avec Google Calendar. Le transfert entre calendriers n’est pas encore disponible ; la visite reste inchangée.");
+        const filter = { _id: id, agent: source, scheduledAt: visit.scheduledAt, status: "SCHEDULED" };
+        const result = await Visit.updateOne(filter, { $set: { agent: target } });
+        if (!result.matchedCount) throw new VisitSlotConflict("La visite a changé. Réessayez.");
+        try {
+          await CalendarEvent.updateMany({ _id: { $in: events.map(event => event._id) } }, { $set: { agent: target, syncStatus: "PENDING" } });
+        } catch (error) {
+          await Visit.updateOne({ ...filter, agent: target }, { $set: { agent: source } });
+          throw error;
+        }
+      };
+      const lock = (index: number): Promise<void> => index === keys.length ? update() : withVisitSlotLock(keys[index], () => lock(index + 1));
+      await lock(0);
+    });
+  } catch (error) {
+    if (error instanceof VisitSlotConflict) return { answer: error.message.replace("Vous avez déjà", "L’agent a déjà"), visitContext: nextContext };
+    throw error;
+  }
+  const calendar = await createCalendarEventFromVisit(id);
+  const when = formatInTimeZone(visit.scheduledAt, tz, "dd/MM/yyyy HH:mm");
+  const title = visit.listing?.title || visit.externalListingRef || "Bien immobilier";
+  let notice = calendar.success ? "" : "\nLe planning doit être resynchronisé : " + (calendar.error || "échec calendrier");
+  if (source !== target) {
+    try {
+      for (const recipient of [source, target]) {
+        const notificationId = createHash("sha256").update(`transfer:${id}:${source}:${target}:${visit.scheduledAt.toISOString()}:${recipient}`).digest("hex").slice(0, 24);
+        await Notification.updateOne({ _id: notificationId }, { $setOnInsert: { recipient, type: "VISIT_SCHEDULED", title: "Visite réattribuée", body: `${title} · ${when} · Agent : ${name}`, relatedEntity: { type: "VISIT", id }, read: false, link: ROUTES.SCHEDULE } }, { upsert: true, runValidators: true, setDefaultsOnInsert: true });
+      }
+    } catch { notice = "\nNotification non envoyée : consultez le planning."; }
+  }
+  revalidatePath(ROUTES.SCHEDULE);
+  revalidatePath(ROUTES.VISITS);
+  revalidatePath(ROUTES.VISIT_DETAIL(id));
+  return { answer: `${say("Visite attribuée à", "Visit assigned to", "تم إسناد الزيارة إلى", "La visite rahi 3and")} ${name}\n- ${title}\n- ${when} (Alger)${notice}`, clientContextId: nextContext.clientId, visitContext: { ...nextContext, agentId: target, reassignPending: false } };
 }

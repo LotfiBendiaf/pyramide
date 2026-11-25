@@ -9,7 +9,7 @@ import { pluralize } from "@/lib/pluralize";
 export { AssistantUnavailable } from "@/lib/assistant-model";
 import { dailyAssistantPlan } from "@/lib/assistant-briefing";
 import { pipelineInput, pipelineInstructions, runPipelineAction, type PipelineContext } from "@/lib/assistant-pipeline";
-import { canManageAgentVisits, canUseAssistantOperations } from "@/constants/values";
+import { canUseAssistantOperations } from "@/constants/values";
 import { createFromAssistant, creationIntents, creationInstructions, type CreationDraft } from "@/lib/assistant-creation";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { VISIT_SLOT_MS } from "@/lib/visit-slot";
@@ -22,13 +22,28 @@ import { analyticsInstructions, analyticsSchema, runAnalytics } from "@/lib/assi
 
 import { prepareVisitProposals, proposalInput } from "@/lib/assistant-proposals";
 
-import { cancelAssistantVisit, confirmAssistantVisit, rescheduleAssistantVisit, rescheduleVisitInput, type VisitContext } from "@/lib/assistant-visit-confirmation";
+import { cancelAssistantVisit, confirmAssistantVisit, rescheduleAssistantVisit, reassignAssistantVisit, rescheduleVisitInput, type VisitContext } from "@/lib/assistant-visit-confirmation";
 
-const datasets = ["sales_history", "client_message", "archive_requests", "approve_archive", "reject_archive", "archive_client", "clients", "hot", "unfollowed", "revenue", "listings", "visits", "followups", "negotiations", "employees", "activity", "tasks", "analytics", "property_match", "visit_proposal", "confirm_visit", "cancel_visit", "reschedule_visit", "visit_feedback", "close_deal", "daily_briefing", "dashboard", ...creationIntents, "discard_creation", "restricted", "unsupported"] as const;
+const datasets = ["sales_history", "client_message", "archive_requests", "approve_archive", "reject_archive", "archive_client", "clients", "hot", "unfollowed", "revenue", "listings", "visits", "followups", "negotiations", "employees", "activity", "tasks", "analytics", "property_match", "visit_proposal", "confirm_visit", "cancel_visit", "reschedule_visit", "reassign_visit", "visit_feedback", "open_negotiation", "approve_negotiation", "begin_closing", "record_deposit", "close_deal", "daily_briefing", "dashboard", ...creationIntents, "discard_creation", "restricted", "unsupported"] as const;
 const statuses = ["HOT", "WARM", "COLD", "ARCHIVED", "BUYER", "SELLER", "RENTER",
   "En Vente", "En Location", "Vendu", "Loué", "SCHEDULED", "COMPLETED", "CANCELLED",
   "PENDING", "DONE", "OVERDUE", "ACTIVE", "DEAL_DONE"] as const;
 const rankingMetrics = ["commission", "closed_deals", "sales", "buyers"] as const;
+const visitConfirmationInputForReschedule = z.object({
+  client: z.string().nullish(), listing: z.string().nullish(),
+  destination: rescheduleVisitInput.pick({ date: true, time: true }).default({}),
+  sameDay: z.boolean().nullish(),
+});
+const rescheduleOutput = {
+  name: "visit_destination",
+  schema: {
+    type: "object", additionalProperties: false, required: ["client", "listing", "destination", "sameDay"],
+    properties: {
+      client: { type: ["string", "null"] }, listing: { type: ["string", "null"] }, sameDay: { type: ["boolean", "null"] },
+      destination: { type: "object", additionalProperties: false, required: ["date", "time"], properties: { date: { type: ["string", "null"] }, time: { type: ["string", "null"] } } },
+    },
+  },
+};
 const agencyPlanSchema = z.object({
   intent: z.enum(datasets),
   queries: analyticsSchema.nullish(),
@@ -49,6 +64,8 @@ const agencyPlanSchema = z.object({
   listingScope: z.enum(["own", "agency"]).nullish(),
   language: z.enum(["fr", "en", "ar", "darija"]).default("fr"),
   assignVisit: z.boolean().default(false),
+  visitForSelf: z.boolean().default(false),
+  visitAssignmentEvidence: z.string().trim().min(1).max(300).nullish(),
   visitAgent: z.string().trim().min(1).max(100).nullish(),
   agent: z.string().trim().min(1).max(100).nullish(),
   client: z.string().trim().min(1).max(100).nullish(),
@@ -96,11 +113,13 @@ Fields:
 - sales_history: read permanently stored closed deals, including archived properties. Use this for sales of an agent in a named month/year, who sold a property reference, transaction history, and historical commissions. Set agent to the named agent, listingQuery to the exact property reference, closedSince and closedUntil YYYY-MM-DD to the first and last days of an explicit calendar period (inclusive). Use period for relative periods. Do not use the current inventory for historical sales. This never creates or re-closes a deal.
 - archive_requests: list pending archive requests for clients and properties. approve_archive and reject_archive: explicitly approve or reject ONE pending archive request. Set requestTarget to the exact entity reference (client or property), request ID, or entity name supplied by the user, archiveEntity CLIENT or LISTING when specified, archiveReason to an explicitly provided review note. Never invent a request ID or target. A missing target must be clarified. These actions are available to administrators and managers; the server enforces permissions.
 - archive_client: archive an existing client when explicitly requested. Copy their name, telephone or CRM reference into client. This action is available: never classify it restricted merely because it changes data. The server enforces permissions. Set archiveReason only if the user provides a reason, never invent one. A question about archived clients uses clients with status ARCHIVED instead.
+- reassign_visit: transfer an existing scheduled visit to another agent, keeping its client, property, date and time. Put the destination agent in visitAgent. Use the current visit context for “this visit”. Never treat reassignment as creating or rescheduling a visit. Only agency managers may transfer.
 - reschedule_visit: move an existing scheduled visit to a new slot. Put the new date and time in confirmation.date and confirmation.time; use confirmation.originalDate and originalTime only to identify the old visit when given. For an explicit request to reschedule on the same day, set confirmation.sameDay true. Do not classify a reschedule as cancelling or creating a visit. A reply supplying missing details continues a pending reschedule.
 - cancel_visit: use for an explicit cancellation request or details resolving a pending cancellation; this is available to the assigned agent. For a contextual cancellation, omit identifiers not supplied in the latest question. For an explicit target, put the client in client and the listing/date/time in confirmation. A question about whether a visit was cancelled is a lookup, not a cancellation.
 - For references such as the first/second/last property, resolve the title or reference from visitContext.propertyChoices, which is in display order. Put the selected title in confirmation.listing and do not guess a property outside those choices.
 - confirm_visit: choose when a CRM user explicitly says the client accepted/confirmed the visit, asks to organize, book, arrange, record or schedule it, or supplies missing details for a pending visit confirmation. Never use visit_proposal for a confirmation. Set confirmation.date (YYYY-MM-DD) and confirmation.time (HH:mm) only when explicitly stated in the latest question; resolve relative dates using todayInAlgiers, and use its year when no year is specified. Never borrow a tentative date from an earlier proposal. Copy an explicit property reference or title to confirmation.listing. If there is no stored property context and earlierQuestions clearly identify one property for this visit, you may recover that reference. Leave missing details empty for the application to ask for them. Do not interpret a question merely asking whether a visit was already confirmed as permission to schedule one.
-- When the signed-in profile is AGENT, an unqualified request to schedule a visit is for that signed-in agent: omit visitAgent and set assignVisit false. The property owner is not necessarily the visiting agent. Only assign another agent when explicitly requested.
+- For EVERY non-assistant profile (AGENT, MANAGER, ADMIN or DEVELOPER), an unqualified request to schedule a visit is for that signed-in person, including managers who also act as agents: omit visitAgent and set assignVisit false. The property owner is not necessarily the visiting agent. Only assign another agent when explicitly requested.
+- visitForSelf: true when the user explicitly wants their own visit or planning. This clears an earlier request to select another agent. visitAssignmentEvidence must quote the exact words in the latest question that explicitly assign the booking to someone else; never infer delegation from an administrator role. For an unqualified booking omit this evidence and assignVisit false.
 - visitAgent: also copy an explicitly named agent when cancelling or moving an existing visit. When the user schedules a visit for an agent, set assignVisit true and copy just the agent’s name or username verbatim from the latest message, without titles, prepositions or surrounding words. Keep client separate. Omit visitAgent when no agent is named. Set assignVisit true even if the agent is unnamed when the user specifically wants to book for another agent. For confirm_visit, set useClientContext only if the user refers to an already discussed client.
 - visit_proposal: use this intent to draft a property or visit proposal for a client, only when they explicitly want a message or draft to send to the client. A request to arrange a visit uses confirm_visit; an informal request for proposals of compatible properties uses property_match. This prepares a draft and never sends anything. Set client to the client name or CRM reference, and proposal to any explicitly stated listing (reference or title), city, propertyType (CRM French value), maxPrice (DZD), transaction (sale/rent) or slot (copy the time wording the user actually supplied). Omit unknown values; do not invent a name, property or slot. Requests to activate a follow-up are handled by the confirmation button, not by the query.
 - listingQuery: for a listings lookup with a specific property title or reference, copy the requested title or reference. Never turn it into the entire inventory.
@@ -114,48 +133,63 @@ Fields:
 For custom analytical requests, use intent analytics with queries (1 to 4 read-only aggregations). Compose them rather than looking for an exact predefined report. Use analytics for any average, any count across multiple sources, and custom breakdowns or comparisons of selected agents. For the average commission per closed deal, use operation average, field commission, source negotiations, and status DEAL_DONE. Example structure: {"source":"clients","operation":"count","group":"leadSource","period":"month","dateField":"createdAt","filters":[{"field":"clientTemperature","op":"eq","value":"HOT"}]}. Each query has source, operation (count, sum, average, distinct), optional field, group (agent or a category), agents (list of names for a restricted scope), period as above, optional dateField, filters (field, op eq for categorical values, gte or lte for numeric fields, missing for date/category), and order (desc/asc). These are exact CRM field identifiers: ${analyticsInstructions}. Use actual values from the request, do not invent filters. Use status DEAL_DONE and closedAt for metrics on closed deals; never count open deals as sales. Use existing specialized reports when they fit such as sales rankings and client lists.
 Omit unspecified filters. Use unsupported for requests outside the available CRM tools, unsupported filters or unsupported periods. Never invent a name, filter, database command or result.`;
 
-const visitContinuationSchema = agencyPlanSchema.pick({ language: true, client: true, confirmation: true, visitAgent: true, assignVisit: true }).extend({
-  action: z.enum(["confirm_visit", "cancel_visit", "reschedule_visit", "other"]),
-});
+const nullableText = { type: ["string", "null"] };
+const visitContinuationOutput = {
+  name: "visit_continuation",
+  schema: { type: "object", additionalProperties: false,
+    required: ["action", "language", "client", "visitAgent", "assignVisit", "visitForSelf", "visitAssignmentEvidence", "confirmation"],
+    properties: {
+      action: { type: "string", enum: ["confirm_visit", "cancel_visit", "reschedule_visit", "reassign_visit", "other"] },
+      language: { type: "string", enum: ["fr", "en", "ar", "darija"] },
+      client: nullableText, visitAgent: nullableText, visitAssignmentEvidence: nullableText,
+      assignVisit: { type: "boolean" }, visitForSelf: { type: "boolean" },
+      confirmation: { type: "object", additionalProperties: false,
+        required: ["date", "time", "listing", "sameDay", "originalDate", "originalTime"],
+        properties: { date: nullableText, time: nullableText, listing: nullableText, originalDate: nullableText, originalTime: nullableText, sameDay: { type: ["boolean", "null"] } },
+      },
+    },
+  },
+};
+const compactReportProperties = {
+  intent: { type: "string", enum: [...datasets, "other"] },
+  language: { type: "string", enum: ["fr", "en", "ar", "darija"] },
+  ...Object.fromEntries(["own", "groupByAgent", "count", "contact", "useClientContext", "continuePipeline", "assignVisit", "visitForSelf"].map(key => [key, { type: "boolean" }])),
+  ...Object.fromEntries(["agent", "client", "city", "calendarDay", "unfollowedSince", "unfollowedUntil", "closedSince", "closedUntil", "listingQuery", "visitAgent", "visitAssignmentEvidence"].map(key => [key, nullableText])),
+  confirmation: { anyOf: [{ type: "null" }, visitContinuationOutput.schema.properties.confirmation] },
+  status: { anyOf: [{ type: "string", enum: [...statuses] }, { type: "null" }] },
+  period: { type: "string", enum: ["today", "yesterday", "tomorrow", "week", "last_week", "month", "last_month", "year", "last_year", "all"] },
+  inactivity: { anyOf: [{ type: "null" }, { type: "object", additionalProperties: false, required: ["amount", "unit"], properties: { amount: { type: "number" }, unit: { type: "string", enum: ["days", "weeks", "months", "years"] } } }] },
+  pipeline: { anyOf: [{ type: "null" }, { type: "object", additionalProperties: false,
+    required: ["outcome", "note", "reminderDate", "reminderTime", "reminderHours", "finalPrice", "commissionPercentage", "negotiationId", "depositAmount", "paymentDate", "paymentMethod"],
+    properties: {
+      outcome: { anyOf: [{ type: "string", enum: ["INTERESTED", "NOT_INTERESTED", "UNDECIDED"] }, { type: "null" }] },
+      ...Object.fromEntries(["note", "reminderDate", "reminderTime", "negotiationId", "paymentDate"].map(key => [key, nullableText])),
+      ...Object.fromEntries(["reminderHours", "finalPrice", "commissionPercentage", "depositAmount"].map(key => [key, { type: ["number", "null"] }])),
+      paymentMethod: { anyOf: [{ type: "string", enum: ["Espèces", "Versement", "Chèque"] }, { type: "null" }] },
+    },
+  }] },
+};
+const compactReportOutput = { name: "crm_request", schema: { type: "object", additionalProperties: false, properties: compactReportProperties, required: Object.keys(compactReportProperties) } };
 
-async function interpretVisitContinuation(question: string, history: string[], visit: VisitContext, isAssistant: boolean) {
-  const result = await askModel(`Decide whether the latest message schedules, moves or cancels a visit, or is unrelated. Your only output is JSON with action (confirm_visit, cancel_visit, reschedule_visit, other), language (fr/en/ar/darija), client only if explicitly named, visitAgent when the user explicitly names the agent for a booking, cancellation or reschedule, assignVisit true when booking for someone else, and confirmation with optional date (YYYY-MM-DD), time (HH:mm), listing title or reference. Accept informal French, English, Arabic and Darija. If the user tells you to arrange or book the visit for this property, action is confirm_visit even when no date or time is supplied; our application will ask. For an explicit request to move or reschedule, use reschedule_visit. In confirmation include date and time for the new slot, and originalDate or originalTime only for an explicitly given old slot. Set confirmation.sameDay true when explicitly moving to another time on the same day. Preserve a pending reschedule when missing details are supplied. An explicit request to cancel, remove or call off the visit is cancel_visit; when it refers to the current visit do not add identifiers from earlier turns. If a confirmation or cancellation is pending, a reply with a property, client, assigned agent, date or time alone continues that action. A new request to browse, match or draft a WhatsApp message is not a scheduling request. Do not invent or reuse an unconfirmed date or hour. Resolve ordinal property selections against propertyChoices in display order and copy the chosen title into confirmation.listing. Extract only what the user gave in the latest question, in Algeria local time. Do not schedule on a vague acknowledgement or a question asking if already booked.`, {
-    latestQuestion: question,
-    earlierQuestions: history,
-    todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd"),
-    clientKnown: Boolean(visit.clientId),
-    propertyKnown: Boolean(visit.listingId || visit.requestedListing),
-    propertyChoices: visit.choices,
-    assistantProfile: isAssistant,
-    agentKnown: Boolean(visit.agentId),
-    pendingConfirmation: Boolean(visit.pending),
-    pendingCancellation: Boolean(visit.cancelPending),
-    pendingReschedule: Boolean(visit.reschedulePending),
-  });
-  const choice = visitContinuationSchema.parse(JSON.parse(result));
-  // Changing the proposed slot of an unsaved booking continues creation; no existing visit can be moved.
-  if (visit.pending && !visit.visitId && choice.action === "reschedule_visit") choice.action = "confirm_visit";
-  return choice.action === "other" ? null : agencyPlanSchema.parse({ ...choice, intent: choice.action });
-}
-
-async function interpretReadReport(question: string, history: string[], access: AssistantScope) {
+async function interpretReadReport(question: string, history: string[], access: AssistantScope, clientContextId?: string, visit?: VisitContext, pipelineContext?: PipelineContext) {
   const report = await askModel(
-    `Classify the latest CRM request by its actual capability, not by a word shared with earlier messages. Return one JSON object. intent must be one of ${datasets.join(", ")}, or other. Read fields: language (fr/en/ar/darija), own, agent, groupByAgent, client, city, count, contact, status, calendarDay, period, inactivity, unfollowedSince, unfollowedUntil. Never classify a requested write as a read-only list merely because its capability is not a report. ` +
+    `Classify the latest CRM request by its actual capability, not by a word shared with earlier messages. Return one JSON object. intent must be one of ${datasets.join(", ")}, or other. The language field is REQUIRED and MUST match the latest message (English=en, French=fr, Arabic=ar, Algerian Darija/Arabizi=darija), regardless of UI or history language. Use null for absent nullable fields and false for absent boolean fields. Read fields: language (fr/en/ar/darija), own, agent, groupByAgent, client, city, count, contact, status, calendarDay, period, inactivity, unfollowedSince, unfollowedUntil. Never classify a requested write as a read-only list merely because its capability is not a report. ` +
     "sales_history reads closed deals including archived properties: sales of an agent during a calendar month/year, who sold a property reference, historical commissions or past transactions. Set agent to the named agent, listingQuery to the exact property reference, closedSince and closedUntil YYYY-MM-DD to the first and last inclusive days of an explicit period. Preserve both month and year from the request, use period for relative dates. Never confuse a question about a past sale with an action to close a deal. " +
-    "visit_feedback records the client’s reaction after a visit and/or schedules their next follow-up. For that intent provide pipeline: outcome INTERESTED/NOT_INTERESTED/UNDECIDED, note a faithful summary, reminderHours a relative number of hours or reminderDate YYYY-MM-DD plus reminderTime HH:mm. Do not invent values. close_deal closes an existing negotiation: pipeline.finalPrice is DZD and pipeline.commissionPercentage a percentage. For either action identify client by explicit phone/name/reference, and listingQuery by an explicit property reference; omit context identifiers not stated. " +
+    "visit_feedback records the client’s reaction after a visit and/or schedules their next follow-up. For that intent provide pipeline: outcome INTERESTED/NOT_INTERESTED/UNDECIDED, note a faithful summary, reminderHours a relative number of hours or reminderDate YYYY-MM-DD plus reminderTime HH:mm. Do not invent values. approve_negotiation validates a pending negotiation (manager only); begin_closing starts closing an active negotiation; record_deposit records an explicitly received deposit with depositAmount DZD, paymentDate YYYY-MM-DD and paymentMethod Espèces/Versement/Chèque, never performs payment. open_negotiation creates a new negotiation for an explicitly requested client/property; it is a write, never a negotiations report. close_deal closes an existing negotiation: pipeline.finalPrice is DZD and pipeline.commissionPercentage a percentage. For these actions identify client by explicit phone/name/reference, and listingQuery by an explicit property reference; omit context identifiers not stated. " +
     "Use archive_requests for pending archiving requests awaiting management approval, including demandes d’archivage en attente. These are NOT followups or reminders. Use other for approving or rejecting requests. " +
     "For other capabilities choose their matching intent (create_client, create_listing, property_match, confirm_visit, reschedule_visit, cancel_visit, client_message, etc.); use other only when none fits. Client inactivity or lack of follow-up ALWAYS uses unfollowed, never the ordinary clients list. For a duration provide inactivity={amount:number,unit:days/weeks/months/years}. It measures elapsed time without contact, not the client's creation period. " +
     "Use unfollowedSince YYYY-MM-DD for an explicit cutoff, and unfollowedUntil for the inclusive end of a historical interval. " +
-    "The latest message determines the task even when earlier questions discuss another task. Never force a request into an allowed category: choose other for actions. Use visits for appointments, visit lists and planning/calendar questions. A specific date uses calendarDay YYYY-MM-DD, resolving omitted year against todayInAlgiers. Visits use status SCHEDULED unless the user asks for another state. Moving, booking or cancelling a visit is an action: use other. " +
+    "Visit actions: confirm_visit books a visit, reschedule_visit changes its date/time, cancel_visit cancels it, reassign_visit transfers an existing visit to another agent. Put an explicitly named target agent in visitAgent; assignVisit true only for explicit delegation. visitAssignmentEvidence quotes exact latest-message delegation words. For non-assistants an unqualified booking is for themselves; visitForSelf true for explicit self-assignment. confirmation contains newly supplied date YYYY-MM-DD, time HH:mm and listing reference/title. Feedback or reminders after a visit use visit_feedback, never confirm_visit. Contextual actions refer to the current visit; do not invent identifiers from prior prose. A reply to a pending booking with missing details continues confirm_visit. The latest message determines the task even when earlier questions discuss another task. Never force a request into an allowed category: choose other for actions. Use visits for appointments, visit lists and planning/calendar questions. A specific date uses calendarDay YYYY-MM-DD, resolving omitted year against todayInAlgiers. Visits use status SCHEDULED unless the user asks for another state. Moving, booking, transferring or cancelling a visit uses its matching action intent, never a read report. " +
     "Use followups ONLY for reminder/follow-up records themselves, never for visits or a calendar planning request. Own=true for the signed-in person's reminders or clients, even if that person is a manager. For a named employee use agent and own=false. For all agents use groupByAgent=true and omit agent. " +
-    "Copy explicitly named clients and cities faithfully. Named employees are not clients. Set contact=true when the client’s phone or email is requested. Preserve context from earlier questions only when the latest request refers back to it. " +
+    "For a currentPipeline, a contextual follow-up supplying missing details continues its action with continuePipeline true. If pending=false, the old action is already completed; choose the NEW requested stage (approve_negotiation for approval, begin_closing for starting closure, record_deposit for a received deposit, close_deal for final closure). A next stage referring to the same dossier uses continuePipeline true. Never reopen a negotiation merely because the user asks to approve it. An explicit different client/property starts a new action with continuePipeline false. property_match finds properties compatible with a client. visit_proposal prepares a message about a property with photos and WhatsApp/SMS drafts; client_message drafts a general client message. For an explicit property set listingQuery to its reference/title. A property mentioned by ce bien/this property comes from the current dossier, never invent a reference. For a contextual client (elle/lui/her/him/that client), set useClientContext true. Copy explicitly named clients and cities faithfully. Named employees are not clients. Set contact=true when the client’s phone or email is requested. Preserve context from earlier questions only when the latest request refers back to it. " +
     "period (today,yesterday,tomorrow,week,last_week,month,last_month,year,last_year,all) limits client creation only when explicitly requested, and reminder dates for followups. For inactivity use period all. " +
     "For clients status may be HOT,WARM,COLD,BUYER,SELLER,RENTER,ARCHIVED. For followups use PENDING,DONE,OVERDUE only if explicitly requested. For visits use SCHEDULED,COMPLETED,CANCELLED. Omit absent filters. Return JSON, no prose.",
-    { latestQuestion: question, earlierQuestions: history, profile: access.role, todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd") },
+    { latestQuestion: question, earlierQuestions: history, profile: access.role, currentClientKnown: Boolean(clientContextId), currentVisitKnown: Boolean(visit?.visitId), pendingBooking: Boolean(visit?.pending), pendingReschedule: Boolean(visit?.reschedulePending), pendingCancellation: Boolean(visit?.cancelPending), pendingReassignment: Boolean(visit?.reassignPending), currentPipeline: pipelineContext ? { action: pipelineContext.action, pending: pipelineContext.pending !== false, dossierKnown: Boolean(pipelineContext.negotiationId || pipelineContext.clientId) } : null, todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd") }, true, compactReportOutput,
   );
   const rawReport = JSON.parse(report);
-  if (!["clients", "hot", "unfollowed", "followups", "visits", "archive_requests", "sales_history", "visit_feedback", "close_deal"].includes(rawReport.intent)) return null;
-  const interpreted = agencyPlanSchema.extend({ intent: z.enum(["clients", "hot", "unfollowed", "followups", "visits", "archive_requests", "sales_history", "visit_feedback", "close_deal"]) }).parse(rawReport);
+  if (!["clients", "hot", "unfollowed", "followups", "visits", "archive_requests", "sales_history", "property_match", "visit_proposal", "client_message", "confirm_visit", "cancel_visit", "reschedule_visit", "reassign_visit", "visit_feedback", "open_negotiation", "approve_negotiation", "begin_closing", "record_deposit", "close_deal"].includes(rawReport.intent)) return null;
+  const interpreted = agencyPlanSchema.extend({ intent: z.enum(["clients", "hot", "unfollowed", "followups", "visits", "archive_requests", "sales_history", "property_match", "visit_proposal", "client_message", "confirm_visit", "cancel_visit", "reschedule_visit", "reassign_visit", "visit_feedback", "open_negotiation", "approve_negotiation", "begin_closing", "record_deposit", "close_deal"]) }).parse(rawReport);
+  if (interpreted.intent === "visit_proposal" && interpreted.listingQuery) interpreted.proposal = { listing: interpreted.listingQuery };
   if (interpreted.intent === "visits" && !interpreted.status) interpreted.status = "SCHEDULED";
   if (interpreted.inactivity || interpreted.unfollowedSince || interpreted.unfollowedUntil) {
     interpreted.intent = "unfollowed";
@@ -186,32 +220,8 @@ async function interpretQuestion(question: string, history: string[], access: As
       if (error instanceof AssistantUnavailable && (error.reason === "quota" || error.reason === "configuration")) throw error;
     }
   }
-  if (pipelineContext && canManageAgentVisits(access.role)) {
-    const raw = await askModel(
-      "Resolve the latest message against this pending CRM action. Return JSON with action (visit_feedback, close_deal, other), language (fr/en/ar/darija), and pipeline containing only newly supplied values. " +
-      "Use the pending action when the user supplies missing details, answers its question, reports further visit feedback, or requests the follow-up reminder after saved feedback. " +
-      "A request to schedule a follow-up is a write continuation, never a report. For reminders use reminderDate YYYY-MM-DD and reminderTime HH:mm in Algeria local time or reminderHours for a relative interval. " +
-      "For closing use finalPrice DZD and commissionPercentage in percent. For feedback use outcome INTERESTED/NOT_INTERESTED/UNDECIDED and a short faithful note. " +
-      "Do not invent missing values, amounts, outcomes or dates. Use other for a new unrelated request, a different action or a read-only question. Accept French, English, Arabic and Darija. Match the user's language.",
-      { latestQuestion: question, pendingAction: pipelineContext, earlierQuestions: history, todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd") },
-    );
-    const continuation = agencyPlanSchema.pick({ language: true, pipeline: true }).extend({
-      action: z.enum(["visit_feedback", "close_deal", "other"]),
-    }).parse(JSON.parse(raw));
-    if (continuation.action !== "other" && continuation.action === pipelineContext.action) {
-      return agencyPlanSchema.parse({ ...continuation, intent: continuation.action, continuePipeline: true });
-    }
-  }
-  if (!draft && !pipelineContext && visit && ((access.role === "ASSISTANT" && visit.pending) || canManageAgentVisits(access.role))) {
-    try {
-      const continuation = await interpretVisitContinuation(question, history, visit, access.role === "ASSISTANT");
-      if (continuation) return continuation;
-    } catch (error) {
-      if (error instanceof AssistantUnavailable && (error.reason === "quota" || error.reason === "configuration")) throw error;
-    }
-  }
   try {
-    const report = await interpretReadReport(question, history, access);
+    const report = await interpretReadReport(question, history, access, clientContextId, visit, pipelineContext);
     if (report) return report;
   } catch (error) {
     if (error instanceof AssistantUnavailable && (error.reason === "quota" || error.reason === "configuration")) throw error;
@@ -271,9 +281,9 @@ export async function answerAgencyQuestion(question: string, history: string[], 
     return answerDashboardQuestion(question, history, access, plan.language);
   }
   if (plan.intent === "daily_briefing") return { ...await dailyAssistantPlan(access, plan.language, new Date(), plan.groupByAgent), interpretation: "ai" };
-  if (plan.intent === "visit_feedback" || plan.intent === "close_deal") {
-    const previous = plan.continuePipeline && pipelineContext?.action === plan.intent ? pipelineContext : undefined;
-    const extracted = await askModel("Extract ALL explicitly supplied details for this CRM action. Return JSON with only these optional fields: outcome INTERESTED/NOT_INTERESTED/UNDECIDED; note a short faithful summary of the visit feedback in the user language; reminderHours a positive number for a requested relative reminder (convert days to hours); reminderDate YYYY-MM-DD and reminderTime HH:mm for an absolute reminder; finalPrice in DZD; commissionPercentage in percent; negotiationId only when supplied. A compound request can include feedback AND a reminder: extract both. Do not invent missing information. Return {} if no details are supplied. Do not interpret identifiers as prices. Output newly supplied details only.", { action: plan.intent, latestQuestion: question, todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd"), language: plan.language });
+  if (plan.intent === "visit_feedback" || plan.intent === "open_negotiation" || plan.intent === "approve_negotiation" || plan.intent === "begin_closing" || plan.intent === "record_deposit" || plan.intent === "close_deal") {
+    const previous = plan.continuePipeline ? pipelineContext : undefined;
+    const extracted = await askModel("Extract ALL explicitly supplied details for this CRM action. Return JSON with only these optional fields: outcome INTERESTED/NOT_INTERESTED/UNDECIDED; note a short faithful summary of the visit feedback in the user language; reminderHours a positive number for a requested relative reminder (convert days to hours); reminderDate YYYY-MM-DD and reminderTime HH:mm for an absolute reminder; finalPrice in DZD; commissionPercentage in percent; negotiationId only when supplied; depositAmount in DZD, paymentDate YYYY-MM-DD, paymentMethod Espèces/Versement/Chèque for an explicitly received deposit. A compound request can include feedback AND a reminder: extract both. Do not invent missing information. Return {} if no details are supplied. Do not interpret identifiers as prices. Output newly supplied details only.", { action: plan.intent, latestQuestion: question, todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd"), language: plan.language });
     plan.pipeline = { ...plan.pipeline, ...pipelineInput.parse(JSON.parse(extracted)) };
     return {
       ...await runPipelineAction(access, plan.intent, plan.client ?? explicitPhoneIn(question), plan.confirmation?.listing ?? plan.proposal?.listing ?? plan.listingQuery,
@@ -297,23 +307,42 @@ export async function answerAgencyQuestion(question: string, history: string[], 
   if (["clients", "hot", "unfollowed", "visits", "followups", "negotiations", "tasks", "visit_proposal", "property_match", "confirm_visit", "cancel_visit", "reschedule_visit"].includes(plan.intent)) {
     plan.client ??= explicitPhoneIn(question);
   }
+  if (plan.intent === "reassign_visit") {
+    return { ...await reassignAssistantVisit(access, plan.client, plan.confirmation, visit, plan.language, plan.visitAgent), interpretation: "ai" };
+  }
   if (plan.intent === "reschedule_visit") {
+    const details = await askModel("Tu extrais le NOUVEAU rendez-vous souhaité dans une demande de déplacement. Réponds uniquement en JSON : {client:identité explicite ou null,listing:référence explicite ou null,destination:{date:YYYY-MM-DD ou null,time:HH:mm ou null},sameDay:booléen}. Le verbe déplacer/décaler signifie changer le rendez-vous : si une seule heure est donnée dans cette demande, c’est l’heure SOUHAITÉE. La date unique est celle du rendez-vous souhaité. S’il y a un ancien ET un nouveau créneau, prends le nouveau. Si aucune date n’est donnée et que le même jour est demandé, sameDay=true. Comprends français, anglais, arabe et darija. Ne déduis aucune heure absente. Ne renvoie aucun champ source ou original. destination est obligatoire même si ses valeurs sont nulles.", { latestQuestion: question, todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd") }, true, rescheduleOutput);
+    const slot = visitConfirmationInputForReschedule.parse(JSON.parse(details));
+    plan.client = slot.client;
+    plan.confirmation = { listing: slot.listing, date: slot.destination.date, time: slot.destination.time, sameDay: slot.sameDay };
     return {
       ...await rescheduleAssistantVisit(access, plan.client, plan.confirmation, visit, plan.language, plan.visitAgent),
       interpretation: "ai",
     };
   }
   if (plan.intent === "cancel_visit") {
+    // Identifiers inferred from prior prose must not override the saved visit ID.
+    const mentioned = (value?: string | null) => Boolean(value && question.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().includes(value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()));
+    if (!mentioned(plan.client)) plan.client = undefined;
+    if (!mentioned(plan.visitAgent)) plan.visitAgent = undefined;
+    if (plan.confirmation?.listing && !mentioned(plan.confirmation.listing)) plan.confirmation.listing = undefined;
+    if (!/\d/.test(question) && plan.confirmation) { plan.confirmation.date = undefined; plan.confirmation.time = undefined; }
     return {
       ...await cancelAssistantVisit(access, plan.client, plan.confirmation, visit, plan.language, plan.visitAgent),
       interpretation: "ai",
     };
   }
   if (plan.intent === "confirm_visit") {
-    const currentVisit = access.role === "ASSISTANT" && !visit?.pending ? undefined : visit;
+    const currentVisit = plan.visitForSelf && access.role !== "ASSISTANT"
+      ? { ...visit, agentId: undefined, assignVisit: false }
+      : access.role === "ASSISTANT" && !visit?.pending ? undefined : visit;
+    const assignmentEvidence = plan.visitAssignmentEvidence?.trim();
+    const explicitlyDelegated = Boolean(assignmentEvidence && question.toLocaleLowerCase().includes(assignmentEvidence.toLocaleLowerCase()));
+    const explicitAgent = !plan.visitForSelf && (plan.visitAgent ?? plan.agent);
+    const groundedAgent = explicitAgent && question.toLocaleLowerCase().includes(explicitAgent.toLocaleLowerCase()) ? explicitAgent : undefined;
     const contextualClient = access.role !== "ASSISTANT" || plan.useClientContext ? clientContextId : undefined;
     return {
-      ...await confirmAssistantVisit(access, plan.client, plan.confirmation, { ...currentVisit, clientId: currentVisit?.clientId ?? contextualClient }, plan.language, plan.visitAgent ?? plan.agent, plan.assignVisit, question),
+      ...await confirmAssistantVisit(access, plan.client, plan.confirmation, { ...currentVisit, clientId: currentVisit?.clientId ?? contextualClient }, plan.language, groundedAgent, !plan.visitForSelf && plan.assignVisit && explicitlyDelegated, question),
       interpretation: "ai",
     };
   }

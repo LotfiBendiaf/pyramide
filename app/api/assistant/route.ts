@@ -5,7 +5,7 @@ import { answerAgencyQuestion, AssistantUnavailable } from "@/lib/assistant-agen
 
 import { assistantHistoryOwner, canUseAssistant } from "@/lib/assistant-access";
 import { dailyAssistantPlan, readAssistantBriefing } from "@/lib/assistant-briefing";
-import { readConversations, recentConversation, saveAssistantMessage } from "@/lib/assistant-history";
+import { continuousConversationId, readConversations, recentConversation, saveAssistantMessage } from "@/lib/assistant-history";
 
 const questionText = z.string().trim().min(1).max(2000);
 const inputSchema = z.object({
@@ -43,11 +43,11 @@ export async function POST(request: Request) {
   if (!input.success) return NextResponse.json({ error: "Saisis une question de 1 à 2000 caractères." }, { status: 400 });
 
   try {
-    const { question, conversationId, previousQuestion, history } = input.data;
+    const { question } = input.data;
     const scope = { userId: user._id, role: user.role };
     const owner = assistantHistoryOwner(scope);
-    const context = conversationId ? await recentConversation(owner, conversationId)
-      : { questions: history ?? (previousQuestion ? [previousQuestion] : []), clientId: undefined, visit: undefined, creation: undefined, pipeline: undefined };
+    const conversationId = await continuousConversationId(owner);
+    const context = await recentConversation(owner, conversationId);
     const result = await answerAgencyQuestion(question, context.questions, scope, context.clientId, context.visit, context.creation, context.pipeline);
     let historySaved = false;
     if (conversationId) {
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         // A storage failure must not discard a verified answer.
       }
     }
-    return NextResponse.json({ ...result, historySaved });
+    return NextResponse.json({ ...result, historySaved, conversationId });
   } catch (error) {
     if (error instanceof AssistantUnavailable) {
       const messages = {
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
         invalid: "L’IA n’a pas pu interpréter cette demande correctement. Essaie de préciser ce que tu veux comparer.",
       };
       const retryAfter = error.reason === "quota" ? error.retryAfterSeconds : undefined;
-      const message = retryAfter ? "Le service IA est temporairement limité. Réessaie dans " + retryAfter + " secondes. Votre saisie est conservée." : messages[error.reason];
+      const message = retryAfter ? "Le service IA est temporairement limité. Réessaie dans " + retryAfter + (retryAfter === 1 ? " seconde. Votre saisie est conservée." : " secondes. Votre saisie est conservée.") : messages[error.reason];
       return NextResponse.json({ error: message, retryAfterSeconds: retryAfter }, {
         status: 503,
         ...(retryAfter ? { headers: { "Retry-After": String(retryAfter) } } : {}),

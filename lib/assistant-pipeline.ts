@@ -6,7 +6,7 @@ import { z } from "zod";
 import { canManageAgentVisits } from "@/constants/values";
 import ROUTES from "@/constants/routes";
 import { CalendarEvent, Client, FollowUp, Listing, Negotiation, Visit } from "@/models";
-import { closeDeal } from "@/lib/actions/negotiation.action";
+import { closeDeal, openNegotiation, approveNegotiation, beginClosing, confirmDeposit } from "@/lib/actions/negotiation.action";
 import { completeVisit } from "@/lib/actions/visit.action";
 import { isAgencyScope, type AssistantScope } from "@/lib/assistant-access";
 import { assistantNameCollation, clientIdentityFilter } from "@/lib/assistant-client-lookup";
@@ -20,17 +20,23 @@ export const pipelineInput = z.object({
   reminderHours: z.number().positive().max(8760).nullish(),
   finalPrice: z.number().positive().max(1e12).nullish(),
   commissionPercentage: z.number().min(0).max(100).nullish(),
+  depositAmount: z.number().positive().nullish(),
+  paymentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  paymentMethod: z.enum(["Espèces", "Versement", "Chèque"]).nullish(),
   negotiationId: z.string().regex(/^[a-f0-9]{24}$/i).nullish(),
 });
-type Action = "visit_feedback" | "close_deal";
+type Action = "visit_feedback" | "open_negotiation" | "approve_negotiation" | "begin_closing" | "record_deposit" | "close_deal";
 type Language = "fr" | "en" | "ar" | "darija";
 export type PipelineContext = {
-  action: Action; clientId?: string; listingId?: string; visitId?: string; negotiationId?: string;
+  action: Action; pending?: boolean; clientId?: string; listingId?: string; visitId?: string; negotiationId?: string;
   outcome?: "INTERESTED" | "NOT_INTERESTED" | "UNDECIDED"; note?: string;
+  depositAmount?: number; paymentDate?: string; paymentMethod?: "Espèces" | "Versement" | "Chèque";
   finalPrice?: number; commissionPercentage?: number; reminderAt?: string;
 };
 export const pipelineInstructions = [
   "Use visit_feedback for an explicit report of the client's feedback after a visit, or its requested follow-up reminder. Set pipeline.outcome to INTERESTED, NOT_INTERESTED or UNDECIDED based on actual feedback and pipeline.note to a faithful short summary in the user's language. A booking is not a completed visit.",
+  "Use open_negotiation for an explicit request to open/start a negotiation. Identify the client and property; preserve any proposed price in pipeline.finalPrice and notes. This is a write, not a negotiations report.",
+  "Use approve_negotiation only when explicitly approving an existing negotiation (manager only). Use begin_closing to start closing an active negotiation. Use record_deposit only to record an explicitly received deposit, not to make a payment; extract depositAmount in DZD, paymentDate YYYY-MM-DD and paymentMethod Espèces/Versement/Chèque, asking for missing details. Never invent a receipt or skip CRM stages.",
   "Use close_deal for an explicit request to close an existing negotiation. Set pipeline.finalPrice in DZD and commissionPercentage in percent. Never invent financial values. The server enforces existing CRM closing stages. Financial questions are read-only reports, not close_deal.",
   "For missing details of a pending pipelineContext action, keep its action and set continuePipeline true. Include only newly supplied fields. For a new self-contained action set continuePipeline false. Keep the current client/property only if the user is referring to that same dossier.",
   "For an explicitly requested reminder set pipeline.reminderDate and reminderTime in Algeria local time, or reminderHours for a relative duration. A date without an hour needs clarification. Never schedule a reminder without a request.",
@@ -46,8 +52,11 @@ export async function runPipelineAction(
   const say = (fr: string, en: string, ar: string, darija: string) => ({ fr, en, ar, darija })[language];
   if (!canManageAgentVisits(scope.role)) return { answer: say("Cette action est accessible à l’agent responsable et au gérant.", "This action is available to the assigned agent and manager.", "هذا الإجراء متاح للوكيل المسؤول والمدير.", "Had l’action lel agent responsable wela gérant.") };
   const data = input ?? {};
-  const context: PipelineContext = { ...previous, action };
-  for (const key of ["outcome", "note", "finalPrice", "commissionPercentage", "negotiationId"] as const) {
+  const context: PipelineContext = {
+    ...(previous?.action === action ? previous : previous ? { clientId: previous.clientId, listingId: previous.listingId, negotiationId: previous.negotiationId } : {}),
+    action, pending: true,
+  };
+  for (const key of ["outcome", "note", "finalPrice", "commissionPercentage", "negotiationId", "depositAmount", "paymentDate", "paymentMethod"] as const) {
     if (data[key] != null) Object.assign(context, { [key]: data[key] });
   }
   const scoped = isAgencyScope(scope) ? {} : { agent: scope.userId };
@@ -78,7 +87,16 @@ export async function runPipelineAction(
     }
     context.reminderAt = at.toISOString();
   }
-  if (action === "close_deal") {
+  if (action === "open_negotiation") {
+    if (!clientId || !listingId) return { answer: say("Pour quel client et quel bien ?", "Which client and property?", "ما الزبون والعقار؟", "Anhi client w bien ?"), pipelineContext: context };
+    const existing = await Negotiation.findOne({ ...scoped, client: clientId, listing: listingId, status: { $nin: ["CANCELLED", "REJECTED", "DEAL_DONE"] } }).select("_id status").lean<{ _id: string; status: string }>();
+    if (existing) return { answer: say("Cette négociation existe déjà.", "This negotiation already exists.", "هذه المفاوضات موجودة بالفعل.", "Had négociation kayna déjà."), records: [{ label: "Voir l’affaire", href: ROUTES.NEGOTIATION_DETAIL(String(existing._id)) }], pipelineContext: { ...context, pending: false, negotiationId: String(existing._id) } };
+    const notes = [context.note, context.finalPrice != null ? `Montant proposé : ${context.finalPrice} DZD` : undefined].filter(Boolean).join("\n");
+    const result = await openNegotiation({ clientId, listingId, notes });
+    if (!result.success || !result.data) return { answer: result.error?.message || "Ouverture impossible.", pipelineContext: context };
+    return { answer: say("Négociation ouverte · en attente de validation du gérant.", "Negotiation opened · awaiting manager approval.", "تم فتح المفاوضات بانتظار موافقة المدير.", "Négociation t7allet · testenna validation ta3 gérant."), records: [{ label: "Voir l’affaire", href: ROUTES.NEGOTIATION_DETAIL(String(result.data._id)) }], pipelineContext: { ...context, pending: false, negotiationId: String(result.data._id) }, clientContextId: clientId };
+  }
+  if (["approve_negotiation", "begin_closing", "record_deposit", "close_deal"].includes(action)) {
     if (!clientId && !listingId && !context.negotiationId) return {
       answer: say("Quelle affaire souhaitez-vous clôturer ? Indiquez le client ou le bien.", "Which deal? Specify the client or property.", "أي صفقة؟ حدّد الزبون أو العقار.", "Anhi affaire ? 3tini client wela bien."), pipelineContext: context,
     };
@@ -90,6 +108,21 @@ export async function runPipelineAction(
     if (deals.length !== 1) return { answer: say("Précisez l’affaire : plusieurs négociations correspondent ou aucune n’est accessible.", "Specify the deal: there are multiple matches or none you can access.", "حدّد الصفقة: توجد عدة نتائج أو لا توجد صفقة متاحة.", "Précisi l’affaire, kayen plusieurs wela ma kayench accessible."), pipelineContext: context };
     const deal = deals[0];
     Object.assign(context, { negotiationId: String(deal._id), clientId: String(deal.client), listingId: String(deal.listing) });
+    if (action !== "close_deal") {
+      if (action === "approve_negotiation" && !isAgencyScope(scope)) return { answer: say("Seul le gérant peut valider une négociation.", "Only a manager can approve a negotiation.", "المدير فقط يمكنه الموافقة على المفاوضات.", "Ghir le gérant yvalider négociation."), pipelineContext: null };
+      const href = ROUTES.NEGOTIATION_DETAIL(String(deal._id));
+      const records = [{ label: "Voir l’affaire", href }];
+      if (action === "record_deposit" && (!context.depositAmount || !context.paymentDate || !context.paymentMethod)) return { answer: [say("Pour enregistrer le dépôt reçu :", "To record the received deposit:", "لتسجيل العربون المستلم:", "Bach nsajel dépôt reçu :"), !context.depositAmount && say("- Montant en DZD", "- Amount in DZD", "- المبلغ بالدينار", "- Montant b DZD"), !context.paymentDate && say("- Date de réception", "- Receipt date", "- تاريخ الاستلام", "- Date ta3 réception"), !context.paymentMethod && say("- Mode : espèces, versement ou chèque", "- Method: cash, bank deposit or cheque", "- الطريقة: نقدا أو إيداع أو شيك", "- Espèces, versement wela chèque")].filter(Boolean).join("\n"), pipelineContext: context };
+      const paymentDate = context.paymentDate ? fromZonedTime(context.paymentDate + "T00:00:00", tz) : undefined;
+      if (action === "record_deposit" && (!paymentDate || !Number.isFinite(paymentDate.getTime()) || formatInTimeZone(paymentDate, tz, "yyyy-MM-dd") !== context.paymentDate || paymentDate > new Date())) return { answer: say("Indiquez la date réelle de réception du dépôt, aujourd’hui ou avant.", "Give the actual deposit receipt date, today or earlier.", "حدد تاريخ استلام العربون، اليوم أو قبله.", "3tini date réelle ta3 réception, lyoum wela 9bel."), pipelineContext: { ...context, paymentDate: undefined } };
+      const result = action === "approve_negotiation" ? await approveNegotiation({ negotiationId: String(deal._id), managerNote: context.note })
+        : action === "begin_closing" ? await beginClosing({ negotiationId: String(deal._id) })
+        : await confirmDeposit({ negotiationId: String(deal._id), depositAmount: context.depositAmount!, paymentDate: paymentDate!, paymentMethod: context.paymentMethod!, proofNotes: context.note });
+      if (!result.success) return { answer: result.error?.message || "Action impossible.", pipelineContext: context, records };
+      const labels = { approve_negotiation: ["Négociation validée.", "Negotiation approved.", "تمت الموافقة على المفاوضات.", "Négociation validée."], begin_closing: ["Clôture démarrée · en attente du dépôt reçu.", "Closing started · awaiting deposit receipt.", "بدأ الإغلاق بانتظار استلام العربون.", "Closing bda · nestennaw dépôt."], record_deposit: ["Dépôt enregistré · prêt pour la finalisation.", "Deposit recorded · ready for finalisation.", "تم تسجيل العربون، جاهز للإتمام.", "Dépôt tsajel · prêt lel finalisation."] };
+      const index = { fr: 0, en: 1, ar: 2, darija: 3 }[language];
+      return { answer: labels[action as keyof typeof labels][index], records, pipelineContext: { ...context, pending: false }, clientContextId: context.clientId };
+    }
     const property = await Listing.findById(deal.listing).select("status").lean<{ status?: string }>();
     if (property && property.status !== "En Location" && property.status !== "Loué") context.commissionPercentage = SALE_AGENCY_COMMISSION_PERCENT;
     if (context.finalPrice == null || context.commissionPercentage == null) return {
