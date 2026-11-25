@@ -59,8 +59,14 @@ export interface INegotiation {
     finalPrice?: number;
     commissionPercentage?: number;
     commissionAmount?: number;
+    buyerCommissionPercentage?: number;
+    sellerCommissionPercentage?: number;
+    buyerCommissionAmount?: number;
+    sellerCommissionAmount?: number;
     notes?: string;
   };
+
+  closingSnapshot?: { listingReference?: string; listingTitle?: string; clientReference?: string; clientName?: string; agentName?: string };
 
   cancelReason?: string;
   rejectionReason?: string;
@@ -140,9 +146,17 @@ const negotiationSchema = new Schema<INegotiation>(
       finalPrice: Number,
       commissionPercentage: Number,
       commissionAmount: Number,
+      buyerCommissionPercentage: Number,
+      sellerCommissionPercentage: Number,
+      buyerCommissionAmount: Number,
+      sellerCommissionAmount: Number,
       notes: { type: String, trim: true },
     },
 
+    closingSnapshot: {
+      listingReference: String, listingTitle: String,
+      clientReference: String, clientName: String, agentName: String,
+    },
     cancelReason: { type: String, trim: true },
     rejectionReason: { type: String, trim: true },
     cancelledAt: Date,

@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:assistant": "sh scripts/start-assistant-local.sh",
+    "backup:assistant": "node --env-file=.env.local scripts/backup-assistant-local.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

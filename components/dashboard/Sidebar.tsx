@@ -37,6 +37,7 @@ import {
   UserPlus,
   CalendarArrowUp,
   LayoutDashboard,
+  Sparkles,
   Building2,
   ClipboardList,
   FileText,
@@ -84,6 +85,7 @@ const sidebarConfig: SidebarGroup[] = [
         url: ROUTES.DASHBOARD,
         icon: LayoutDashboard,
       },
+      { title: "Assistant IA", url: "/dashboard/assistant", icon: Sparkles },
     ],
   },
   {
@@ -129,12 +131,13 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Résidences",
-    roles: ["ADMIN", "MANAGER", "DEVELOPER"],
+    roles: ["ADMIN", "MANAGER", "DEVELOPER", "ASSISTANT", "AGENT"],
     items: [
       {
         title: "Toutes les résidences",
         url: ROUTES.RESIDENCES_DASHBOARD,
         icon: Landmark,
+        roles: ["ADMIN", "MANAGER", "DEVELOPER"],
       },
       {
         title: "Ajouter une résidence",
@@ -237,13 +240,13 @@ const sidebarConfig: SidebarGroup[] = [
   },
   {
     label: "Administration",
-    roles: ["ADMIN", "MANAGER", "ASSISTANT"],
+    roles: ["ADMIN", "MANAGER", "ASSISTANT", "AGENT"],
     items: [
       {
         title: "Messages",
         url: ROUTES.MESSAGES,
         icon: Mail,
-        roles: ["ADMIN", "MANAGER", "ASSISTANT"],
+        roles: ["ADMIN", "MANAGER", "ASSISTANT", "AGENT"],
       },
       {
         title: "Gestion utilisateurs",

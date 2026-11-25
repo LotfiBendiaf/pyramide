@@ -208,6 +208,7 @@ interface Client {
   budgetMax?: number;
   priceCurrency?: "DZD" | "EUR" | "USD";
   wantedArea?: number;
+  wantedAreaMin?: number;
   city?: string;
   wantedPropertyType?: string;
   rooms?: number;

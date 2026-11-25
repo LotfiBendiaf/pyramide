@@ -1,5 +1,7 @@
 "use client";
 
+import { pluralize } from "@/lib/pluralize";
+
 import { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone"; // npm install react-dropzone
 import { ImagePlus, Trash2, Eye, EyeOff, GripVertical } from "lucide-react";
@@ -262,7 +264,7 @@ export default function ImageUpload({
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {images.length ? `${images.length} image(s)` : "Aucune image"}
+          {images.length ? `${images.length} ${pluralize(images.length, "image")}` : "Aucune image"}
         </p>
         <Button
           type="button"

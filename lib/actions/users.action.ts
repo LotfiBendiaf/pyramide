@@ -13,7 +13,7 @@ import {
 } from "../validators/user";
 import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
-import { CLIENT_AGENT_ROLES } from "@/constants/values";
+import { canManageAgentVisits, CLIENT_AGENT_ROLES } from "@/constants/values";
 
 export async function fetchUsers(): Promise<ActionResponse<User[]>> {
   try {
@@ -82,11 +82,7 @@ export async function fetchListingAssignees(): Promise<ActionResponse<User[]>> {
       };
     }
 
-    if (
-      currentUser.data.role !== "ADMIN" &&
-      currentUser.data.role !== "DEVELOPER" &&
-      currentUser.data.role !== "AGENT"
-    ) {
+    if (!canManageAgentVisits(currentUser.data.role)) {
       return {
         success: false,
         error: { message: "Accès refusé" },

@@ -4,15 +4,16 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 import { fetchListingAssignees } from "@/lib/actions/users.action";
 import ROUTES from "@/constants/routes";
-import { isElevatedRole } from "@/constants/values";
+import { canUseAssistantOperations, isElevatedRole } from "@/constants/values";
 
 export default async function AddResidencePage() {
   const user = await getUserBySessionEmail();
-  if (!user.data || !isElevatedRole(user.data.role)) {
+  if (!user.data || !canUseAssistantOperations(user.data.role)) {
     redirect(ROUTES.DASHBOARD);
   }
 
-  const assigneesResult = await fetchListingAssignees();
+  const assistantDraft = !isElevatedRole(user.data.role);
+  const assigneesResult = assistantDraft ? undefined : await fetchListingAssignees();
 
   return (
     <div>
@@ -20,7 +21,7 @@ export default async function AddResidencePage() {
         title="Ajouter une résidence"
         subtitle="Renseignez les détails du programme immobilier"
       />
-      <ResidenceForm agents={assigneesResult.data ?? []} />
+      <ResidenceForm agents={assigneesResult?.data ?? []} assistantDraft={assistantDraft} />
     </div>
   );
 }

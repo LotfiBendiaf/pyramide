@@ -1,5 +1,7 @@
 "use client";
 
+import { formatLegacyPlurals } from "@/lib/pluralize";
+
 import { useState, useEffect, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -157,10 +159,10 @@ function NotificationItem({
       {notification.read && <span className="mt-1.5 h-2 w-2 shrink-0" />}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium leading-tight">
-          {notification.title}
+          {formatLegacyPlurals(notification.title)}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-          {notification.body}
+          {formatLegacyPlurals(notification.body)}
         </p>
         <p className="text-[10px] text-muted-foreground mt-1">
           {formatDistanceToNow(new Date(notification.createdAt), {

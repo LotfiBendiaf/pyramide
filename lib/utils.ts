@@ -1,3 +1,4 @@
+import { pluralize } from "@/lib/pluralize";
 import { ClientType } from "@/models/client.model";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -43,13 +44,13 @@ export function getTimeAgo(date: Date | string): string {
   const diff = Math.floor((now.getTime() - target.getTime()) / 1000); // in seconds
 
   if (diff < 60) return "Il y a un instant";
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} minute(s)`;
-  if (diff < 86400) return `Il y a  ${Math.floor(diff / 3600)} heure(s)`;
-  if (diff < 604800) return `Il y a  ${Math.floor(diff / 86400)} jour(s)`;
-  if (diff < 2592000) return `Il y a  ${Math.floor(diff / 604800)} semaine(s)`;
+  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} ${pluralize(Math.floor(diff / 60), "minute")}`;
+  if (diff < 86400) return `Il y a  ${Math.floor(diff / 3600)} ${pluralize(Math.floor(diff / 3600), "heure")}`;
+  if (diff < 604800) return `Il y a  ${Math.floor(diff / 86400)} ${pluralize(Math.floor(diff / 86400), "jour")}`;
+  if (diff < 2592000) return `Il y a  ${Math.floor(diff / 604800)} ${pluralize(Math.floor(diff / 604800), "semaine")}`;
   if (diff < 31536000) return `Il y a  ${Math.floor(diff / 2592000)} mois`;
 
-  return `${Math.floor(diff / 31536000)} year(s) ago`;
+  return `Il y a ${Math.floor(diff / 31536000)} ${pluralize(Math.floor(diff / 31536000), "an")}`;
 }
 
 // lib/utils/date.ts

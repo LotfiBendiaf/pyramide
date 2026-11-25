@@ -90,7 +90,7 @@ export async function GET() {
       closedDealsThisMonth,
 
       // Revenue
-      soldListingsForRevenue,
+      closedTransactions,
       totalGainAggregation,
       monthlyGainAggregation,
 
@@ -104,10 +104,7 @@ export async function GET() {
         ...listingFilter,
         status: { $in: ["En Vente", "En Location"] },
       }),
-      Listing.countDocuments({
-        ...listingFilter,
-        status: { $in: ["Vendu", "Loué"] },
-      }),
+      Negotiation.countDocuments({ ...negotiationFilter, status: "DEAL_DONE" }),
       Listing.countDocuments({
         ...listingFilter,
         createdAt: { $gte: startOfMonth },
@@ -186,8 +183,8 @@ export async function GET() {
       }),
 
       // Revenue (always global for admin, scoped for agent)
-      Listing.find({ ...listingFilter, status: { $in: ["Vendu", "Loué"] } })
-        .select("price status updatedAt")
+      Negotiation.find({ ...negotiationFilter, status: "DEAL_DONE" })
+        .select("closingDetails.finalPrice closedAt")
         .lean(),
       Negotiation.aggregate([
         {
@@ -272,6 +269,11 @@ export async function GET() {
         .lean(),
     ]);
 
+    // Financial history comes from recorded closings, including archived properties.
+    const soldListingsForRevenue = closedTransactions.map((deal) => ({
+      price: deal.closingDetails?.finalPrice ?? 0,
+      updatedAt: deal.closedAt,
+    }));
     // 4. Calculate revenue
     const totalRevenue = soldListingsForRevenue.reduce(
       (sum, listing) => sum + (listing.price || 0),
@@ -339,10 +341,7 @@ export async function GET() {
               }),
               FollowUp.countDocuments({ agent: agent._id }),
               FollowUp.countDocuments({ agent: agent._id, status: "OVERDUE" }),
-              Listing.countDocuments({
-                agent: agent._id,
-                status: { $in: ["Vendu", "Loué"] },
-              }),
+              Negotiation.countDocuments({ agent: agent._id, status: "DEAL_DONE" }),
             ]);
 
           return {
@@ -425,9 +424,10 @@ export async function GET() {
           .populate("agent", "name profileImage")
           .populate("client", "firstName lastName")
           .lean(),
-        Listing.find({ ...activityListingFilter, status: { $in: ["Vendu", "Loué"] } })
-          .sort({ updatedAt: -1 })
+        Negotiation.find({ ...negotiationFilter, status: "DEAL_DONE" })
+          .sort({ closedAt: -1 })
           .limit(3)
+          .populate("listing", "title")
           .populate("agent", "name profileImage")
           .lean(),
       ]);
@@ -494,10 +494,10 @@ export async function GET() {
       })),
       ...recentSales.map((s) => ({
         type: "sale" as const,
-        entityId: String(s._id),
+        entityId: String(s.listing?._id ?? s.listing),
         title: "Vente réalisée",
-        description: s.title || `${s.propertyType} à ${s.location.city}`,
-        timestamp: s.updatedAt,
+        description: s.listing?.title || "Affaire clôturée",
+        timestamp: s.closedAt,
         user: {
           name: s.agent?.name || "Agent",
           profileImage: s.agent?.profileImage,

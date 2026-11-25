@@ -1,6 +1,11 @@
 "use server";
 
-import { Negotiation, Listing, Client } from "@/models";
+import { saleCommission } from "@/lib/agency-commission";
+import { pluralize } from "@/lib/pluralize";
+
+import { withVisitSlotLock } from "@/lib/visit-slot";
+
+import { Negotiation, Listing, Client, User } from "@/models";
 import { INegotiation } from "@/models/negotiation.model";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
@@ -693,7 +698,7 @@ export async function requestBlock(
     await notifyManagers({
       type: "BLOCK_REQUESTED",
       title: "Demande de blocage en attente",
-      body: `Une demande de blocage de ${durationDays} jour(s) nécessite votre approbation.`,
+      body: `Une demande de blocage de ${durationDays} ${pluralize(durationDays, "jour")} nécessite votre approbation.`,
       link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
       relatedEntity: { type: "NEGOTIATION", id: negotiationId },
     });
@@ -805,7 +810,7 @@ export async function approveBlock(
       recipientId: negotiation.agent.toString(),
       type: "BLOCK_APPROVED",
       title: "Blocage approuvé",
-      body: `Votre demande de blocage de ${blockReq.durationDays} jour(s) a été approuvée.`,
+      body: `Votre demande de blocage de ${blockReq.durationDays} ${pluralize(blockReq.durationDays, "jour")} a été approuvée.`,
       link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
       relatedEntity: { type: "NEGOTIATION", id: negotiationId },
     });
@@ -1147,7 +1152,7 @@ export async function closeDeal(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
-  const { negotiationId, finalPrice, commissionPercentage, notes, document } =
+  const { negotiationId, finalPrice, commissionPercentage: requestedCommissionPercentage, notes, document } =
     validationResult.params;
 
   if (!Types.ObjectId.isValid(negotiationId)) {
@@ -1158,150 +1163,176 @@ export async function closeDeal(
     };
   }
 
+  const currentUser = user.data;
   try {
-    const negotiation =
-      await Negotiation.findById(negotiationId).lean<INegotiation>();
-    if (!negotiation) {
-      return {
-        success: false,
-        error: { message: "Négociation introuvable" },
-        status: 404,
+    return await withVisitSlotLock("close:" + negotiationId, async () => {
+      const negotiation =
+        await Negotiation.findById(negotiationId).lean<INegotiation>();
+      if (!negotiation) {
+        return {
+          success: false,
+          error: { message: "Négociation introuvable" },
+          status: 404,
+        };
+      }
+
+      const listing = await Listing.findById(negotiation.listing)
+        .select("status referenceCode title")
+        .lean<{
+          status?: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
+          referenceCode?: string; title?: string;
+        }>();
+
+      if (!listing) {
+        return {
+          success: false,
+          error: { message: "Bien introuvable" },
+          status: 404,
+        };
+      }
+
+      const isSale = listing.status !== "En Location" && listing.status !== "Loué";
+      const breakdown = isSale ? saleCommission(finalPrice) : undefined;
+      const commissionPercentage = breakdown?.totalPercentage ?? requestedCommissionPercentage;
+      const alreadyClosed = negotiation.status === "DEAL_DONE";
+      if (alreadyClosed && (negotiation.closingDetails?.finalPrice !== finalPrice || negotiation.closingDetails?.commissionPercentage !== commissionPercentage)) {
+        return { success: false, error: { message: "Cette affaire est déjà clôturée avec des montants différents." }, status: 409 };
+      }
+      if (!alreadyClosed && !["CLOSING", "CLOSING_FINALISATION"].includes(negotiation.status)) {
+        return {
+          success: false,
+          error: {
+            message:
+              "Seules les négociations en closing finalisation peuvent être conclues",
+          },
+          status: 409,
+        };
+      }
+
+      if (
+        negotiation.status === "CLOSING_FINALISATION" &&
+        !negotiation.closingDetails?.depositAmount
+      ) {
+        return {
+          success: false,
+          error: {
+            message:
+              "Le dépôt doit être confirmé avant de marquer l'affaire comme conclue",
+          },
+          status: 409,
+        };
+      }
+
+      const isManager = isElevatedRole(currentUser.role);
+      const isNegotiationAgent =
+        negotiation.agent?.toString() === currentUser._id?.toString();
+
+      if (!isManager && !isNegotiationAgent) {
+        return {
+          success: false,
+          error: { message: "Accès refusé" },
+          status: 403,
+        };
+      }
+
+      const now = negotiation.closedAt ?? new Date();
+      const commissionAmount = breakdown?.totalAmount ?? (finalPrice * commissionPercentage) / 100;
+      const closedListingStatus =
+        listing.status === "En Location" || listing.status === "Loué"
+          ? "Loué"
+          : "Vendu";
+
+      const [closingClient, closingAgent] = !negotiation.closingSnapshot ? await Promise.all([
+        Client.findById(negotiation.client).select("referenceCode firstName lastName").lean<{ referenceCode?: string; firstName?: string; lastName?: string }>(),
+        User.findById(negotiation.agent).select("firstname lastname name").lean<{ firstname?: string; lastname?: string; name?: string }>(),
+      ]) : [null, null];
+      const snapshot = negotiation.closingSnapshot ?? {
+        listingReference: listing.referenceCode, listingTitle: listing.title,
+        clientReference: closingClient?.referenceCode,
+        clientName: [closingClient?.firstName, closingClient?.lastName].filter(Boolean).join(" "),
+        agentName: closingAgent?.name || [closingAgent?.firstname, closingAgent?.lastname].filter(Boolean).join(" "),
       };
-    }
-
-    if (
-      !["CLOSING", "CLOSING_FINALISATION"].includes(negotiation.status)
-    ) {
-      return {
-        success: false,
-        error: {
-          message:
-            "Seules les négociations en closing finalisation peuvent être conclues",
-        },
-        status: 409,
-      };
-    }
-
-    if (
-      negotiation.status === "CLOSING_FINALISATION" &&
-      !negotiation.closingDetails?.depositAmount
-    ) {
-      return {
-        success: false,
-        error: {
-          message:
-            "Le dépôt doit être confirmé avant de marquer l'affaire comme conclue",
-        },
-        status: 409,
-      };
-    }
-
-    const isManager = isElevatedRole(user.data.role);
-    const isNegotiationAgent =
-      negotiation.agent?.toString() === user.data._id?.toString();
-
-    if (!isManager && !isNegotiationAgent) {
-      return {
-        success: false,
-        error: { message: "Accès refusé" },
-        status: 403,
-      };
-    }
-
-    const now = new Date();
-    const commissionAmount = (finalPrice * commissionPercentage) / 100;
-    const listing = await Listing.findById(negotiation.listing)
-      .select("status")
-      .lean<{
-        status?: "En Vente" | "En Location" | "Vendu" | "Loué" | "Retiré";
-      }>();
-
-    if (!listing) {
-      return {
-        success: false,
-        error: { message: "Bien introuvable" },
-        status: 404,
-      };
-    }
-
-    const closedListingStatus =
-      listing.status === "En Location" || listing.status === "Loué"
-        ? "Loué"
-        : "Vendu";
-
-    await Promise.all([
-      Negotiation.findByIdAndUpdate(negotiationId, {
-        $set: {
-          status: "DEAL_DONE",
-          closedAt: now,
-          "closingDetails.finalPrice": finalPrice,
-          "closingDetails.commissionPercentage": commissionPercentage,
-          "closingDetails.commissionAmount": commissionAmount,
-          ...(notes ? { "closingDetails.notes": notes } : {}),
-        },
-        ...(document
-          ? {
-              $push: {
-                documents: {
-                  publicId: document.publicId,
-                  url: document.url,
-                  secureUrl: document.secureUrl,
-                  originalFilename: document.originalFilename,
-                  format: document.format,
-                  resourceType: document.resourceType,
-                  bytes: document.bytes,
-                  uploadedBy: user.data._id,
-                  uploadedAt: now,
+      await Promise.all([
+        Negotiation.findByIdAndUpdate(negotiationId, {
+          $set: {
+            status: "DEAL_DONE",
+            closingSnapshot: snapshot,
+            closedAt: now,
+            "closingDetails.finalPrice": finalPrice,
+            "closingDetails.commissionPercentage": commissionPercentage,
+            "closingDetails.commissionAmount": commissionAmount,
+            ...(breakdown ? {
+              "closingDetails.buyerCommissionPercentage": breakdown.buyerPercentage,
+              "closingDetails.sellerCommissionPercentage": breakdown.sellerPercentage,
+              "closingDetails.buyerCommissionAmount": breakdown.buyerAmount,
+              "closingDetails.sellerCommissionAmount": breakdown.sellerAmount,
+            } : {}),
+            ...(notes && !alreadyClosed ? { "closingDetails.notes": notes } : {}),
+          },
+          ...(document && !alreadyClosed
+            ? {
+                $push: {
+                  documents: {
+                    publicId: document.publicId,
+                    url: document.url,
+                    secureUrl: document.secureUrl,
+                    originalFilename: document.originalFilename,
+                    format: document.format,
+                    resourceType: document.resourceType,
+                    bytes: document.bytes,
+                    uploadedBy: currentUser._id,
+                    uploadedAt: now,
+                  },
                 },
-              },
-            }
-          : {}),
-      }),
-      Listing.findByIdAndUpdate(negotiation.listing, {
-        pipelineStatus: "SOLD",
-        status: closedListingStatus,
-        offeredPrice: finalPrice,
-        isPublished: false,
-        archived: true,
-        archivedAt: now,
-        $unset: { blockedUntil: "", blockedForClient: "" },
-      }),
-      Client.findByIdAndUpdate(negotiation.client, {
-        pipelineStage: "CLOSED",
-        lastContactedAt: now,
-      }),
-    ]);
+              }
+            : {}),
+        }),
+        Listing.findByIdAndUpdate(negotiation.listing, {
+          pipelineStatus: "SOLD",
+          status: closedListingStatus,
+          offeredPrice: finalPrice,
+          isPublished: false,
+          archived: true,
+          archivedAt: now,
+          $unset: { blockedUntil: "", blockedForClient: "" },
+        }),
+        Client.findByIdAndUpdate(negotiation.client, {
+          pipelineStage: "CLOSED",
+          lastContactedAt: now,
+        }),
+      ]);
 
-    revalidatePath(ROUTES.NEGOTIATIONS);
-    revalidatePath(ROUTES.MES_BIENS);
-    revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
-    revalidatePath(
-      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
-    );
-    revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
+      revalidatePath(ROUTES.NEGOTIATIONS);
+      revalidatePath(ROUTES.MES_BIENS);
+      revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
+      revalidatePath(
+        ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+      );
+      revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
 
-    const dealPayloads = [
-      {
-        recipientId: negotiation.agent.toString(),
-        type: "DEAL_DONE" as const,
-        title: "Affaire conclue !",
-        body: "La vente a été finalisée avec succès. Félicitations !",
-        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
-        relatedEntity: { type: "NEGOTIATION" as const, id: negotiationId },
-      },
-    ];
-    await Promise.all([
-      notify(dealPayloads),
-      notifyManagers({
-        type: "DEAL_DONE",
-        title: "Affaire conclue !",
-        body: "Une vente a été finalisée avec succès.",
-        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
-        relatedEntity: { type: "NEGOTIATION", id: negotiationId },
-      }),
-    ]);
+      const dealPayloads = [
+        {
+          recipientId: negotiation.agent.toString(),
+          type: "DEAL_DONE" as const,
+          title: "Affaire conclue !",
+          body: "La vente a été finalisée avec succès. Félicitations !",
+          link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+          relatedEntity: { type: "NEGOTIATION" as const, id: negotiationId },
+        },
+      ];
+      if (!alreadyClosed) await Promise.all([
+        notify(dealPayloads),
+        notifyManagers({
+          type: "DEAL_DONE",
+          title: "Affaire conclue !",
+          body: "Une vente a été finalisée avec succès.",
+          link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+          relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+        }),
+      ]);
 
-    return { success: true, status: 200 };
+      return { success: true, status: 200 };
+    });
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }
@@ -1337,87 +1368,90 @@ export async function cancelNegotiation(
     };
   }
 
+  const currentUser = user.data;
   try {
-    const negotiation =
-      await Negotiation.findById(negotiationId).lean<INegotiation>();
-    if (!negotiation) {
-      return {
-        success: false,
-        error: { message: "Négociation introuvable" },
-        status: 404,
-      };
-    }
+    return await withVisitSlotLock("close:" + negotiationId, async () => {
+      const negotiation =
+        await Negotiation.findById(negotiationId).lean<INegotiation>();
+      if (!negotiation) {
+        return {
+          success: false,
+          error: { message: "Négociation introuvable" },
+          status: 404,
+        };
+      }
 
-    if (
-      !["ACTIVE", "CLOSING", "CLOSING_DEPOSIT", "CLOSING_FINALISATION"].includes(
-        negotiation.status
-      )
-    ) {
-      return {
-        success: false,
-        error: { message: "Cette négociation ne peut pas être annulée" },
-        status: 409,
-      };
-    }
+      if (
+        !["ACTIVE", "CLOSING", "CLOSING_DEPOSIT", "CLOSING_FINALISATION"].includes(
+          negotiation.status
+        )
+      ) {
+        return {
+          success: false,
+          error: { message: "Cette négociation ne peut pas être annulée" },
+          status: 409,
+        };
+      }
 
-    const isManager = isElevatedRole(user.data.role);
-    const isNegotiationAgent =
-      negotiation.agent?.toString() === user.data._id?.toString();
+      const isManager = isElevatedRole(currentUser.role);
+      const isNegotiationAgent =
+        negotiation.agent?.toString() === currentUser._id?.toString();
 
-    if (!isManager && !isNegotiationAgent) {
-      return {
-        success: false,
-        error: { message: "Accès refusé" },
-        status: 403,
-      };
-    }
+      if (!isManager && !isNegotiationAgent) {
+        return {
+          success: false,
+          error: { message: "Accès refusé" },
+          status: 403,
+        };
+      }
 
-    const now = new Date();
+      const now = new Date();
 
-    await Promise.all([
-      Negotiation.findByIdAndUpdate(negotiationId, {
-        status: "CANCELLED",
-        cancelReason,
-        cancelledAt: now,
-      }),
-      Listing.findByIdAndUpdate(negotiation.listing, {
-        pipelineStatus: "ACTIVE",
-        $unset: { blockedUntil: "", blockedForClient: "" },
-      }),
-      Client.findByIdAndUpdate(negotiation.client, {
-        pipelineStage: "ACTIVE_SEARCH",
-        lastContactedAt: now,
-      }),
-    ]);
+      await Promise.all([
+        Negotiation.findByIdAndUpdate(negotiationId, {
+          status: "CANCELLED",
+          cancelReason,
+          cancelledAt: now,
+        }),
+        Listing.findByIdAndUpdate(negotiation.listing, {
+          pipelineStatus: "ACTIVE",
+          $unset: { blockedUntil: "", blockedForClient: "" },
+        }),
+        Client.findByIdAndUpdate(negotiation.client, {
+          pipelineStage: "ACTIVE_SEARCH",
+          lastContactedAt: now,
+        }),
+      ]);
 
-    revalidatePath(ROUTES.NEGOTIATIONS);
-    revalidatePath(ROUTES.MES_BIENS);
-    revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
-    revalidatePath(
-      ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
-    );
-    revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
+      revalidatePath(ROUTES.NEGOTIATIONS);
+      revalidatePath(ROUTES.MES_BIENS);
+      revalidatePath(ROUTES.NEGOTIATION_DETAIL(negotiationId));
+      revalidatePath(
+        ROUTES.LISTING_DETAIL_DASHBOARD(negotiation.listing.toString())
+      );
+      revalidatePath(ROUTES.CLIENT_DETAIL(negotiation.client.toString()));
 
-    if (isManager) {
-      await notify({
-        recipientId: negotiation.agent.toString(),
-        type: "NEGOTIATION_CANCELLED",
-        title: "Négociation annulée",
-        body: "La négociation a été annulée par le gérant.",
-        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
-        relatedEntity: { type: "NEGOTIATION", id: negotiationId },
-      });
-    } else {
-      await notifyManagers({
-        type: "NEGOTIATION_CANCELLED",
-        title: "Négociation annulée",
-        body: "Un agent a annulé une négociation en cours.",
-        link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
-        relatedEntity: { type: "NEGOTIATION", id: negotiationId },
-      });
-    }
+      if (isManager) {
+        await notify({
+          recipientId: negotiation.agent.toString(),
+          type: "NEGOTIATION_CANCELLED",
+          title: "Négociation annulée",
+          body: "La négociation a été annulée par le gérant.",
+          link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+          relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+        });
+      } else {
+        await notifyManagers({
+          type: "NEGOTIATION_CANCELLED",
+          title: "Négociation annulée",
+          body: "Un agent a annulé une négociation en cours.",
+          link: ROUTES.NEGOTIATION_DETAIL(negotiationId),
+          relatedEntity: { type: "NEGOTIATION", id: negotiationId },
+        });
+      }
 
-    return { success: true, status: 200 };
+      return { success: true, status: 200 };
+    });
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }

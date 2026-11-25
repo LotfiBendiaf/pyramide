@@ -1,5 +1,6 @@
 "use server";
 
+import { assistantCreationId } from "@/lib/assistant-creation-id";
 import {
   Listing,
   Client,
@@ -29,6 +30,7 @@ import { revalidatePath } from "next/cache";
 import {
   PropertyStatus,
   canManageListingPublication,
+  canUseAssistantOperations,
   hasFullAccess,
   isElevatedRole,
 } from "@/constants/values";
@@ -168,7 +170,8 @@ function buildListingDescription(
 }
 
 export async function createListing(
-  params: ListingInput
+  params: ListingInput,
+  fromAssistant?: boolean,
 ): Promise<ActionResponse<Listing>> {
   // 1. Validation + Authorization
   const validationResult = await action({
@@ -209,6 +212,11 @@ export async function createListing(
 
     await dbConnect();
 
+    const chatCreation = fromAssistant === true && canUseAssistantOperations(user.data.role);
+    const creationId = chatCreation ? assistantCreationId("listing", String(user.data._id), parsedParams) : undefined;
+    const existing = creationId ? await Listing.findById(creationId) : null;
+    if (existing) return { success: true, data: JSON.parse(JSON.stringify(existing)), status: 200 };
+
     // 3. Create the required seller client
     const {
       sellerFirstName,
@@ -231,16 +239,21 @@ export async function createListing(
         { phone: { $in: sellerVariants } },
         { phone2: { $in: sellerVariants } },
       ],
-    }).select("referenceCode archived").lean() as unknown as { referenceCode: string; archived?: boolean } | null;
-    if (existingSeller) {
+    }).select("referenceCode archived type createdBy assignedAgent").lean<{
+      _id: Types.ObjectId; referenceCode: string; archived?: boolean; type?: string; createdBy?: Types.ObjectId; assignedAgent?: Types.ObjectId;
+    }>();
+    const mayReuseSeller = chatCreation && existingSeller?.type === "SELLER" && !existingSeller.archived && (
+      isElevatedRole(user.data.role) || [existingSeller.createdBy, existingSeller.assignedAgent].some((id) => String(id) === String(user.data!._id))
+    );
+    if (existingSeller && !mayReuseSeller) {
       return {
         success: false,
-        error: { message: `Le vendeur existe déjà sous la référence ${existingSeller.referenceCode}${existingSeller.archived ? " (archivée)" : ""}. Utilisez sa fiche existante avant d’ajouter le bien.` },
+        error: { message: chatCreation ? "Ce numéro est déjà associé à une fiche vendeur indisponible pour cet ajout." : `Le vendeur existe déjà sous la référence ${existingSeller.referenceCode}${existingSeller.archived ? " (archivée)" : ""}. Utilisez sa fiche existante avant d’ajouter le bien.` },
         status: 409,
       };
     }
 
-    const sellerClient = await Client.create({
+    const sellerId = existingSeller?._id ?? (await Client.create({
       referenceCode: sellerReferenceCode,
       profileKind: "INDIVIDUAL",
       type: "SELLER",
@@ -256,7 +269,7 @@ export async function createListing(
       assignedAgent: user.data._id,
       phoneKeys: sellerPhoneKeys,
       leadSource: "DIRECT_CALL",
-    });
+    }))._id;
 
     // 4. Create listing (no reference code yet — assigned on validation)
     const description =
@@ -272,7 +285,7 @@ export async function createListing(
     // required once a listing reaches VALIDATED (see toggleListingValidation).
     const isAgentCreated = user.data.role === "AGENT";
 
-    const listing = await Listing.create({
+    const listingData = {
       ...parsedParams,
       // Agents submit publication requests separately; they cannot publish via
       // a crafted form payload.
@@ -281,7 +294,7 @@ export async function createListing(
       propertyTypeCustom: normalizedPropertyTypeCustom,
       evaluation,
       agent: user.data._id,
-      sellerClient: sellerClient._id,
+      sellerClient: sellerId,
       isValidated: isAgentCreated,
       ...(isAgentCreated && {
         validationStatus: "APPROVED",
@@ -289,7 +302,10 @@ export async function createListing(
         validatedBy: user.data._id,
         pipelineStatus: "PHOTO_VISIT_PENDING",
       }),
-    });
+    };
+    const listing = creationId
+      ? await Listing.findOneAndUpdate({ _id: creationId }, { $setOnInsert: listingData }, { upsert: true, new: true, runValidators: true })
+      : await Listing.create(listingData);
 
     if (!listing) {
       throw new Error("Échec de la création de l'annonce");

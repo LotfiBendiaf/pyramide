@@ -1,0 +1,20 @@
+import { fetchPendingArchiveRequests, approveArchiveRequest, rejectArchiveRequest } from "@/lib/actions/archiveRequest.action";
+import type { AssistantScope } from "@/lib/assistant-access";
+
+export async function reviewAssistantArchive(scope: AssistantScope, intent: "archive_requests" | "approve_archive" | "reject_archive", target: string | null | undefined, entity: "CLIENT" | "LISTING" | null | undefined, note: string | null | undefined, language: "fr" | "en" | "ar" | "darija") {
+  const say = (fr: string, en: string, ar: string, darija: string) => ({ fr, en, ar, darija })[language];
+  if (!["ADMIN", "MANAGER", "DEVELOPER"].includes(scope.role)) return { answer: say("Seul un responsable peut traiter ces demandes.", "Only management can review these requests.", "المسؤول فقط يستطيع معالجة هذه الطلبات.", "Ghir le responsable yqder ytraiti had les demandes.") };
+  const result = await fetchPendingArchiveRequests();
+  if (!result.success || !result.data) return { answer: result.error?.message || say("Impossible de charger les demandes.", "Could not load requests.", "تعذر تحميل الطلبات.", "Ma qdertch nchouf les demandes.") };
+  const requests = result.data.requests.filter(r => !entity || r.entityType === entity);
+  const label = (r: typeof requests[number]) => r.relatedClient?.referenceCode || r.relatedListing?.referenceCode || r.relatedListing?.title || [r.relatedClient?.firstName, r.relatedClient?.lastName].filter(Boolean).join(" ") || r._id;
+  if (intent === "archive_requests") return { answer: requests.length ? say("Demandes d’archivage en attente", "Pending archive requests", "طلبات الأرشفة المعلقة", "Demandes d’archivage li mazal") + "\n\n" + requests.map(r => `- **${label(r)}** · ${r.entityType === "CLIENT" ? say("Client", "Client", "عميل", "Client") : say("Bien", "Property", "عقار", "Bien")}\n  ${r.reason}\n  ID : ${r._id}`).join("\n\n") : say("Aucune demande d’archivage en attente.", "No pending archive requests.", "لا توجد طلبات أرشفة معلقة.", "Ma kayen hata demande en attente.") };
+  if (!target) return { answer: say("Quelle demande ? Indiquez la référence du client ou du bien, ou l’ID de la demande.", "Which request? Give the client/property reference or request ID.", "أي طلب؟ حدد مرجع العميل أو العقار أو رقم الطلب.", "Quelle demande ? A3tini référence client/bien wela ID.") };
+  const normalize = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const matches = requests.filter(r => [r._id, r.relatedClient?.referenceCode, r.relatedListing?.referenceCode, r.relatedListing?.title, [r.relatedClient?.firstName, r.relatedClient?.lastName].filter(Boolean).join(" ")].some(v => v && normalize(v) === normalize(target)));
+  if (matches.length !== 1) return { answer: matches.length ? say("Plusieurs demandes correspondent. Précisez l’ID de la demande.", "Several requests match. Specify the request ID.", "توجد عدة طلبات مطابقة. حدد رقم الطلب.", "Kayen plusieurs demandes. A3tini ID.") : say("Aucune demande en attente ne correspond à cette référence.", "No pending request matches that reference.", "لا يوجد طلب معلق مطابق لهذا المرجع.", "Ma kayen hata demande en attente b had référence.") };
+  const request = matches[0];
+  const decision = await (intent === "approve_archive" ? approveArchiveRequest : rejectArchiveRequest)({ requestId: request._id, managerNote: note || undefined });
+  if (!decision.success) return { answer: decision.error?.message || say("La demande n’a pas pu être traitée.", "The request could not be processed.", "تعذرت معالجة الطلب.", "La demande ma ttraitatch.") };
+  return { answer: intent === "approve_archive" ? say(`Demande acceptée : ${label(request)} a été archivé.`, `Request approved: ${label(request)} was archived.`, `تم قبول الطلب وأرشفة ${label(request)}.`, `Demande acceptée : ${label(request)} t’archiva.`) : say(`Demande refusée : ${label(request)} reste actif.`, `Request rejected: ${label(request)} remains active.`, `تم رفض طلب أرشفة ${label(request)}.`, `Demande refusée : ${label(request)} ma t’archivach.`) };
+}

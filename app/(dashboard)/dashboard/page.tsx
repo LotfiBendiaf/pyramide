@@ -149,19 +149,14 @@ async function DashboardContent() {
     );
   }
 
-  // Admin/Manager dashboard
   return (
-    <div className="mx-auto max-w-[1600px] space-y-7 pb-8">
-      <div className="flex flex-col gap-4 border-b border-border/60 pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="@container mx-auto max-w-[1600px] space-y-7 pb-8">
+      <div className="border-b border-border/60 pb-6">
         <SectionHeader
           title="Vue d’ensemble"
           subtitle="Les chiffres qui comptent, les actions qui demandent votre attention."
         />
-        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          Activité de l’agence
-        </p>
       </div>
-
       <section className="space-y-3">
         <div>
           <h2 className="text-base font-semibold">En un coup d’œil</h2>
@@ -170,21 +165,21 @@ async function DashboardContent() {
         <SectionCards stats={stats} />
       </section>
 
-      <section className="grid items-start gap-6 xl:grid-cols-12">
-        <div className="xl:col-span-8">
+      <section className="grid items-start gap-6 @[56rem]:grid-cols-12">
+        <div className="@[56rem]:col-span-8">
           <DashboardCharts data={charts} />
         </div>
-        <div className="xl:col-span-4">
+        <div className="@[56rem]:col-span-4">
           <DashboardStatsCards stats={stats} />
         </div>
       </section>
 
       {/* Activity feed + Agent performance */}
-      <section className="grid items-start gap-6 xl:grid-cols-12">
-        <div className="xl:col-span-7">
+      <section className="grid items-start gap-6 @[56rem]:grid-cols-12">
+        <div className="@[56rem]:col-span-7">
           <RecentActivity activities={recentActivities} />
         </div>
-        <div className="xl:col-span-5">
+        <div className="@[56rem]:col-span-5">
           <AgentPerformance agents={agentPerformance} />
         </div>
       </section>

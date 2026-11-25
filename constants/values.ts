@@ -18,6 +18,12 @@ export const ELEVATED_ROLES = ["MANAGER", "ADMIN", "DEVELOPER"] as const;
 export const isElevatedRole = (role: string): boolean =>
   (ELEVATED_ROLES as readonly string[]).includes(role);
 
+export const canManageAgentVisits = (role: string): boolean =>
+  role === "AGENT" || isElevatedRole(role);
+
+export const canUseAssistantOperations = (role: string): boolean =>
+  role === "ASSISTANT" || canManageAgentVisits(role);
+
 // Roles with unrestricted application access. Keep authorization checks routed
 // through this helper so DEVELOPER cannot be accidentally omitted.
 export const FULL_ACCESS_ROLES = ["ADMIN", "DEVELOPER"] as const;
@@ -91,6 +97,7 @@ export const getLeadSourceLabel = (value?: string) =>
   LEAD_SOURCES.find((source) => source.value === value)?.label ?? "Non renseignée";
 
 export const routeTitles: Record<string, string> = {
+  "/dashboard/assistant": "Assistant IA",
   // === Auth ===
   "/sign-in": "Connexion",
   "/sign-up": "Créer un compte",
