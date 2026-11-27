@@ -33,6 +33,7 @@ import {
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import PhoneActionLink from "@/components/PhoneActionLink";
+import { generateSocialPublicationDescription } from "@/lib/social-publication-description";
 
 const LocationMap = dynamic(() => import("./LocationMap"), { ssr: false });
 
@@ -45,6 +46,7 @@ export default function ListingInfo({
   listing,
   isStaff = false,
 }: ListingInfoProps) {
+  const description = generateSocialPublicationDescription(listing);
   const agentName = listing.agent
     ? [listing.agent.firstname, listing.agent.lastname].filter(Boolean).join(" ")
     : "";
@@ -221,7 +223,7 @@ export default function ListingInfo({
       <section>
         <h2 className="font-semibold text-lg mb-3">Description</h2>
         <div className="text-sm text-muted-foreground space-y-1 leading-relaxed">
-          {listing.description.split("\n").map((line, i) => {
+          {description.split("\n").map((line, i) => {
             if (!line.trim()) return <div key={i} className="h-2" />;
 
             // Key : Value lines — bold the key

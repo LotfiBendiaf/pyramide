@@ -33,8 +33,9 @@ import {
   isElevatedRole,
 } from "@/constants/values";
 import ROUTES from "@/constants/routes";
-import { clientPrefix, formatPriceAlgeria } from "../utils";
+import { clientPrefix } from "../utils";
 import { buildPhoneKeys, phoneSearchVariants } from "../phone";
+import { generateSocialPublicationDescription } from "../social-publication-description";
 
 function getListingReferencePrefix(status: string): "V" | "L" {
   return status === "En Location" || status === "Loué" ? "L" : "V";
@@ -81,90 +82,14 @@ async function generateListingReferenceCode(prefix: "V" | "L") {
   return `${prefix}-${String(counter.sequence).padStart(7, "0")}`;
 }
 
-function upsertReferenceInDescription(
-  description: string | undefined,
-  referenceCode: string
-) {
-  if (!description) return description;
-
-  if (description.includes("Réf :")) {
-    return description.replace(/^Réf : .+$/m, `Réf : ${referenceCode}`);
-  }
-
-  return description.replace(/^([\s\S]*?)(Type :)/m, `$1Réf : ${referenceCode}\n$2`);
-}
-
 function buildListingDescription(
   params: ListingInput,
   referenceCode?: string
 ): string {
-  const statusLine =
-    params.status === "En Location"
-      ? "𝗣𝗬𝗥𝗔𝗠𝗜𝗗𝗘 𝗜𝗠𝗠𝗢𝗕𝗜𝗟𝗜𝗘𝗥 met en location"
-      : "𝗣𝗬𝗥𝗔𝗠𝗜𝗗𝗘 𝗜𝗠𝗠𝗢𝗕𝗜𝗟𝗜𝗘𝗥 met en vente";
-
-  const typeLabel = params.propertyTypeCustom?.trim() || params.propertyType;
-  const lowerType = typeLabel.toLowerCase();
-  const isVilla = lowerType.startsWith("villa");
-  const article =
-    lowerType.startsWith("maison") || isVilla ? "Une" : "Un";
-  const situe = article === "Une" ? "située" : "situé";
-  const _city = params.location?.city?.trim();
-  const _address = params.location?.address?.trim();
-  const locationLabel =
-    params.location?.district?.trim() ||
-    (_city && _address ? `${_city} - ${_address}` : _city || _address || "");
-  const areaLabel = params.features.area ? `${params.features.area} m²` : "";
-  const nombreEtages = params.features.nombreEtages;
-  const nombreEtagesLine =
-    nombreEtages !== undefined ? `Hauteur : R+${nombreEtages}` : undefined;
-  const etage = params.features.etage;
-  const etageSuffix = etage === 1 ? "er" : "e";
-  const elevatorText = params.features.elevator ? " avec ascenseur" : "";
-  const etageLine =
-    etage !== undefined && !isVilla
-      ? `Étage : ${etage}${etageSuffix}${elevatorText}`
-      : undefined;
-
-  const priceLabel = `${formatPriceAlgeria(params.price ?? 0).replace(".", ",")} DA`;
-
-  const villaTypeLabel =
-    isVilla && nombreEtages !== undefined
-      ? `${lowerType} R+${nombreEtages}`
-      : lowerType;
-
-  const floorLocation =
-    !isVilla && etage !== undefined ? ` au ${etage}${etageSuffix} étage` : "";
-  const intro = `${article} ${villaTypeLabel}${areaLabel ? ` de ${areaLabel}` : ""}${
-    floorLocation || locationLabel
-      ? `, ${situe}${floorLocation}${locationLabel ? ` à ${locationLabel}` : ""}`
-      : ""
-  }.`;
-
-  const roomCount = params.features.roomCount ?? params.features.bedrooms;
-  const layoutNotation = params.features.layoutNotation ?? "F";
-  const roomsLine =
-    roomCount && roomCount > 0
-      ? `Nombre de pièces : ${layoutNotation}${roomCount}`
-      : undefined;
-
-  const details = [
-    referenceCode ? `Réf : ${referenceCode}` : undefined,
-    `Type : ${typeLabel}`,
-    roomsLine,
-    areaLabel ? `Surface : ${areaLabel}` : undefined,
-    etageLine,
-    nombreEtagesLine,
-    locationLabel ? `Emplacement : ${locationLabel}` : undefined,
-    `Prix demandé : ${priceLabel}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const contact =
-    "Pour plus d’informations ou pour organiser une visite :\n0556510000 / 0779079706";
-
-  return [statusLine, intro, "", details, "", contact].join("\n");
+  return generateSocialPublicationDescription({
+    ...params,
+    referenceCode,
+  });
 }
 
 export async function createListing(
@@ -259,8 +184,7 @@ export async function createListing(
     });
 
     // 4. Create listing (no reference code yet — assigned on validation)
-    const description =
-      parsedParams.description?.trim() || buildListingDescription(parsedParams);
+    const description = buildListingDescription(parsedParams);
 
     const normalizedPropertyTypeCustom =
       parsedParams.propertyType === "Autre"
@@ -978,9 +902,7 @@ export async function updateListingStatus(
   try {
     await dbConnect();
 
-    const listing = await Listing.findById(listingId).select(
-      "referenceCode description validationStatus"
-    );
+    const listing = await Listing.findById(listingId);
 
     if (!listing) {
       return { success: false };
@@ -1003,9 +925,18 @@ export async function updateListingStatus(
       const referenceCode = await generateListingReferenceCode(expectedPrefix);
       update.referenceCode = referenceCode;
       update.referenceGeneratedAt = new Date();
-      update.description =
-        upsertReferenceInDescription(listing.description, referenceCode) ||
-        listing.description;
+      update.description = buildListingDescription(
+        {
+          ...(listing.toObject() as unknown as ListingInput),
+          status,
+        },
+        referenceCode
+      );
+    } else {
+      update.description = buildListingDescription({
+        ...(listing.toObject() as unknown as ListingInput),
+        status,
+      }, listing.referenceCode);
     }
 
     await Listing.findByIdAndUpdate(listingId, update);
@@ -1204,8 +1135,8 @@ export async function toggleListingValidation(
 
       if (!hasListingReferencePrefix(referenceCode, prefix)) {
         referenceCode = await generateListingReferenceCode(prefix);
-        updatedDescription = upsertReferenceInDescription(
-          listing.description,
+        updatedDescription = buildListingDescription(
+          listing.toObject() as unknown as ListingInput,
           referenceCode
         );
       }
