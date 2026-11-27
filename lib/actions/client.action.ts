@@ -31,7 +31,7 @@ import {
   Phase2RejectionInput,
 } from "@/types/client";
 import { FilterQuery, Types } from "mongoose";
-import { CLIENT_AGENT_ROLES, ClientQualification, isElevatedRole } from "@/constants/values";
+import { CLIENT_AGENT_ROLES, ClientQualification, canUseAssistantOperations, isElevatedRole } from "@/constants/values";
 import dbConnect from "../mongoose";
 import { buildPhoneKeys, phoneSearchVariants } from "../phone";
 
@@ -1023,6 +1023,8 @@ export async function archiveClient(
     };
   }
 
+  if (!canUseAssistantOperations(user.data.role)) return { success: false, error: { message: "Accès refusé" }, status: 403 };
+
   try {
     if (!Types.ObjectId.isValid(clientId)) {
       return {
@@ -1043,7 +1045,11 @@ export async function archiveClient(
 
     await dbConnect();
 
-    const client = await Client.findById(clientId).select("_id").lean();
+    const client = await Client.findOne({ _id: clientId,
+      ...(isElevatedRole(user.data.role) ? {} : user.data.role === "ASSISTANT"
+        ? { $or: [{ assignedAgent: user.data._id }, { createdBy: user.data._id }] }
+        : { assignedAgent: user.data._id }),
+    }).select("_id archived").lean<{ _id: Types.ObjectId; archived?: boolean }>();
 
     if (!client) {
       return {
@@ -1052,6 +1058,8 @@ export async function archiveClient(
         status: 404,
       };
     }
+
+    if (client.archived) return { success: false, error: { message: "Ce client est déjà archivé" }, status: 409 };
 
     if (user.data.role === "ADMIN") {
       await Client.findByIdAndUpdate(clientId, {

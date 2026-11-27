@@ -647,6 +647,15 @@ export async function fetchListings(
         : -1
       : -1;
 
+    // Visibility is a server policy; caller-supplied filters cannot broaden it.
+    const viewer = await getUserBySessionEmail();
+    if (!viewer.data || viewer.data.role === "ASSISTANT" || viewer.data.role === "VIEWER") {
+      query.$and = [...(query.$and ?? []), {
+        isValidated: true, validationStatus: "VALIDATED", archived: { $ne: true },
+        ...(!viewer.data ? { isPublished: true } : {}),
+      }];
+    }
+
     const [listings, total] = await Promise.all([
       Listing.find(query)
         .sort({ [sortField]: sortDirection })
@@ -781,10 +790,15 @@ export async function fetchListingById(
     await dbConnect();
 
     // 3️⃣ Fetch listing
-    const listing = await Listing.findById(listingId)
-      .populate("agent", "firstname lastname email phone")
-      .populate("sellerClient", "firstName lastName phone email")
-      .lean();
+    const viewer = await getUserBySessionEmail();
+    const restricted = !viewer.data || viewer.data.role === "ASSISTANT" || viewer.data.role === "VIEWER";
+    const query = Listing.findOne({ _id: listingId, ...(restricted ? {
+      isValidated: true, validationStatus: "VALIDATED", archived: { $ne: true },
+      ...(!viewer.data ? { isPublished: true } : {}),
+    } : {}) }).populate("agent", "firstname lastname email phone");
+    if (viewer.data && viewer.data.role !== "VIEWER") query.populate("sellerClient", "firstName lastName phone email");
+    else query.select("-sellerClient");
+    const listing = await query.lean();
 
     if (!listing) {
       return {
@@ -1201,6 +1215,10 @@ export async function toggleListingValidation(
       };
     }
 
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
+    }
+
     await dbConnect();
 
     const listing = await Listing.findById(listingId);
@@ -1282,6 +1300,10 @@ export async function approveListingWithoutReference(
       };
     }
 
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
+    }
+
     await dbConnect();
 
     const listing = await Listing.findById(listingId);
@@ -1342,6 +1364,10 @@ export async function setListingNeutre(
       };
     }
 
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
+    }
+
     await dbConnect();
 
     await Listing.findByIdAndUpdate(listingId, {
@@ -1385,6 +1411,10 @@ export async function unarchiveListing(
         error: { message: "Utilisateur non autorisé" },
         status: 401,
       };
+    }
+
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
     }
 
     await dbConnect();
@@ -1456,7 +1486,15 @@ export async function fetchListingsBySellerClient(
 
     await dbConnect();
 
-    const listings = await Listing.find({ sellerClient: sellerClientId })
+    const viewer = await getUserBySessionEmail();
+    if (!viewer.data) return { success: false, error: { message: "Utilisateur non autorisé" }, status: 401 };
+    if (viewer.data.role === "VIEWER") return { success: false, error: { message: "Accès refusé" }, status: 403 };
+    const agency = isElevatedRole(viewer.data.role);
+    const accessibleSeller = await Client.exists({ _id: sellerClientId,
+      ...(agency ? {} : viewer.data.role === "ASSISTANT" ? { $or: [{ assignedAgent: viewer.data._id }, { createdBy: viewer.data._id }] } : { assignedAgent: viewer.data._id }),
+    });
+    if (!accessibleSeller) return { success: false, error: { message: "Client introuvable" }, status: 404 };
+    const listings = await Listing.find({ sellerClient: sellerClientId, ...(viewer.data.role === "ASSISTANT" ? { isValidated: true, validationStatus: "VALIDATED", archived: { $ne: true } } : {}) })
       .sort({ createdAt: -1 })
       .populate("agent", "name firstname lastname email phone")
       .lean();

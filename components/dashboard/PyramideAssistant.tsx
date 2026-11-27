@@ -52,7 +52,7 @@ export function PyramideAssistant({ embedded = false, conversationId, actions }:
     } else if (log) {
       log.scrollTop = 0;
     }
-  }, [messages]);
+  }, [messages, submitted]);
 
   async function ask(value: string) {
     if (!value.trim() || pending || loading) return;
@@ -155,7 +155,7 @@ export function PyramideAssistant({ embedded = false, conversationId, actions }:
           ))}
         </div>
       )}
-      <form onSubmit={submit} className="flex shrink-0 gap-2">
+      <form onSubmit={submit} className={`flex shrink-0 gap-2 ${embedded ? "" : "pr-14 sm:pr-0"}`}>
         <Input className="min-w-0" dir="auto" aria-label="Votre question" placeholder="Posez une question sur l’agence…" value={question} maxLength={2000} disabled={pending || loading} onChange={(event) => setQuestion(event.target.value)} />
         <Button type="submit" size="icon" aria-label="Envoyer" disabled={pending || loading || !question.trim()}>
           <ArrowUp className="size-4" aria-hidden />

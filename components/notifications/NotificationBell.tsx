@@ -2,7 +2,7 @@
 
 import { formatLegacyPlurals } from "@/lib/pluralize";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,11 +29,19 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [loading, setLoading] = useState(false);
+  const announcedReminders = useRef(new Set<string>());
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     const result = await fetchMyNotifications(1, 8);
     if (result.success && result.data) {
+      for (const notification of result.data.notifications) {
+        const id = String(notification._id);
+        if (notification.type === "PERSONAL_REMINDER" && !notification.read && !announcedReminders.current.has(id)) {
+          announcedReminders.current.add(id);
+          toast(notification.title, { description: notification.body, duration: 10000 });
+        }
+      }
       setNotifications(result.data.notifications);
       setUnreadCount(result.data.unreadCount);
     }

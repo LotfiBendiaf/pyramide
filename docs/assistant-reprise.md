@@ -1,12 +1,14 @@
 # Point de reprise — Assistant IA
 
-Tests arrêtés à la demande de l’utilisateur le 25 novembre 2026. Reprendre sur `ai-assistant`, dans `/Users/HP/Desktop/pyramide-ai-assistant`. Le dossier `/Users/HP/Desktop/pyramide immobilier` contient l’autre branche `feature/social-publishing` : ne pas la modifier.
+Campagne reprise les 26 et 27 novembre 2026. Continuer sur `ai-assistant`, dans `/Users/HP/Desktop/pyramide-ai-assistant`. Le dossier `/Users/HP/Desktop/pyramide immobilier` contient l’autre branche `feature/social-publishing` : ne pas la modifier.
 
 ## Consigne actuelle
 
-Une seule conversation persistante par utilisateur/profil, commune à la page Assistant IA et au chat flottant. Pas de liste d’historique, pas de bouton Nouveau, pas de remise à zéro à l’ouverture. Cette consigne remplace les anciennes demandes de cinq conversations et de nouvelles conversations automatiques. Les anciennes conversations ne sont pas supprimées. La mémoire est du contexte sauvegardé, pas un réentraînement du modèle.
+Plusieurs conversations avec historique (consigne finale du 27 novembre). Chaque ouverture du bouton flottant crée une nouvelle conversation avec l’accueil du rôle ; Agrandir ouvre cette même conversation. La page Assistant IA propose l’historique, Nouvelle conversation et la sélection d’un ancien échange. Chaque conversation garde son propre contexte. Titres courts par intention, une ligne ; appui long ou menu … pour renommer, épingler/désépingler et supprimer avec confirmation. Suppression logique, archives conservées, accès limité au propriétaire.
 
-L’utilisateur veut les tests visibles dans le navigateur, dans l’ordre de la campagne. Il a demandé d’arrêter pour aujourd’hui et de sauvegarder sur GitHub, sans PR ni message à Lotfi.
+Notes privées demandées explicitement et rappels personnels ajoutés. Rappels : date/heure validée, notification CRM au polling de la cloche (60 secondes), pas de push lorsque le site est fermé. Ne jamais promettre une notification iPhone hors site sans intégration push. Mémoire = données enregistrées, pas réentraînement du modèle.
+
+L’utilisateur veut les tests visibles dans le navigateur, dans l’ordre de la campagne. Les tests ont repris. Sauvegardes Git uniquement sur le dépôt personnel ikramtlh/pyramide-immobilier, sans PR ni message à Lotfi.
 
 ## Résultats acquis
 
@@ -32,21 +34,29 @@ Contrôles ajoutés à `requestArchive` : rôles autorisés et propriétaire du 
 **À traiter avant de considérer l’étape 3 complète** :
 
 - Rôle PHOTOGRAPHER absent des constantes/modèles de cette version. Aucun compte photographe testé ; ne pas annoncer ce rôle comme opérationnel.
-- Les actions natives `toggleListingValidation`, `approveListingWithoutReference`, `setListingNeutre`, `unarchiveListing` ont été inspectées : elles vérifient l’authentification mais n’ont pas encore reçu le contrôle de rôle de gestion identifié pendant l’audit. La correction a été annoncée comme prochaine action mais n’a PAS été implémentée avant l’arrêt demandé.
+- Ces quatre actions natives sont maintenant réservées à la gestion ; quatre appels assistante retournent 403. Catalogue, détail par ID et relations vendeur filtrés côté serveur. Treize contrôles négatifs/positifs passent le 27 novembre.
 - Continuer l’audit des mutations sensibles, sans supposer que le filtrage du chat protège les actions natives.
 
 ## Étape 4 — archivage et validation des nouveaux biens
 
 Le chat a confondu « demander l’archivage » avec l’examen des demandes, puis BUY-00001 avec un bien. Corrections sauvegardées : intentions distinctes, action d’archivage des biens, résolution du type d’une référence via les données autorisées, et contrôle que la référence provient du message actuel.
 
-**Retest du chat à reprendre** : « Demande l’archivage de BUY-00001, motif : dossier de simulation terminé. » La dernière tentative a été rejetée par Groq avant toute exécution (Retry-After 1158 secondes). Ne pas compter ce cas comme réussi. Vérifier ensuite dans Mongo qu’une seule demande PENDING est créée et que le client reste actif, puis tester refus et acceptation par le gérant. Pour les biens, vérifier séparément demande d’archivage et validation d’un nouveau bien. Les intentions de validation d’un nouveau bien ne sont pas encore reliées au chat.
+Tests visibles passés : demande d’archivage BUY-00001 puis refus (client actif), acceptation BUY-00005 (archivé). Une course approbation/refus donne un seul gagnant et une seule notification. Voir qa-manager-2026-11-26.md.
+
+Validation d’un nouveau bien testée le 27 dans le chat gérant : « Valide le bien QAS26 Estimation F5. » → V-0000003 ; puis « Refuse la validation de ce bien, il doit rester non validé. » → même bien NEUTRAL. Vérification Mongo : isValidated=false, surface250, étage11, priceLabel=À estimer, aucun prix inventé. Bien ID059b9d7ad1fe2ad154413f2e.
+
+Tests visites natifs : propriétaire client contrôlé, lecture des visites étrangères filtrée, annulation étrangère403, doublon idempotent, chevauchement409, créneau adjacent30minutes accepté ; deux réservations concurrentes donnent201+409 avec une seule visite/calendrier.
+
+Saisie : six contrôles portables passent, notamment noms facultatifs, source obligatoire et preuve, continuation préservant critères/notes, téléphone distinct du prix et ville explicite prioritaire.
+
+Mobile simulé390×844 : page et flottant lisibles, même conversation récupérée, commandes fermer/agrandir accessibles ; vue normale restaurée. Clavier et ouverture WhatsApp/SMS sur téléphone physique restent à vérifier.
 
 ## Suite de la campagne
 
-5. Saisies : téléphone/prix, estimation, minimum de surface, étage, budget, source, titre automatique, Oran et notes.
-6. Chiffres et périodes du gérant ; distinguer montants de transactions et commissions, vérifier les historiques.
+5. Saisies : contrôles portables et intake réel passés ; poursuivre les variantes multilingues. Alias de quartier Akid/Akid Lotfi limité à Oran, sans élargir budget, surface ni étage.
+6. Chiffres et périodes du gérant vérifiés : voir qa-manager-2026-11-26.md. Limite à clarifier : certains compteurs intitulés ventes incluent les locations.
 7. Configuration IA : clés divulguées à remplacer, quota adapté, indisponibilités. Ne pas publier de clés.
-8. Téléphone : clavier, défilement, conversation flottante, WhatsApp/SMS.
+8. Téléphone : viewport et flottant vérifiés ; clavier et WhatsApp/SMS sur appareil physique restent à vérifier.
 9. Livraison : données fictives à retirer seulement avant production, documentation, différences avec origin/main. Aucun PR demandé.
 
 ## Quotas et modèle
@@ -63,3 +73,23 @@ Modèle configuré par défaut : `openai/gpt-oss-120b` via Groq. Un contrôle de
 - Clients synthétiques réservés +1 202 555 01xx. Ne pas envoyer de messages réels. Photos de L-0000001 illustratives locales.
 - Tests persistés : `node --test scripts/test-assistant-model.mjs` ; test Mongo avec `ASSISTANT_TEST_MONGODB_URI=mongodb://127.0.0.1:27029 node --test scripts/test-assistant-history.mjs`.
 - ESLint ciblé passé. TypeScript des sources hors `.next` passé après les dernières modifications. Le contrôle standard rencontre un problème préexistant PageProps/searchParams dans les types Next générés de la page d’accueil.
+
+## Contrôles iPhone du 27 novembre
+
+Recopie de l’iPhone utilisée avec autorisation. Safari atteint le CRM via l’adresse locale du Mac. Connexion assistante, création de Leila QA27 BUY-00007 (+12025550171), recherche contextuelle « pour elle » → V-0000002 Maraval85m²/19M, critères de saisie vérifiés en base. Visite demandée en darija pour28/11/2026à15h30avecAmine : confirmation affichée. Retest du message automatique pour l’assistante en cours ; ancien code le masquait pour ce profil, condition retirée. Aucun message externe envoyé vers les téléphones fictifs.
+
+Flou/assombrissement derrière le flottant sur mobile et fermeture en touchant l’arrière-plan vérifiés sur vrai iPhone. Historique mobile repliable et nouvelle conversation affichés. L’icône flottante masquait l’envoi dans la page complète : espace réservé à droite du formulaire mobile ajouté.
+
+Limites de test restantes : premier test darija de lecture client par téléphone a échoué malgré fiche existante ; ancrage du téléphone saisi ajouté, retest nécessaire. Un rapport financier non pris en charge s’affichait à tort comme vérifié : schéma analytics et indicateur d’échec corrigés, retest IA nécessaire. Anciennes réponses déjà enregistrées ne sont pas réécrites.
+
+## Reprise du 27 novembre au soir
+
+28 tests automatisés passent : modèle, saisies, quartiers, messages, analyses, commissions, mémoire, historique et rappels MongoDB isolés. TypeScript des sources hors .next et git diff --check passent.
+
+Tests visibles : rappel personnel demandé dans une minute, confirmation heure d’Alger puis notification dans la cloche et toast effectivement reçus ; note « mon mot clé de simulation est Soleil » mémorisée puis retrouvée dans une nouvelle conversation. Le rappel exige le CRM ouvert ou une ouverture ultérieure ; aucune notification push iPhone site fermé.
+
+Retest darija du gérant « chakhash hed client +1 202 555 0171 ? wach rahi t9alleb w ch7al budget ta3ha ? » réussi : Leila QA27 BUY-00007, Appartement F3 Maraval, budget maximum 20 000 000 DZD, minimum 80 m².
+
+Complément iPhone : confirmation de visite pour l’assistante avec brouillon client vérifiée ; ouverture du composeur SMS contenant Leila, le bien, le 28 novembre et 15 h 30. Annulation du composeur, aucun envoi. Message personnel reformulé visible dans un brouillon WhatsApp, aucun envoi. Renommage et épinglage de « Visite Leila » vérifiés par appui long.
+
+Comparaison financière réelle du gérant retestée avec succès : novembre 2026, 2 affaires, 18 578 000 DA de transactions, 448 000 DA de commissions ; ventilation ventes/locations par Amine, Manager Local et Sarah, y compris résultats nuls. Les commissions locatives correspondent aux valeurs de simulation enregistrées.

@@ -285,10 +285,18 @@ export async function approveArchiveRequest(
             $unset: { validatedAt: 1, validatedBy: 1, publishedAt: 1 },
           });
 
-    await Promise.all([
-      ArchiveRequest.findByIdAndUpdate(requestId, reviewFields),
-      entityUpdate,
-    ]);
+    // Only one review can win, even when two managers decide concurrently.
+    const claimed = await ArchiveRequest.updateOne({ _id: requestId, status: "PENDING" }, { $set: reviewFields });
+    if (!claimed.matchedCount) return { success: false, error: { message: "Cette demande a déjà été traitée" }, status: 409 };
+    try {
+      const archivedEntity = await entityUpdate;
+      if (!archivedEntity) throw new Error("Élément à archiver introuvable");
+    } catch (error) {
+      await ArchiveRequest.updateOne({ _id: requestId, status: "APPROVED", reviewedAt: reviewFields.reviewedAt, reviewedBy: user.data._id }, {
+        $set: { status: "PENDING" }, $unset: { reviewedBy: 1, reviewedAt: 1, managerNote: 1 },
+      });
+      throw error;
+    }
 
     if (archiveRequest.entityType === "CLIENT") {
       revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -364,11 +372,10 @@ export async function rejectArchiveRequest(
       };
     }
 
-    archiveRequest.status = "REJECTED";
-    archiveRequest.reviewedBy = user.data._id;
-    archiveRequest.reviewedAt = new Date();
-    archiveRequest.managerNote = managerNote;
-    await archiveRequest.save();
+    const reviewed = await ArchiveRequest.updateOne({ _id: requestId, status: "PENDING" }, {
+      $set: { status: "REJECTED", reviewedBy: user.data._id, reviewedAt: new Date(), managerNote },
+    });
+    if (!reviewed.matchedCount) return { success: false, error: { message: "Cette demande a déjà été traitée" }, status: 409 };
     revalidateListingArchive(archiveRequest.entityId.toString());
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);

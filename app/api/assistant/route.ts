@@ -5,15 +5,24 @@ import { answerAgencyQuestion, AssistantUnavailable } from "@/lib/assistant-agen
 
 import { assistantHistoryOwner, canUseAssistant } from "@/lib/assistant-access";
 import { dailyAssistantPlan, readAssistantBriefing } from "@/lib/assistant-briefing";
-import { continuousConversationId, readConversations, recentConversation, saveAssistantMessage } from "@/lib/assistant-history";
+import { continuousConversationId, createConversation, selectConversation, renameConversation, pinConversation, deleteConversation, readConversations, recentConversation, saveAssistantMessage } from "@/lib/assistant-history";
 
 const questionText = z.string().trim().min(1).max(2000);
-const inputSchema = z.object({
+const questionSchema = z.object({
   question: questionText,
   conversationId: z.string().uuid().optional(),
   previousQuestion: questionText.optional(),
   history: z.array(questionText).max(4).optional(),
 });
+
+const inputSchema = z.union([
+  questionSchema,
+  z.object({ action: z.literal("create") }),
+  z.object({ action: z.literal("select"), conversationId: z.string().uuid() }),
+  z.object({ action: z.literal("rename"), conversationId: z.string().uuid(), title: z.string().trim().min(1).max(60) }),
+  z.object({ action: z.literal("pin"), conversationId: z.string().uuid(), pinned: z.boolean() }),
+  z.object({ action: z.literal("delete"), conversationId: z.string().uuid() }),
+]);
 
 export async function GET() {
   const { data: user } = await getUserBySessionEmail();
@@ -26,7 +35,8 @@ export async function GET() {
       readConversations(assistantHistoryOwner(scope)),
       Promise.all([readAssistantBriefing(scope), dailyAssistantPlan(scope)]).then(([counts, agenda]) => ({ ...counts, agenda })).catch(() => null),
     ]);
-    return NextResponse.json({ conversations, briefing }, {
+    const activeId = await continuousConversationId(assistantHistoryOwner(scope));
+    return NextResponse.json({ conversations, briefing, activeId }, {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch {
@@ -43,17 +53,36 @@ export async function POST(request: Request) {
   if (!input.success) return NextResponse.json({ error: "Saisis une question de 1 à 2000 caractères." }, { status: 400 });
 
   try {
-    const { question } = input.data;
     const scope = { userId: user._id, role: user.role };
     const owner = assistantHistoryOwner(scope);
-    const conversationId = await continuousConversationId(owner);
+    if ("action" in input.data) {
+      const action = input.data;
+      let id: string | null | false;
+      if (action.action === "create") id = await createConversation(owner);
+      else if (action.action === "select") id = await selectConversation(owner, action.conversationId);
+      else if (action.action === "delete") id = await deleteConversation(owner, action.conversationId);
+      else {
+        const changed = action.action === "rename"
+          ? await renameConversation(owner, action.conversationId, action.title)
+          : await pinConversation(owner, action.conversationId, action.pinned);
+        id = changed ? await continuousConversationId(owner) : null;
+      }
+      if (!id) return NextResponse.json({ error: "Conversation introuvable." }, { status: 404 });
+      return NextResponse.json({ conversationId: id, conversations: await readConversations(owner) });
+    }
+    const { question } = input.data;
+    const conversationId = input.data.conversationId
+      ? await selectConversation(owner, input.data.conversationId)
+      : await continuousConversationId(owner);
+    if (!conversationId) return NextResponse.json({ error: "Conversation introuvable." }, { status: 404 });
     const context = await recentConversation(owner, conversationId);
-    const result = await answerAgencyQuestion(question, context.questions, scope, context.clientId, context.visit, context.creation, context.pipeline);
+    const result = await answerAgencyQuestion(question, context.questions, scope, context.clientId, context.visit, context.creation, context.pipeline, context.lastAssistantAnswer);
     let historySaved = false;
     if (conversationId) {
       try {
         await saveAssistantMessage(owner, conversationId, {
           question,
+          title: result.conversationTitle,
           answer: result.answer,
           interpretation: result.interpretation,
           ...("clientContextId" in result && typeof result.clientContextId === "string" ? { clientContextId: result.clientContextId } : {}),

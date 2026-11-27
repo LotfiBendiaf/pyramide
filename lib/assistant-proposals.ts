@@ -1,4 +1,5 @@
 import { pluralize } from "@/lib/pluralize";
+import { expandPreferredDistricts } from "@/lib/assistant-districts";
 import { createHash, randomUUID } from "node:crypto";
 import { Types } from "mongoose";
 import { z } from "zod";
@@ -99,7 +100,7 @@ export async function prepareVisitProposals(
   if (!specific && (client.budgetMin != null || client.budgetMax != null) && client.priceCurrency && client.priceCurrency !== "DZD") {
     return { answer: say("Le budget est dans une autre devise. Indiquez son équivalent en DZD pour comparer les prix.", "Provide the budget in DZD to compare property prices.", "يرجى تحديد الميزانية بالدينار الجزائري لمقارنة الأسعار.", "3tini l’équivalent ta3 budget b DZD bach ncompari les prix."), clientContextId };
   }
-  const districts = district?.split(/\s*(?:\/|;|\bou\b|\bor\b|،)\s*/i).map((value: string) => value.trim()).filter(Boolean);
+  const districts = expandPreferredDistricts(district, city);
   const floorMin = compareSaved ? client.floorMin : undefined;
   const floorMax = compareSaved ? client.floorMax : undefined;
   const filters = [

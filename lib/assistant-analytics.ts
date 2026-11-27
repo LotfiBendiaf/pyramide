@@ -31,7 +31,24 @@ export const analyticsSchema = z.array(z.object({
     value: z.union([z.string().trim().min(1).max(100), z.number().finite()]).nullish(),
   })).max(8).default([]),
   order: z.enum(["asc", "desc"]).default("desc"),
-})).min(1).max(4);
+})).min(1).max(4).superRefine((queries, context) => {
+  // Reject unsupported model-generated plans before executing any aggregation.
+  queries.forEach((query, index) => {
+    const spec = sources[query.source];
+    const has = (values: readonly string[], value?: string | null) => Boolean(value && values.includes(value));
+    const invalid = (path: (string | number)[], message: string) => context.addIssue({ code: z.ZodIssueCode.custom, path: [index, ...path], message });
+    if (query.group && query.group !== "agent" && !has(spec.categories, query.group)) invalid(["group"], "Use a supported category or agent grouping");
+    if (["sum", "average"].includes(query.operation) && !has(spec.numbers, query.field)) invalid(["field"], "Use a supported numeric metric");
+    if (query.operation === "distinct" && !has(spec.distinct, query.field)) invalid(["field"], "Use a supported distinct identifier");
+    if (query.dateField && !has(spec.dates, query.dateField)) invalid(["dateField"], "Use a supported date field");
+    query.filters.forEach((filter, filterIndex) => {
+      const valid = filter.op === "eq" && has(spec.categories, filter.field) && typeof filter.value === "string"
+        || ["gte", "lte"].includes(filter.op) && has(spec.numbers, filter.field) && filter.field !== "commission" && typeof filter.value === "number"
+        || filter.op === "missing" && (has(spec.categories, filter.field) || has(spec.dates, filter.field));
+      if (!valid) invalid(["filters", filterIndex], "Use only supported filters; closed-deal transaction and commission comparisons belong to sales_history");
+    });
+  });
+});
 
 export const analyticsInstructions = JSON.stringify(Object.fromEntries(
   Object.entries(sources).map(([key, { dates, categories, numbers, distinct }]) => [key, { dates, categories, numbers, distinct }]),
@@ -45,7 +62,7 @@ const exact = (value: string) => new RegExp("^" + value.replace(/[.*+?^${}()|[\]
 type Query = z.infer<typeof analyticsSchema>[number];
 type DateRange = { $gte: Date; $lt: Date } | undefined;
 
-export async function runAnalytics(queries: Query[], dateRange: (period: Query["period"]) => DateRange, access: AssistantScope) {
+export async function runAnalytics(queries: Query[], dateRange: (period: Query["period"]) => DateRange, access: AssistantScope, language: "fr" | "en" | "ar" | "darija" = "fr") {
   const personal = !isAgencyScope(access);
   const employees = await User.find(personal ? { _id: access.userId } : { role: { $in: ["AGENT", "MANAGER", "ADMIN", "ASSISTANT", "EMPLOYEE"] } })
     .select("firstname lastname username").lean();
@@ -129,14 +146,20 @@ export async function runAnalytics(queries: Query[], dateRange: (period: Query["
     }
   }));
   return {
+    available: results.every(result => !("unavailable" in result)),
     facts: JSON.stringify(results),
     summary: results.map((result) => {
-      if ("unavailable" in result) return `${result.source} · Calcul indisponible (${result.unavailable}).`;
+      if ("unavailable" in result) return {
+        fr: "Je ne peux pas calculer ce résultat avec les critères demandés. Aucun chiffre n’a été confirmé.",
+        en: "I cannot calculate this result with the requested criteria. No figures have been confirmed.",
+        ar: "تعذر حساب هذه النتيجة بالمعايير المطلوبة. لم يتم تأكيد أي أرقام.",
+        darija: "Ma nqderch n7seb had résultat b les critères hadou. Ma kayen 7tta chiffre confirmé.",
+      }[language];
       return [
         `${result.source} · ${result.operation} · ${result.field || ""} · ${result.period}`,
         ...result.results.map((row) => `${row.group ?? "Total"} : ${row.value ?? "—"}${result.unit ? ` ${result.unit}` : ""}`),
         ...(result.truncated ? ["30 premiers groupes affichés."] : []),
       ].join("\n");
-    }).join("\n\n"),
+    }).filter((value, index, all) => all.indexOf(value) === index).join("\n\n"),
   };
 }

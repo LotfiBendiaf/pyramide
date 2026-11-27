@@ -63,22 +63,22 @@ export function AssistantVisitProposal({ proposal }: { proposal: VisitProposal }
           value={message} maxLength={1800} onChange={(event) => setMessage(event.target.value)} />
       </label>
       {proposal.phone && message.trim() ? (
-        <Button asChild size="sm">
+        <Button asChild size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center">
           <a href={`https://wa.me/${proposal.phone}?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer"
             >
             <ExternalLink className="size-4" aria-hidden /> Ouvrir WhatsApp
           </a>
         </Button>
       ) : !proposal.phone && <p className="text-sm text-muted-foreground">Aucun numéro utilisable dans la fiche du client.</p>}
-      {proposal.phone && message.trim() && <Button asChild size="sm" variant="outline">
+      {proposal.phone && message.trim() && <Button asChild size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center" variant="outline">
         <a href={`sms:+${proposal.phone}?body=${encodeURIComponent(message)}`}>Ouvrir le SMS</a>
       </Button>}
-      <Button type="button" size="sm" variant="outline" disabled={assistant.pending || assistant.loading}
+      <Button type="button" size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center" variant="outline" disabled={assistant.pending || assistant.loading}
         onClick={() => void assistant.send(`Organise une visite pour le client ${proposal.clientReference || proposal.clientName} du bien ${proposal.listingReference || proposal.title}.`)}>
         Organiser une visite
       </Button>
       {!reminder ? (
-        <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => void addFollowUp()}>
+        <Button type="button" size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center" variant="outline" disabled={pending} onClick={() => void addFollowUp()}>
           <BellPlus className="size-4" aria-hidden /> {pending ? "Création du suivi…" : "Ajouter un rappel dans 24 h"}
         </Button>
       ) : (

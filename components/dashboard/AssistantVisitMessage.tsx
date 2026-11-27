@@ -19,17 +19,17 @@ export function AssistantVisitMessage({ draft }: { draft: VisitMessageDraft }) {
           <div className="flex flex-wrap gap-2">
             {text.trim() ? (
               <>
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center">
                   <a href={`https://wa.me/${draft.phone}?text=${body}`} target="_blank" rel="noreferrer">Ouvrir WhatsApp</a>
                 </Button>
-                <Button asChild size="sm" variant="outline">
+                <Button asChild size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center" variant="outline">
                   <a href={`sms:+${draft.phone}?body=${body}`}>Ouvrir le SMS</a>
                 </Button>
               </>
             ) : (
               <>
-                <Button size="sm" disabled>Ouvrir WhatsApp</Button>
-                <Button size="sm" variant="outline" disabled>Ouvrir le SMS</Button>
+                <Button size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center" disabled>Ouvrir WhatsApp</Button>
+                <Button size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-center" variant="outline" disabled>Ouvrir le SMS</Button>
               </>
             )}
           </div>

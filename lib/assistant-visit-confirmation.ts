@@ -214,7 +214,7 @@ export async function confirmAssistantVisit(
       ...(visitId && !agent ? [{ label: say("Voir la visite", "View visit", "عرض الزيارة", "Chouf la visite"), href: ROUTES.VISIT_DETAIL(visitId) }] : []),
       ...(!agent ? [{ label: say("Mon planning", "My schedule", "جدولي", "Planning ta3i"), href: ROUTES.SCHEDULE }] : []),
     ],
-    ...(isAssistant ? {} : { visitMessage: buildVisitMessage("confirmed", { firstName: client.firstName, phone: client.phone, phone2: client.phone2 }, title, scheduledAt) }),
+    visitMessage: buildVisitMessage("confirmed", { firstName: client.firstName, phone: client.phone, phone2: client.phone2 }, title, scheduledAt),
     clientContextId: String(client._id),
     visitContext: { clientId: String(client._id), listingId: String(listing._id), visitId, pending: false, ...(agent ? { agentId } : {}) },
   };
