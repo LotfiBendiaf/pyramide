@@ -14,7 +14,7 @@ import { askModel, AssistantUnavailable } from "@/lib/assistant-model";
 import { pluralize } from "@/lib/pluralize";
 export { AssistantUnavailable } from "@/lib/assistant-model";
 import { dailyAssistantPlan } from "@/lib/assistant-briefing";
-import { pipelineInput, pipelineInstructions, runPipelineAction, type PipelineContext } from "@/lib/assistant-pipeline";
+import { pipelineInput, parsePipelineDetails, pipelineInstructions, runPipelineAction, type PipelineContext } from "@/lib/assistant-pipeline";
 import { canUseAssistantOperations } from "@/constants/values";
 import { createFromAssistant, creationIntents, creationInstructions, type CreationDraft } from "@/lib/assistant-creation";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
@@ -331,7 +331,19 @@ async function executeAgencyQuestion(plan: z.infer<typeof agencyPlanSchema>, que
   if (plan.intent === "visit_feedback" || plan.intent === "open_negotiation" || plan.intent === "approve_negotiation" || plan.intent === "begin_closing" || plan.intent === "record_deposit" || plan.intent === "close_deal") {
     const previous = plan.continuePipeline ? pipelineContext : undefined;
     const extracted = await askModel("Extract ALL explicitly supplied details for this CRM action. Return JSON with only these optional fields: outcome INTERESTED/NOT_INTERESTED/UNDECIDED; note a short faithful summary of the visit feedback in the user language; reminderHours a positive number for a requested relative reminder (convert days to hours); reminderDate YYYY-MM-DD and reminderTime HH:mm for an absolute reminder; finalPrice in DZD; commissionPercentage in percent; negotiationId only when supplied; depositAmount in DZD, paymentDate YYYY-MM-DD, paymentMethod Espèces/Versement/Chèque for an explicitly received deposit. A compound request can include feedback AND a reminder: extract both. Do not invent missing information. Return {} if no details are supplied. Do not interpret identifiers as prices. Output newly supplied details only.", { action: plan.intent, latestQuestion: question, todayInAlgiers: formatInTimeZone(new Date(), timeZone, "yyyy-MM-dd"), language: plan.language });
-    plan.pipeline = { ...plan.pipeline, ...pipelineInput.parse(JSON.parse(extracted)) };
+    try {
+      plan.pipeline = { ...plan.pipeline, ...parsePipelineDetails(extracted, question) };
+      // Never let a guessed identifier from the first planner override dossier resolution.
+      const grounded = parsePipelineDetails(JSON.stringify(plan.pipeline), question);
+      plan.pipeline = grounded;
+    } catch {
+      return { answer: {
+        fr: "Je n’ai pas pu identifier les détails de cette action. Précisez le client ou le bien et les informations à enregistrer.",
+        en: "I could not identify the action details. Specify the client or property and the details to record.",
+        ar: "لم أتمكن من تحديد تفاصيل الإجراء. حدد الزبون أو العقار والمعلومات المراد تسجيلها.",
+        darija: "Ma fhemtch détails ta3 l’action. 3tini client wela bien w les infos li nsajel.",
+      }[plan.language], interpretation: "ai" };
+    }
     return {
       ...await runPipelineAction(access, plan.intent, plan.client ?? explicitPhoneIn(question), plan.confirmation?.listing ?? plan.proposal?.listing ?? plan.listingQuery,
         plan.pipeline, { ...visit, clientId: visit?.clientId ?? clientContextId }, previous, plan.language),

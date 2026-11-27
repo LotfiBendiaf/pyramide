@@ -1,6 +1,6 @@
 # Assistant CRM : environnement local
 
-Branche : `ai-assistant`. Les commits sont locaux ; aucun push ni PR n'est nécessaire pour lancer les tests.
+Branche : `ai-assistant`. Aucun push ni PR n’est nécessaire pour lancer les tests.
 
 ## Démarrage
 
@@ -18,7 +18,7 @@ La configuration privée reste dans `.env.local` (non versionnée), avec `MONGOD
 
 Les fichiers MongoDB sont dans `.local-data/mongodb`, hors de `/tmp` et ignorés par Git. Les transactions clôturées restent dans les négociations, avec leur date de clôture, prix final, commissions et liens vers le bien, le client et l'agent. Une copie des références et noms est conservée à la clôture pour garder le contexte historique. L'archivage d'un bien ne supprime pas ces transactions.
 
-La limite de cinq conversations ne limite pas l'historique métier des ventes.
+Les conversations sont conservées séparément de l’historique métier des ventes.
 
 Pour créer une sauvegarde locale complète de la base :
 

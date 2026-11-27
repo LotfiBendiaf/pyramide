@@ -23,8 +23,25 @@ export const pipelineInput = z.object({
   depositAmount: z.number().positive().nullish(),
   paymentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
   paymentMethod: z.enum(["Espèces", "Versement", "Chèque"]).nullish(),
-  negotiationId: z.string().regex(/^[a-f0-9]{24}$/i).nullish(),
+  negotiationId: z.preprocess(
+    (value) => typeof value === "string" && !/^[a-f0-9]{24}$/i.test(value) ? undefined : value,
+    z.string().regex(/^[a-f0-9]{24}$/i).nullish(),
+  ),
 });
+/** Model identifiers are hints only when copied explicitly from the latest request. */
+export function parsePipelineDetails(text: string, question: string) {
+  const input = JSON.parse(text) as unknown;
+  if (input && typeof input === "object" && !Array.isArray(input)) {
+    const details = { ...input } as Record<string, unknown>;
+    const explicitIds = question.match(/(?<![a-z0-9])[a-f0-9]{24}(?![a-z0-9])/gi) ?? [];
+    if (typeof details.negotiationId !== "string" ||
+      !explicitIds.some((id) => id.toLowerCase() === String(details.negotiationId).toLowerCase())) {
+      delete details.negotiationId;
+    }
+    return pipelineInput.parse(details);
+  }
+  return pipelineInput.parse(input);
+}
 type Action = "visit_feedback" | "open_negotiation" | "approve_negotiation" | "begin_closing" | "record_deposit" | "close_deal";
 type Language = "fr" | "en" | "ar" | "darija";
 export type PipelineContext = {

@@ -93,3 +93,13 @@ Retest darija du gérant « chakhash hed client +1 202 555 0171 ? wach rahi t9al
 Complément iPhone : confirmation de visite pour l’assistante avec brouillon client vérifiée ; ouverture du composeur SMS contenant Leila, le bien, le 28 novembre et 15 h 30. Annulation du composeur, aucun envoi. Message personnel reformulé visible dans un brouillon WhatsApp, aucun envoi. Renommage et épinglage de « Visite Leila » vérifiés par appui long.
 
 Comparaison financière réelle du gérant retestée avec succès : novembre 2026, 2 affaires, 18 578 000 DA de transactions, 448 000 DA de commissions ; ventilation ventes/locations par Amine, Manager Local et Sarah, y compris résultats nuls. Les commissions locatives correspondent aux valeurs de simulation enregistrées.
+
+## Trois parcours finaux en parallèle — 27 novembre 2026
+
+Assistante : BUY-00008, recherche contextuelle dans le catalogue partagé V-0000002 appartenant au gérant, proposition et visite Amine le28/11à10h30 ; client/source/critères, planning et notification vérifiés en base. Rapport qa-assistante-final-2026-11-27.md. Correction du compteur accueil : clients assignés OU créés pour le rôle ASSISTANT.
+
+Agent : BUY-00009 / V-0000004, déplacement puis annulation dans la même conversation, brouillons client, retour intéressé + relance30/11à10h et clôture19.5MDA. Commission195kacheteur+195kvendeur=390k. Préconditions négociation/validation/dépôt testées par actions natives, mutations suivantes par chat. Premier essai clôture503 dû à un identifiant modèle invalide, deuxième réussi. Correction générale d’ancrage des identifiants et clarification JSON invalide avec3tests ciblés ; pas de seconde clôture complète après correctif. Rapport qa-agent-final-2026-11-27.md.
+
+Gérant : ses clients/relances et accès équipe vérifiés, inactivité1mois avec fixtures positives, décisions d’archivage client/bien, validation distincte du bien et refus. Finances après clôture :3affaires38 078 000DA et838 000DA de commissions, concordance chat/dashboard/agrégat Mongo indépendant. Rapport qa-gerant-final-2026-11-27.md.
+
+Contrôles finaux :9tests ciblés (dont saisies et modèle), TypeScript sources hors.next, ESLint3fichiersmodifiés et gitdiffcheck passent. Aucun message externe envoyé. Étape4 préparation PR/configuration non commencée dans ce lot.

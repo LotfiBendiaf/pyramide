@@ -16,9 +16,12 @@ export async function readAssistantBriefing(scope: AssistantScope, now = new Dat
   };
   const all = isAgencyScope(scope);
   const own = all ? {} : { agent: scope.userId };
+  const clientScope = all ? {} : scope.role === "ASSISTANT"
+    ? { $or: [{ assignedAgent: scope.userId }, { createdBy: scope.userId }] }
+    : { assignedAgent: scope.userId };
   const listingScope = scope.role === "VIEWER" || scope.role === "ASSISTANT" ? { ...agencyListingsVisibility, archived: { $ne: true } } : own;
   const [clients, listings, visits, negotiations, hotClients, scheduledVisits, completedVisits, cancelledVisits] = await Promise.all([
-    canReadAssistantSource(scope, "clients") ? Client.countDocuments({ createdAt, ...(all ? {} : { assignedAgent: scope.userId }) }) : null,
+    canReadAssistantSource(scope, "clients") ? Client.countDocuments({ createdAt, ...clientScope }) : null,
     Listing.countDocuments({ createdAt, ...listingScope }),
     canReadAssistantSource(scope, "visits") ? Visit.countDocuments({ createdAt, ...own }) : null,
     canReadAssistantSource(scope, "negotiations") ? Negotiation.countDocuments({ createdAt, ...own }) : null,
