@@ -1,0 +1,113 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { MongoClient } from 'mongodb';
+import ts from 'typescript';
+
+// Integration test of the actual storage code against an explicitly selected local test database.
+const uri = process.env.ASSISTANT_TEST_MONGODB_URI;
+if (!uri) throw new Error('ASSISTANT_TEST_MONGODB_URI is required; select a local test database explicitly.');
+const client = await MongoClient.connect(uri, { serverSelectionTimeoutMS: 3000 });
+const db = client.db('Pyramide-Immobilier');
+const prefix = 'qa-multiple-conversation:' + randomUUID();
+const owners = [prefix + ':agent', prefix + ':assistant'];
+try {
+  let source = await readFile(new URL('../lib/assistant-history.ts', import.meta.url), 'utf8');
+  source = source.replace('import dbConnect from "@/lib/mongoose";', 'const dbConnect = async () => ({connection:{db:globalThis.__assistantHistoryTestDb}});');
+  const titleSource = await readFile(new URL('../lib/assistant-conversation-title.ts', import.meta.url), 'utf8');
+  const titleJs = ts.transpileModule(titleSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
+  source = source.replace('"@/lib/assistant-conversation-title"', JSON.stringify('data:text/javascript;base64,' + Buffer.from(titleJs).toString('base64')));
+  globalThis.__assistantHistoryTestDb = db;
+  const js = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
+  const history = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
+  await test('multiple owned conversations preserve separate contexts, selection, reload and legacy history', async () => {
+    const ids = await Promise.all(Array.from({ length: 6 }, () => history.continuousConversationId(owners[0])));
+    assert.equal(new Set(ids).size, 1);
+    const initialDocument = await db.collection('assistant_conversations').findOne({ _id: owners[0] + ':latest' });
+    assert.equal(initialDocument.threads.length, 1, 'concurrent initializers must not create orphan empty conversations');
+    assert.equal((await history.readConversations(owners[0])).length, 1);
+    const firstId = ids[0];
+    await history.saveAssistantMessage(owners[0], firstId, { question: 'Synthetic A', answer: 'A', clientContextId: '000000000000000000000001' });
+    const secondId = await history.createConversation(owners[0]);
+    assert.notEqual(secondId, firstId);
+    assert.equal(await history.continuousConversationId(owners[0]), secondId);
+    assert.equal((await history.recentConversation(owners[0], secondId)).clientId, undefined);
+    await history.saveAssistantMessage(owners[0], secondId, { question: 'Synthetic B', answer: 'B', clientContextId: '000000000000000000000003' });
+    assert.equal((await history.recentConversation(owners[0], firstId)).clientId, '000000000000000000000001');
+    assert.equal((await history.recentConversation(owners[0], secondId)).clientId, '000000000000000000000003');
+    assert.equal(await history.selectConversation(owners[0], firstId), firstId);
+    assert.equal(await history.continuousConversationId(owners[0]), firstId);
+    assert.equal(await history.selectConversation(owners[1], firstId), null);
+    assert.deepEqual((await history.recentConversation(owners[1], firstId)).questions, []);
+    await assert.rejects(history.saveAssistantMessage(owners[1], firstId, { question: 'Denied', answer: 'Denied' }), /not owned/);
+    assert.equal(await db.collection('assistant_message_archive').countDocuments({ owner: owners[1] }), 0);
+    const legacyId = randomUUID();
+    await db.collection('assistant_conversations').insertOne({ _id: randomUUID(), owner: owners[0], id: legacyId, title: 'Legacy', updatedAt: new Date(0), messages: [{ question: 'Legacy context', answer: 'Saved', clientContextId: 'legacy-client' }] });
+    assert.equal(await history.selectConversation(owners[0], legacyId), legacyId);
+    assert.equal((await history.recentConversation(owners[0], legacyId)).clientId, 'legacy-client');
+    await history.saveAssistantMessage(owners[0], legacyId, { question: 'Resume legacy', answer: 'OK' });
+    await Promise.all(Array.from({ length: 22 }, () => history.createConversation(owners[0])));
+    const stored = await history.readConversations(owners[0]);
+    assert.equal(stored.length, 25);
+    assert.equal(stored.find(thread => thread.id === legacyId).messages.length, 2);
+    assert.equal(stored.find(thread => thread.id === firstId).messages.length, 1);
+    assert.equal(stored.find(thread => thread.id === firstId).title, 'Synthetic A');
+    assert.equal(stored.find(thread => thread.id === secondId).title, 'Synthetic B');
+    // The visible window is bounded, while the archive retains every exchange.
+    for (let index = 0; index < 101; index++) await history.saveAssistantMessage(owners[0], secondId, { question: 'Archive ' + index, answer: 'Saved' });
+    assert.equal((await history.readConversations(owners[0])).find(thread => thread.id === secondId).messages.length, 100);
+    assert.equal(await db.collection('assistant_message_archive').countDocuments({ owner: owners[0], conversationId: secondId }), 102);
+    await history.selectConversation(owners[0], firstId);
+    assert.equal(await history.continuousConversationId(owners[0]), firstId);
+    assert.equal((await history.readConversations(owners[0])).length, 25);
+  });
+  await test('rename, pin and soft delete enforce ownership, preserve metadata and recover active chat', async () => {
+    const owner = owners[1];
+    const first = await history.continuousConversationId(owner);
+    const second = await history.createConversation(owner);
+    assert.equal(await history.renameConversation(owners[0], first, 'Foreign'), false);
+    assert.equal(await history.pinConversation(owners[0], first, true), false);
+    assert.equal(await history.deleteConversation(owners[0], first), false);
+    assert.equal(await history.renameConversation(owner, first, ' '), false);
+    assert.equal(await history.renameConversation(owner, first, 'x'.repeat(61)), false);
+    assert.equal(await history.pinConversation(owner, first, 'yes'), false);
+    assert.equal(await history.renameConversation(owner, first, '  Mon dossier personnalisé  '), true);
+    assert.equal(await history.pinConversation(owner, first, true), true);
+    await history.saveAssistantMessage(owner, first, { question: 'First message', answer: 'OK', title: 'Generated title', clientContextId: 'private-context' });
+    const stored = await history.readConversations(owner);
+    assert.equal(stored[0].id, first);
+    assert.equal(stored[0].title, 'Mon dossier personnalisé');
+    assert.equal(stored[0].pinned, true);
+    assert.equal(await history.pinConversation(owner, first, false), true);
+    assert.equal(await history.selectConversation(owner, first), first);
+    assert.equal(await history.deleteConversation(owner, first), second);
+    assert.equal(await history.selectConversation(owner, first), null);
+    assert.deepEqual((await history.recentConversation(owner, first)).questions, []);
+    await assert.rejects(history.saveAssistantMessage(owner, first, { question: 'Deleted', answer: 'No' }), /not owned/);
+    assert.equal(await history.renameConversation(owner, first, 'Deleted'), false);
+    assert.equal(await history.pinConversation(owner, first, true), false);
+    assert.equal((await history.readConversations(owner)).some(thread => thread.id === first), false);
+    assert.equal(await db.collection('assistant_message_archive').countDocuments({ owner, conversationId: first }), 1);
+    const document = await db.collection('assistant_conversations').findOne({ _id: owner + ':latest' });
+    const tombstone = document.threads.find(thread => thread.id === first);
+    assert.ok(tombstone.deletedAt instanceof Date);
+    assert.equal(tombstone.messages.length, 1);
+    assert.equal(tombstone.customTitle, true);
+    const replacement = await history.deleteConversation(owner, second);
+    assert.ok(replacement && replacement !== first && replacement !== second);
+    assert.equal(await history.continuousConversationId(owner), replacement);
+    assert.equal((await history.readConversations(owner)).length, 1);
+    // A legacy document must not resurrect a deleted thread during migration.
+    await db.collection('assistant_conversations').insertOne({ _id: randomUUID(), owner, id: first, messages: [{ question: 'Old copy', answer: 'Old' }] });
+    await history.createConversation(owner);
+    assert.equal((await history.readConversations(owner)).some(thread => thread.id === first), false);
+  });
+} finally {
+  // Only the disposable owners minted by this test are removed.
+  await db.collection('assistant_sessions').deleteMany({ _id: { $in: owners } });
+  await db.collection('assistant_conversations').deleteMany({ owner: { $in: owners } });
+  await db.collection('assistant_message_archive').deleteMany({ owner: { $in: owners } });
+  delete globalThis.__assistantHistoryTestDb;
+  await client.close();
+}

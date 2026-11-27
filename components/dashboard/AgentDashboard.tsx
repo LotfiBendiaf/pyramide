@@ -24,7 +24,7 @@ import {
 import ROUTES from "@/constants/routes";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { formatPriceAlgeria } from "@/lib/utils";
+const formatDinars = (value: number) => new Intl.NumberFormat("fr-DZ", { maximumFractionDigits: 2 }).format(value);
 
 interface AgentDashboardProps {
   userName: string;
@@ -145,8 +145,8 @@ export function AgentDashboard({
     },
     {
       label: "Commissions gagnées",
-      value: `${formatPriceAlgeria(totalCommission)} DA`,
-      helper: `${formatPriceAlgeria(monthlyCommission)} DA ce mois`,
+      value: `${formatDinars(totalCommission)} DA`,
+      helper: `${formatDinars(monthlyCommission)} DA ce mois`,
       icon: CircleDollarSign,
       className:
         "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-300",

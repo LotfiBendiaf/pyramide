@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { normalizePhoneKey } from "@/lib/phone";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -32,7 +33,8 @@ export default function PhoneActionLink({
   label?: string;
   showIcon?: boolean;
 }) {
-  const whatsappPhone = phone.replace(/\D/g, "");
+  const normalized = normalizePhoneKey(phone);
+  const whatsappPhone = normalized && /^\d{8,15}$/.test(normalized) ? normalized : undefined;
 
   return (
     <Dialog>
@@ -40,7 +42,7 @@ export default function PhoneActionLink({
         <button
           type="button"
           className={cn(
-            "text-primary hover:underline flex items-center gap-2 text-left",
+            "text-primary hover:underline flex min-h-11 min-w-0 items-center gap-2 break-words text-left",
             className
           )}
         >
@@ -57,15 +59,15 @@ export default function PhoneActionLink({
         </DialogHeader>
         <div className="grid gap-3 pt-2">
           <DialogClose asChild>
-            <Button asChild className="w-full justify-start">
-              <a href={`tel:${phone}`}>
+            <Button asChild className="h-auto min-h-11 w-full justify-start whitespace-normal py-2 text-left">
+              <a href={`tel:${whatsappPhone ? `+${whatsappPhone}` : phone}`}>
                 <Phone className="h-4 w-4" />
                 Appeler avec l’application Téléphone
               </a>
             </Button>
           </DialogClose>
-          <DialogClose asChild>
-            <Button asChild variant="outline" className="w-full justify-start">
+          {whatsappPhone && <DialogClose asChild>
+            <Button asChild variant="outline" className="h-auto min-h-11 w-full justify-start whitespace-normal py-2 text-left">
               <a
                 href={`https://wa.me/${whatsappPhone}`}
                 target="_blank"
@@ -75,7 +77,7 @@ export default function PhoneActionLink({
                 Ouvrir dans WhatsApp
               </a>
             </Button>
-          </DialogClose>
+          </DialogClose>}
         </div>
       </DialogContent>
     </Dialog>

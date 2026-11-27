@@ -1,5 +1,6 @@
 "use client";
 
+import { SALE_AGENCY_COMMISSION_PERCENT } from "@/lib/agency-commission";
 import { useRef, useState, type ChangeEvent, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -126,6 +127,7 @@ export interface NegotiationDetailProps {
       referenceCode?: string;
       title?: string;
       pipelineStatus?: string;
+      status?: string;
     };
     client?: {
       _id: string;
@@ -531,6 +533,7 @@ export function NegotiationDetail({
                 <CloseDealDialog
                   negotiationId={negotiation._id}
                   closingDetails={negotiation.closingDetails}
+                  isSale={negotiation.listing?.status !== "En Location" && negotiation.listing?.status !== "Loué"}
                 />
               )}
               <Button size="sm" variant="outline" asChild>
@@ -1070,9 +1073,11 @@ function ConfirmDepositDialog({ negotiationId }: { negotiationId: string }) {
 function CloseDealDialog({
   negotiationId,
   closingDetails,
+  isSale,
 }: {
   negotiationId: string;
   closingDetails?: NegotiationDetailProps["negotiation"]["closingDetails"];
+  isSale: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [uploadingDocument, setUploadingDocument] = useState(false);
@@ -1086,7 +1091,7 @@ function CloseDealDialog({
     defaultValues: {
       negotiationId,
       finalPrice: closingDetails?.finalPrice ?? 0,
-      commissionPercentage: closingDetails?.commissionPercentage ?? 0,
+      commissionPercentage: isSale ? SALE_AGENCY_COMMISSION_PERCENT : closingDetails?.commissionPercentage ?? 0,
       notes: "",
     },
   });
@@ -1204,6 +1209,7 @@ function CloseDealDialog({
                   <FormControl>
                     <Input
                       type="number"
+                      readOnly={isSale}
                       min={0}
                       max={100}
                       step={0.1}
@@ -1211,6 +1217,7 @@ function CloseDealDialog({
                       onChange={(e) => field.onChange(Number(e.target.value))}
                     />
                   </FormControl>
+                  {isSale && <p className="text-sm text-muted-foreground">1 % acheteur + 1 % vendeur = 2 % pour l’agence.</p>}
                   <FormMessage />
                 </FormItem>
               )}

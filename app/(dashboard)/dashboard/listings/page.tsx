@@ -20,7 +20,7 @@ function canAccessNewListings(role?: string) {
 }
 
 type ListingsSectionProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     city?: string;
     status?: string;
     minPrice?: string;
@@ -40,7 +40,7 @@ type ListingsSectionProps = {
     sortBy?: string;
     sortOrder?: string;
     agentId?: string;
-  };
+  }>;
 };
 
 type ListingsContentProps = ListingsSectionProps & {

@@ -6,6 +6,10 @@ import dbConnect from "@/lib/mongoose";
 import { Listing, Client, FollowUp, User, Negotiation } from "@/models";
 import { getUserBySessionEmail } from "@/lib/getUserBySessionEmail";
 
+function clientDisplayName(client: { firstName?: string; lastName?: string; referenceCode?: string }) {
+  return [client.firstName, client.lastName].filter(Boolean).join(" ").trim() || client.referenceCode || "Client";
+}
+
 export async function GET() {
   try {
     await dbConnect();
@@ -90,7 +94,7 @@ export async function GET() {
       closedDealsThisMonth,
 
       // Revenue
-      soldListingsForRevenue,
+      closedTransactions,
       totalGainAggregation,
       monthlyGainAggregation,
 
@@ -104,10 +108,7 @@ export async function GET() {
         ...listingFilter,
         status: { $in: ["En Vente", "En Location"] },
       }),
-      Listing.countDocuments({
-        ...listingFilter,
-        status: { $in: ["Vendu", "Loué"] },
-      }),
+      Negotiation.countDocuments({ ...negotiationFilter, status: "DEAL_DONE" }),
       Listing.countDocuments({
         ...listingFilter,
         createdAt: { $gte: startOfMonth },
@@ -186,8 +187,8 @@ export async function GET() {
       }),
 
       // Revenue (always global for admin, scoped for agent)
-      Listing.find({ ...listingFilter, status: { $in: ["Vendu", "Loué"] } })
-        .select("price status updatedAt")
+      Negotiation.find({ ...negotiationFilter, status: "DEAL_DONE" })
+        .select("closingDetails.finalPrice closedAt")
         .lean(),
       Negotiation.aggregate([
         {
@@ -272,6 +273,11 @@ export async function GET() {
         .lean(),
     ]);
 
+    // Financial history comes from recorded closings, including archived properties.
+    const soldListingsForRevenue = closedTransactions.map((deal) => ({
+      price: deal.closingDetails?.finalPrice ?? 0,
+      updatedAt: deal.closedAt,
+    }));
     // 4. Calculate revenue
     const totalRevenue = soldListingsForRevenue.reduce(
       (sum, listing) => sum + (listing.price || 0),
@@ -339,10 +345,7 @@ export async function GET() {
               }),
               FollowUp.countDocuments({ agent: agent._id }),
               FollowUp.countDocuments({ agent: agent._id, status: "OVERDUE" }),
-              Listing.countDocuments({
-                agent: agent._id,
-                status: { $in: ["Vendu", "Loué"] },
-              }),
+              Negotiation.countDocuments({ agent: agent._id, status: "DEAL_DONE" }),
             ]);
 
           return {
@@ -369,7 +372,7 @@ export async function GET() {
       _id: string;
       type: string;
       reminderAt: Date;
-      client?: { firstName: string; lastName: string };
+      client?: { firstName: string; lastName: string; referenceCode?: string };
       listing?: { title: string };
     }
 
@@ -377,7 +380,7 @@ export async function GET() {
       ...followUpFilter,
       reminderAt: { $gte: startOfDay, $lte: endOfDay },
     })
-      .populate("client", "firstName lastName")
+      .populate("client", "firstName lastName referenceCode")
       .populate("listing", "title")
       .sort({ reminderAt: 1 })
       .lean()) as unknown as TodayEvent[];
@@ -387,7 +390,7 @@ export async function GET() {
       title:
         event.listing?.title ||
         (event.client
-          ? `${event.client.firstName} ${event.client.lastName}`
+          ? clientDisplayName(event.client)
           : event.type),
       time: new Date(event.reminderAt).toLocaleTimeString("fr-FR", {
         hour: "2-digit",
@@ -395,7 +398,7 @@ export async function GET() {
       }),
       type: event.type === "VISIT" ? "visit" : "followup",
       clientName: event.client
-        ? `${event.client.firstName} ${event.client.lastName}`
+        ? clientDisplayName(event.client)
         : undefined,
     }));
 
@@ -423,11 +426,12 @@ export async function GET() {
           .sort({ createdAt: -1 })
           .limit(3)
           .populate("agent", "name profileImage")
-          .populate("client", "firstName lastName")
+          .populate("client", "firstName lastName referenceCode")
           .lean(),
-        Listing.find({ ...activityListingFilter, status: { $in: ["Vendu", "Loué"] } })
-          .sort({ updatedAt: -1 })
+        Negotiation.find({ ...negotiationFilter, status: "DEAL_DONE" })
+          .sort({ closedAt: -1 })
           .limit(3)
+          .populate("listing", "title status")
           .populate("agent", "name profileImage")
           .lean(),
       ]);
@@ -453,7 +457,7 @@ export async function GET() {
           type: "client" as const,
           entityId: String(c._id),
           title: "Nouveau client",
-          description: `${c.firstName} ${c.lastName} - ${c.type}`,
+          description: `${clientDisplayName({ firstName: c.firstName, lastName: c.lastName, referenceCode: c.referenceCode })} - ${c.type}`,
           timestamp: c.createdAt,
           user: {
             name: c.createdBy?.name || "Agent",
@@ -483,7 +487,7 @@ export async function GET() {
         entityId: f.client?._id?.toString(),
         title: "Suivi créé",
         description: f.client
-          ? `${f.client.firstName} ${f.client.lastName} - ${f.type}`
+          ? `${clientDisplayName(f.client)} - ${f.type}`
           : `Suivi ${f.type}`,
         timestamp: f.createdAt,
         user: {
@@ -494,10 +498,10 @@ export async function GET() {
       })),
       ...recentSales.map((s) => ({
         type: "sale" as const,
-        entityId: String(s._id),
-        title: "Vente réalisée",
-        description: s.title || `${s.propertyType} à ${s.location.city}`,
-        timestamp: s.updatedAt,
+        entityId: String(s.listing?._id ?? s.listing),
+        title: s.listing?.status === "Loué" || s.closingSnapshot?.listingReference?.startsWith("L-") ? "Location conclue" : "Vente réalisée",
+        description: s.listing?.title || "Affaire clôturée",
+        timestamp: s.closedAt,
         user: {
           name: s.agent?.name || "Agent",
           profileImage: s.agent?.profileImage,

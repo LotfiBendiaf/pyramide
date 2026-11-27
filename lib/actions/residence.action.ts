@@ -4,12 +4,13 @@ import { FilterQuery, Types } from "mongoose";
 import { revalidatePath } from "next/cache";
 import slugify from "slugify";
 
+import { assistantCreationId } from "@/lib/assistant-creation-id";
 import { Residence, ReferenceCounter } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
 import dbConnect from "../mongoose";
 import ROUTES from "@/constants/routes";
-import { isElevatedRole } from "@/constants/values";
+import { canUseAssistantOperations, isElevatedRole } from "@/constants/values";
 import {
   residenceSchema,
   unitStatusUpdateSchema,
@@ -19,14 +20,14 @@ import {
 
 /* ─────────────────────── Helpers ─────────────────────── */
 
-async function requireResidenceManager() {
+async function requireResidenceManager(allowAssistant = false) {
   const user = await getUserBySessionEmail();
 
   if (!user?.data) {
     return { error: { message: "Non autorisé", status: 401 } as const };
   }
 
-  if (!isElevatedRole(user.data.role)) {
+  if (!isElevatedRole(user.data.role) && !(allowAssistant && canUseAssistantOperations(user.data.role))) {
     return {
       error: {
         message: "Accès réservé aux gérants, administrateurs et développeurs",
@@ -123,17 +124,24 @@ function revalidateResidencePaths(slug?: string, previousSlug?: string) {
 /* ─────────────────────── Create / Update ─────────────────────── */
 
 export async function createResidence(
-  params: ResidenceInput
+  params: ResidenceInput,
+  fromAssistant?: boolean,
 ): Promise<ActionResponse<Residence>> {
   try {
     const parsedParams = residenceSchema.parse(params);
 
-    const access = await requireResidenceManager();
+    const access = await requireResidenceManager(true);
     if (access.error) {
       return { success: false, error: { message: access.error.message }, status: access.error.status };
     }
 
     await dbConnect();
+
+    const creationId = fromAssistant === true
+      ? assistantCreationId("residence", String(access.user!._id), parsedParams)
+      : undefined;
+    const existing = creationId ? await Residence.findById(creationId) : null;
+    if (existing) return { success: true, data: JSON.parse(JSON.stringify(existing)), status: 200 };
 
     const slug = await generateUniqueResidenceSlug(
       parsedParams.slug?.trim() || parsedParams.title
@@ -142,8 +150,10 @@ export async function createResidence(
     const { totalUnits, priceFrom } = computeResidenceAggregates(parsedParams.units);
     const amenities = normalizeAmenities(parsedParams.amenities);
 
-    const residence = await Residence.create({
+    const assistantDraft = !isElevatedRole(access.user!.role);
+    const residenceData = {
       ...parsedParams,
+      ...(assistantDraft ? { isPublished: false, isFeatured: false } : {}),
       slug,
       referenceCode,
       referenceGeneratedAt: new Date(),
@@ -152,8 +162,11 @@ export async function createResidence(
       priceFrom,
       agent: parsedParams.agent || undefined,
       createdBy: access.user!._id,
-      publishedAt: parsedParams.isPublished ? new Date() : undefined,
-    });
+      publishedAt: !assistantDraft && parsedParams.isPublished ? new Date() : undefined,
+    };
+    const residence = creationId
+      ? await Residence.findOneAndUpdate({ _id: creationId }, { $setOnInsert: residenceData }, { upsert: true, new: true, runValidators: true })
+      : await Residence.create(residenceData);
 
     revalidateResidencePaths(slug);
 

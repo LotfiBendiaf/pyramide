@@ -4,7 +4,9 @@ import Link from "next/link";
 import { Building2, CircleDollarSign, Clock3, Wallet, type LucideIcon } from "lucide-react";
 import ROUTES from "@/constants/routes";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn, formatPriceAlgeria } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+
+const formatDinars = (value: number) => new Intl.NumberFormat("fr-DZ", { maximumFractionDigits: 2 }).format(value);
 
 interface SectionCardsProps {
   stats: {
@@ -48,9 +50,9 @@ function MetricCard({ label, value, detail, icon: Icon, href, tone = "neutral" }
 
 export function SectionCards({ stats }: SectionCardsProps) {
   return (
-    <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <MetricCard label="Valeur des transactions" value={`${formatPriceAlgeria(stats.totalRevenue)} DA`} detail={`${formatPriceAlgeria(stats.monthlyRevenue)} DA réalisés ce mois`} icon={CircleDollarSign} href={ROUTES.SOLD_LISTINGS_DASHBOARD} tone="brand" />
-      <MetricCard label="Commissions agence" value={`${formatPriceAlgeria(stats.totalGainedAmount)} DA`} detail={`${formatPriceAlgeria(stats.monthlyGainedAmount)} DA encaissés ce mois`} icon={Wallet} href={ROUTES.DEAL_DONE_NEGOTIATIONS} tone="success" />
+    <div className="grid auto-rows-fr gap-4 @[28rem]:grid-cols-2 @[56rem]:grid-cols-4">
+      <MetricCard label="Valeur des transactions" value={`${formatDinars(stats.totalRevenue)} DA`} detail={`${formatDinars(stats.monthlyRevenue)} DA réalisés ce mois`} icon={CircleDollarSign} href={ROUTES.SOLD_LISTINGS_DASHBOARD} tone="brand" />
+      <MetricCard label="Commissions agence" value={`${formatDinars(stats.totalGainedAmount)} DA`} detail={`${formatDinars(stats.monthlyGainedAmount)} DA enregistrés ce mois`} icon={Wallet} href={ROUTES.DEAL_DONE_NEGOTIATIONS} tone="success" />
       <MetricCard label="Biens actifs" value={stats.activeListings.toLocaleString("fr-FR")} detail={`${stats.totalListings.toLocaleString("fr-FR")} biens dans le portefeuille`} icon={Building2} href={ROUTES.LISTINGS_DASHBOARD} />
       <MetricCard label="Suivis en retard" value={stats.overdueFollowUps.toLocaleString("fr-FR")} detail={`${stats.pendingFollowUps.toLocaleString("fr-FR")} suivis restent à traiter`} icon={Clock3} href={ROUTES.FOLLOWUPS} tone={stats.overdueFollowUps > 0 ? "warning" : "neutral"} />
     </div>

@@ -1,6 +1,7 @@
 "use server";
 
-import { Visit, Listing, Client } from "@/models";
+import { createVisitInSlot, VisitSlotConflict, withVisitSlotLock } from "@/lib/visit-slot";
+import { CalendarEvent, Visit, Listing, Client, User } from "@/models";
 import { IVisit } from "@/models/visit.model";
 import { IClient } from "@/models/client.model";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
@@ -16,7 +17,7 @@ import {
   CancelVisitInput,
 } from "../validators/visit";
 import { VisitFilters, PopulatedVisit, VisitStats } from "@/types/visit";
-import { isElevatedRole } from "@/constants/values";
+import { canManageAgentVisits, canUseAssistantOperations, isElevatedRole } from "@/constants/values";
 import { Types, FilterQuery } from "mongoose";
 import { startOfDay, endOfDay, endOfWeek } from "date-fns";
 import dbConnect from "../mongoose";
@@ -47,6 +48,9 @@ export async function scheduleVisit(
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
+  if (!canUseAssistantOperations(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
+  }
 
   const {
     listingId,
@@ -56,6 +60,8 @@ export async function scheduleVisit(
     scheduledAt,
     status,
     notes,
+    deduplicate,
+    assignedAgentId,
   } = validationResult.params;
   const visitStatus = status ?? "SCHEDULED";
 
@@ -76,16 +82,37 @@ export async function scheduleVisit(
   }
 
   try {
+    if (user.data.role === "ASSISTANT" && !assignedAgentId) {
+      return { success: false, error: { message: "Choisissez l’agent responsable de cette visite" }, status: 403 };
+    }
+    const accessibleClient = await Client.exists({
+      _id: clientId, archived: { $ne: true },
+      ...(isElevatedRole(user.data.role) ? {} : user.data.role === "ASSISTANT"
+        ? { $or: [{ assignedAgent: user.data._id }, { createdBy: user.data._id }] }
+        : { assignedAgent: user.data._id }),
+    });
+    if (!accessibleClient) return { success: false, error: { message: "Client introuvable dans vos dossiers accessibles" }, status: 404 };
+    if (assignedAgentId) {
+      if (visitStatus !== "SCHEDULED" || isExternalListing || scheduledAt <= new Date()) {
+        return { success: false, error: { message: "Affectation de visite non autorisée" }, status: 403 };
+      }
+      const agent = await User.exists({ _id: assignedAgentId, role: { $in: ["AGENT", "MANAGER", "ADMIN", "DEVELOPER"] } });
+      if (!agent) return { success: false, error: { message: "Agent indisponible pour cette visite" }, status: 404 };
+    }
+
     // Hard block check — only applies to internal listings
     if (!isExternalListing && listingId) {
       const listing = await Listing.findById(listingId)
-        .select("pipelineStatus blockedUntil keyAvailable isValidated archived")
+        .select("pipelineStatus blockedUntil keyAvailable isValidated validationStatus archived status agent")
         .lean<{
           pipelineStatus: string;
           blockedUntil?: Date;
           keyAvailable: boolean;
           isValidated?: boolean;
           archived?: boolean;
+          validationStatus?: string;
+          status?: string;
+          agent?: Types.ObjectId;
         }>();
 
       if (!listing) {
@@ -96,6 +123,14 @@ export async function scheduleVisit(
         };
       }
 
+      if (listing.archived || !["En Vente", "En Location"].includes(listing.status ?? "")) {
+        return { success: false, error: { message: "Ce bien n’est pas disponible pour les visites" }, status: 409 };
+      }
+      const ownListing = String(listing.agent) === String(user.data._id);
+      const approvedCatalogueListing = listing.isValidated && listing.validationStatus === "VALIDATED";
+      if (!isElevatedRole(user.data.role) && !approvedCatalogueListing && !(user.data.role === "AGENT" && ownListing)) {
+        return { success: false, error: { message: "Bien introuvable dans votre catalogue accessible" }, status: 404 };
+      }
       const isNeutreListing = !listing.isValidated && !listing.archived;
 
       if (!isNeutreListing) {
@@ -131,17 +166,19 @@ export async function scheduleVisit(
       }
     }
 
-    const visit = await Visit.create({
+    const visitData = {
       listing: !isExternalListing && listingId ? listingId : undefined,
       client: clientId,
-      agent: user.data._id,
+      agent: assignedAgentId ?? user.data._id,
       isExternalListing: isExternalListing ?? false,
       externalListingRef: isExternalListing ? externalListingRef : undefined,
       scheduledAt,
       notes,
       status: visitStatus,
       completedAt: visitStatus === "COMPLETED" ? new Date() : undefined,
-    });
+    };
+    const visit = await createVisitInSlot(visitData, deduplicate);
+    if (visit.calendarEventId) return { success: true, data: JSON.parse(JSON.stringify(visit)), status: 200 };
 
     await Client.findByIdAndUpdate(clientId, { lastContactedAt: new Date() });
 
@@ -170,6 +207,7 @@ export async function scheduleVisit(
       status: 201,
     };
   } catch (error) {
+    if (error instanceof VisitSlotConflict) return { success: false, error: { message: error.message }, status: 409 };
     return handleError(error) as ErrorResponse;
   }
 }
@@ -193,6 +231,9 @@ export async function completeVisit(
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
+  if (!canManageAgentVisits(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
+  }
 
   const { visitId, outcome, notes } = validationResult.params;
 
@@ -204,74 +245,82 @@ export async function completeVisit(
     };
   }
 
+  const currentUser = user.data;
   try {
-    const visit = await Visit.findById(visitId).lean<IVisit>();
-    if (!visit) {
-      return {
-        success: false,
-        error: { message: "Visite introuvable" },
-        status: 404,
-      };
-    }
-
-    if (visit.status !== "SCHEDULED") {
-      return {
-        success: false,
-        error: {
-          message: "Seules les visites planifiées peuvent être complétées",
-        },
-        status: 409,
-      };
-    }
-
-    const isManager = isElevatedRole(user.data.role);
-    const isVisitAgent = visit.agent?.toString() === user.data._id?.toString();
-
-    if (!isManager && !isVisitAgent) {
-      return {
-        success: false,
-        error: {
-          message: "Seul l'agent ayant planifié la visite peut la compléter",
-        },
-        status: 403,
-      };
-    }
-
-    const clientId = visit.client.toString();
-
-    // Determine next client pipeline stage based on outcome + temperature
-    const client = await Client.findById(clientId)
-      .select("clientTemperature pipelineStage")
-      .lean<Pick<IClient, "clientTemperature" | "pipelineStage">>();
-
-    const nextClientStage = (() => {
-      if (outcome === "INTERESTED") return "IN_NEGOTIATION";
-      if (outcome === "NOT_INTERESTED") {
-        return client?.clientTemperature === "HOT"
-          ? "ACTIVE_SEARCH"
-          : "FOLLOW_UP";
+    return await withVisitSlotLock("feedback:" + visitId, async () => {
+      const visit = await Visit.findById(visitId).lean<IVisit>();
+      if (!visit) {
+        return {
+          success: false,
+          error: { message: "Visite introuvable" },
+          status: 404,
+        };
       }
-      return client?.pipelineStage; // UNDECIDED — no change
-    })();
 
-    await Promise.all([
-      Visit.findByIdAndUpdate(visitId, {
-        status: "COMPLETED",
-        outcome,
-        notes,
-        completedAt: new Date(),
-      }),
-      Client.findByIdAndUpdate(clientId, {
-        lastContactedAt: new Date(),
+      if (visit.status !== "SCHEDULED" && !(visit.status === "COMPLETED" && visit.outcome === outcome)) {
+        return {
+          success: false,
+          error: {
+            message: "Seules les visites planifiées peuvent être complétées",
+          },
+          status: 409,
+        };
+      }
+
+      const isManager = isElevatedRole(currentUser.role);
+      const isVisitAgent = visit.agent?.toString() === currentUser._id?.toString();
+
+      if (!isManager && !isVisitAgent) {
+        return {
+          success: false,
+          error: {
+            message: "Seul l'agent ayant planifié la visite peut la compléter",
+          },
+          status: 403,
+        };
+      }
+
+      const clientId = visit.client.toString();
+
+      // Determine next client pipeline stage based on outcome + temperature
+      const client = await Client.findById(clientId)
+        .select("clientTemperature pipelineStage")
+        .lean<Pick<IClient, "clientTemperature" | "pipelineStage">>();
+
+      const nextClientStage = (() => {
+        if (client?.pipelineStage === "CLOSED") return "CLOSED";
+        if (outcome === "INTERESTED") return "IN_NEGOTIATION";
+        if (outcome === "NOT_INTERESTED") {
+          return client?.clientTemperature === "HOT"
+            ? "ACTIVE_SEARCH"
+            : "FOLLOW_UP";
+        }
+        return "FOLLOW_UP";
+      })();
+
+      const completed = await Visit.findOneAndUpdate({ _id: visitId, status: visit.status }, {
+          status: "COMPLETED",
+          outcome,
+          ...(notes ? { notes } : {}),
+          completedAt: visit.completedAt ?? new Date(),
+        }, { new: true });
+      if (!completed) return { success: false, error: { message: "La visite a changé. Vérifiez son état actuel." }, status: 409 };
+      await Client.updateOne({
+        _id: clientId,
+        pipelineStage: { $ne: "CLOSED" },
+        ...(visit.status === "COMPLETED" ? { $or: [{ lastContactedAt: { $lt: completed.completedAt } }, { lastContactedAt: { $exists: false } }] } : {}),
+      }, {
+        lastContactedAt: completed.completedAt,
         ...(nextClientStage ? { pipelineStage: nextClientStage } : {}),
-      }),
-    ]);
+      });
 
-    revalidatePath(ROUTES.VISITS);
-    revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
-    revalidatePath(ROUTES.MES_BIENS);
+      revalidatePath(ROUTES.SCHEDULE);
+      revalidatePath(ROUTES.VISITS);
+      revalidatePath(ROUTES.CLIENT_DETAIL(clientId));
+      revalidatePath(ROUTES.MES_BIENS);
 
-    return { success: true, status: 200 };
+      return { success: true, status: 200 };
+    });
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }
@@ -296,8 +345,11 @@ export async function cancelVisit(
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
+  if (!canManageAgentVisits(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
+  }
 
-  const { visitId, notes } = validationResult.params;
+  const { visitId, notes, expectedScheduledAt } = validationResult.params;
 
   if (!Types.ObjectId.isValid(visitId)) {
     return {
@@ -341,16 +393,28 @@ export async function cancelVisit(
       };
     }
 
-    await Visit.findByIdAndUpdate(visitId, {
+    const cancelled = await Visit.findOneAndUpdate({
+      _id: visitId,
+      status: expectedScheduledAt ? "SCHEDULED" : visit.status,
+      ...(expectedScheduledAt ? { scheduledAt: new Date(expectedScheduledAt) } : {}),
+      ...(!isManager ? { agent: user.data._id } : {}),
+    }, {
       status: "CANCELLED",
-      notes,
+      ...(notes !== undefined ? { notes } : {}),
       cancelledAt: new Date(),
     });
+    if (!cancelled) return { success: false, error: { message: "La visite a changé. Consultez votre planning." }, status: 409 };
 
     if (visit.calendarEventId) {
-      await deleteEventFromGoogle(visit.calendarEventId.toString());
+      await deleteEventFromGoogle(visit.calendarEventId.toString()).catch(() => undefined);
     }
+    await CalendarEvent.updateMany({
+      sourceType: "VISIT",
+      sourceId: visitId,
+      agent: visit.agent,
+    }, { $set: { syncStatus: "DELETED" } });
 
+    revalidatePath(ROUTES.SCHEDULE);
     revalidatePath(ROUTES.VISITS);
     revalidatePath(ROUTES.CLIENT_DETAIL(visit.client.toString()));
     revalidatePath(ROUTES.MES_BIENS);
@@ -381,6 +445,9 @@ export async function markVisitNoShow(
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+  if (!canManageAgentVisits(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
   }
 
   if (!Types.ObjectId.isValid(visitId)) {
@@ -447,6 +514,9 @@ export async function fetchVisitsByClient(
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
+  if (!canUseAssistantOperations(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
+  }
 
   if (!Types.ObjectId.isValid(clientId)) {
     return {
@@ -459,7 +529,7 @@ export async function fetchVisitsByClient(
   try {
     await dbConnect();
 
-    const filter = { client: clientId };
+    const filter = { client: clientId, ...(isElevatedRole(user.data.role) ? {} : { agent: user.data._id }) };
     const skip = (page - 1) * limit;
 
     const [visits, total] = await Promise.all([
@@ -495,6 +565,9 @@ export async function fetchVisitsByListing(
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
+  if (!canUseAssistantOperations(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
+  }
 
   if (!Types.ObjectId.isValid(listingId)) {
     return {
@@ -507,7 +580,7 @@ export async function fetchVisitsByListing(
   try {
     await dbConnect();
 
-    const filter = { listing: listingId };
+    const filter = { listing: listingId, ...(isElevatedRole(user.data.role) ? {} : { agent: user.data._id }) };
     const skip = (page - 1) * limit;
 
     const [visits, total] = await Promise.all([
@@ -550,6 +623,9 @@ export async function fetchVisits(
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+  if (!canUseAssistantOperations(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
   }
 
   const {
@@ -652,6 +728,9 @@ export async function fetchVisitStats(): Promise<ActionResponse<VisitStats>> {
   const user = await getUserBySessionEmail();
   if (!user?.data) {
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
+  }
+  if (!canUseAssistantOperations(user.data.role)) {
+    return { success: false, error: { message: "Accès refusé pour ce profil" }, status: 403 };
   }
 
   try {

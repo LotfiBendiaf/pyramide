@@ -13,16 +13,17 @@ import Navbar from "@/components/navigation/Navbar";
 import MapSection from "@/components/sections/MapSection";
 
 type ListingsSectionProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     city?: string;
     status?: string;
     minPrice?: string;
     maxPrice?: string;
     bedrooms?: string;
-  };
+  }>;
 };
 
-const page = ({ searchParams }: ListingsSectionProps) => {
+const page = async ({ searchParams }: ListingsSectionProps) => {
+  const params = await searchParams;
   return (
     <main>
       <Navbar />
@@ -30,7 +31,7 @@ const page = ({ searchParams }: ListingsSectionProps) => {
       <Hero />
       <AboutSection />
       <div className="container mx-auto">
-        <ListingsSection searchParams={searchParams} />
+        <ListingsSection searchParams={params} />
       </div>
       <ExpertiseSection />
       <GlobalImpactSection />

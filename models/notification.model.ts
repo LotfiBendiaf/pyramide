@@ -20,7 +20,8 @@ export type NotificationType =
   | "ARCHIVE_REQUESTED"
   | "ARCHIVE_APPROVED"
   | "ARCHIVE_REJECTED"
-  | "HOT_CLIENT_INACTIVE";
+  | "HOT_CLIENT_INACTIVE"
+  | "PERSONAL_REMINDER";
 
 export type NotificationEntityType =
   | "CLIENT"
@@ -71,6 +72,7 @@ const notificationSchema = new Schema<INotification>(
         "ARCHIVE_APPROVED",
         "ARCHIVE_REJECTED",
         "HOT_CLIENT_INACTIVE",
+        "PERSONAL_REMINDER",
       ],
       required: true,
     },

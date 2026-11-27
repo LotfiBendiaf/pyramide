@@ -6,6 +6,7 @@ import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
 import { Types } from "mongoose";
 import dbConnect from "../mongoose";
+import { deliverDuePersonalReminders } from "@/lib/assistant-personal-reminders";
 
 /* ─────────────────────── Fetch My Notifications ─────────────────────── */
 
@@ -22,6 +23,7 @@ export async function fetchMyNotifications(
   try {
     await dbConnect();
 
+    await deliverDuePersonalReminders(String(user.data._id));
     const filter: Record<string, unknown> = { recipient: user.data._id };
     if (unreadOnly) filter.read = false;
 

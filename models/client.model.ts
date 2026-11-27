@@ -41,6 +41,7 @@ export interface IClient {
   budgetMax?: number;
   priceCurrency?: "DZD" | "EUR" | "USD";
   wantedArea?: number;
+  wantedAreaMin?: number;
   city?: string;
   wantedPropertyType?: string;
   rooms?: number;
@@ -108,6 +109,7 @@ const clientSchema = new Schema<IClient>(
       default: "DZD",
     },
     wantedArea: Number,
+    wantedAreaMin: Number,
     city: String,
     wantedPropertyType: String,
     rooms: Number,

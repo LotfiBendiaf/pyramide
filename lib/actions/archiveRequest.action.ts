@@ -1,5 +1,6 @@
 "use server";
 
+import { canUseAssistantOperations, isElevatedRole } from "@/constants/values";
 import { ArchiveRequest, Client, Listing } from "@/models";
 import { getUserBySessionEmail } from "../getUserBySessionEmail";
 import handleError from "../handlers/error";
@@ -114,6 +115,8 @@ export async function requestArchive(
     return { success: false, error: { message: "Non autorisé" }, status: 401 };
   }
 
+  if (!canUseAssistantOperations(user.data.role)) return { success: false, error: { message: "Accès refusé" }, status: 403 };
+
   const { entityType, entityId, reason } = validationResult.params;
 
   if (!Types.ObjectId.isValid(entityId)) {
@@ -121,9 +124,10 @@ export async function requestArchive(
   }
 
   try {
+    const agency = isElevatedRole(user.data.role);
     const entity = entityType === "CLIENT"
-      ? await Client.findById(entityId).select("archived")
-      : await Listing.findById(entityId).select("archived");
+      ? await Client.findOne({ _id: entityId, ...(agency ? {} : user.data.role === "ASSISTANT" ? { $or: [{ assignedAgent: user.data._id }, { createdBy: user.data._id }] } : { assignedAgent: user.data._id }) }).select("archived")
+      : await Listing.findOne({ _id: entityId, ...(agency ? {} : { agent: user.data._id }) }).select("archived");
     if (!entity) {
       return { success: false, error: { message: "Élément introuvable" }, status: 404 };
     }
@@ -281,10 +285,18 @@ export async function approveArchiveRequest(
             $unset: { validatedAt: 1, validatedBy: 1, publishedAt: 1 },
           });
 
-    await Promise.all([
-      ArchiveRequest.findByIdAndUpdate(requestId, reviewFields),
-      entityUpdate,
-    ]);
+    // Only one review can win, even when two managers decide concurrently.
+    const claimed = await ArchiveRequest.updateOne({ _id: requestId, status: "PENDING" }, { $set: reviewFields });
+    if (!claimed.matchedCount) return { success: false, error: { message: "Cette demande a déjà été traitée" }, status: 409 };
+    try {
+      const archivedEntity = await entityUpdate;
+      if (!archivedEntity) throw new Error("Élément à archiver introuvable");
+    } catch (error) {
+      await ArchiveRequest.updateOne({ _id: requestId, status: "APPROVED", reviewedAt: reviewFields.reviewedAt, reviewedBy: user.data._id }, {
+        $set: { status: "PENDING" }, $unset: { reviewedBy: 1, reviewedAt: 1, managerNote: 1 },
+      });
+      throw error;
+    }
 
     if (archiveRequest.entityType === "CLIENT") {
       revalidatePath(ROUTES.CLIENTS_DASHBOARD);
@@ -360,11 +372,10 @@ export async function rejectArchiveRequest(
       };
     }
 
-    archiveRequest.status = "REJECTED";
-    archiveRequest.reviewedBy = user.data._id;
-    archiveRequest.reviewedAt = new Date();
-    archiveRequest.managerNote = managerNote;
-    await archiveRequest.save();
+    const reviewed = await ArchiveRequest.updateOne({ _id: requestId, status: "PENDING" }, {
+      $set: { status: "REJECTED", reviewedBy: user.data._id, reviewedAt: new Date(), managerNote },
+    });
+    if (!reviewed.matchedCount) return { success: false, error: { message: "Cette demande a déjà été traitée" }, status: 409 };
     revalidateListingArchive(archiveRequest.entityId.toString());
 
     revalidatePath(ROUTES.CLIENTS_DASHBOARD);

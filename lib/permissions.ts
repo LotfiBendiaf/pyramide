@@ -21,6 +21,7 @@ export const RolePermissions = {
     "manage_clients",
     "manage_listings",
     "manage_followups",
+    "view_all_messages",
   ],
   ASSISTANT: [
     "view_dashboard",

@@ -1,5 +1,7 @@
 "use client";
 
+import { pluralize } from "@/lib/pluralize";
+
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -105,11 +107,11 @@ export function NegotiationRequestsList({
       if (succeeded.length > 0) {
         setCompletedIds((ids) => [...ids, ...succeeded]);
         toast.success(
-          `${succeeded.length} demande(s) de négociation ${decision === "approve" ? "approuvée(s)" : "refusée(s)"}`
+          `${succeeded.length} ${pluralize(succeeded.length, "demande")} de négociation ${pluralize(succeeded.length, decision === "approve" ? "approuvée" : "refusée")}`
         );
       }
       if (errors.length > 0) {
-        toast.error(`${errors.length} demande(s) non traitée(s)`, {
+        toast.error(`${errors.length} ${pluralize(errors.length, "demande")} non ${pluralize(errors.length, "traitée")}`, {
           description: errors[0],
         });
       }

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { formatLegacyPlurals } from "@/lib/pluralize";
+
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,11 +29,19 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [loading, setLoading] = useState(false);
+  const announcedReminders = useRef(new Set<string>());
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     const result = await fetchMyNotifications(1, 8);
     if (result.success && result.data) {
+      for (const notification of result.data.notifications) {
+        const id = String(notification._id);
+        if (notification.type === "PERSONAL_REMINDER" && !notification.read && !announcedReminders.current.has(id)) {
+          announcedReminders.current.add(id);
+          toast(notification.title, { description: notification.body, duration: 10000 });
+        }
+      }
       setNotifications(result.data.notifications);
       setUnreadCount(result.data.unreadCount);
     }
@@ -157,10 +167,10 @@ function NotificationItem({
       {notification.read && <span className="mt-1.5 h-2 w-2 shrink-0" />}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium leading-tight">
-          {notification.title}
+          {formatLegacyPlurals(notification.title)}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-          {notification.body}
+          {formatLegacyPlurals(notification.body)}
         </p>
         <p className="text-[10px] text-muted-foreground mt-1">
           {formatDistanceToNow(new Date(notification.createdAt), {

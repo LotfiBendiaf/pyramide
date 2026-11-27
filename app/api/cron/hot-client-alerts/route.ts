@@ -1,3 +1,4 @@
+import { pluralize } from "@/lib/pluralize";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import { Client, User } from "@/models";
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
           recipient: agentId,
           type: "HOT_CLIENT_INACTIVE",
           title: "Client HOT sans contact",
-          body: `${clientName} n'a pas été contacté depuis ${daysSince} jour(s). Un suivi urgent est recommandé.`,
+          body: `${clientName} n'a pas été contacté depuis ${daysSince} ${pluralize(daysSince, "jour")}. Un suivi urgent est recommandé.`,
           link: ROUTES.CLIENT_DETAIL(client._id!.toString()),
           read: false,
           relatedEntity: { type: "CLIENT", id: client._id },
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
         recipient: manager._id.toString(),
         type: "HOT_CLIENT_INACTIVE",
         title: "Clients HOT inactifs",
-        body: `${toAlert.length} client(s) HOT n'ont pas été contactés depuis plus de ${INACTIVITY_THRESHOLD_DAYS} jours.`,
+        body: `${toAlert.length} ${pluralize(toAlert.length, "client")} HOT ${toAlert.length === 1 ? "n’a pas été contacté" : "n’ont pas été contactés"} depuis plus de ${INACTIVITY_THRESHOLD_DAYS} jours.`,
         link: ROUTES.CLIENTS_DASHBOARD,
         read: false,
         relatedEntity: { type: "CLIENT", id: toAlert[0]._id },
@@ -188,7 +189,7 @@ export async function GET(request: NextRequest) {
             NotificationEmail({
               recipientName: `${agent.firstname} ${agent.lastname}`,
               title: "Client HOT sans contact",
-              body: `${clientName} n'a pas été contacté depuis ${daysSince} jour(s). Un suivi urgent est recommandé.`,
+              body: `${clientName} n'a pas été contacté depuis ${daysSince} ${pluralize(daysSince, "jour")}. Un suivi urgent est recommandé.`,
               link: ROUTES.CLIENT_DETAIL(client._id!.toString()),
               baseUrl: BASE_URL,
             })
@@ -216,7 +217,7 @@ export async function GET(request: NextRequest) {
           NotificationEmail({
             recipientName: `${manager.firstname} ${manager.lastname}`,
             title: "Clients HOT inactifs",
-            body: `${toAlert.length} client(s) HOT n'ont pas été contactés depuis plus de ${INACTIVITY_THRESHOLD_DAYS} jours. Veuillez vérifier le tableau de bord.`,
+            body: `${toAlert.length} ${pluralize(toAlert.length, "client")} HOT ${toAlert.length === 1 ? "n’a pas été contacté" : "n’ont pas été contactés"} depuis plus de ${INACTIVITY_THRESHOLD_DAYS} jours. Veuillez vérifier le tableau de bord.`,
             link: ROUTES.CLIENTS_DASHBOARD,
             baseUrl: BASE_URL,
           })

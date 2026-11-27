@@ -1,5 +1,7 @@
 "use client";
 
+import { pluralize } from "@/lib/pluralize";
+
 import * as React from "react";
 import {
   closestCenter,
@@ -526,7 +528,7 @@ export function DataTable({
         <div className="flex items-center justify-between px-4">
           <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+            {table.getFilteredRowModel().rows.length} {pluralize(table.getFilteredRowModel().rows.length, "row", "rows", "en")} selected.
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
             <div className="hidden items-center gap-2 lg:flex">

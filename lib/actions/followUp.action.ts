@@ -1,7 +1,8 @@
 "use server";
 
 import dbConnect from "../mongoose";
-import { Client, FollowUp, Listing, Visit } from "@/models";
+import { createVisitInSlot, VisitSlotConflict } from "@/lib/visit-slot";
+import { Client, FollowUp, Listing } from "@/models";
 import action from "../handlers/action";
 import {
   FollowUpSchema,
@@ -89,10 +90,10 @@ export async function createFollowUp(
           ? "SCHEDULED"
           : "COMPLETED";
 
-      const visit = await Visit.create({
-        listing: followUp.listing,
-        client: followUp.client,
-        agent: followUp.agent,
+      const visit = await createVisitInSlot({
+        listing: followUp.listing?.toString(),
+        client: followUp.client.toString(),
+        agent: followUp.agent.toString(),
         isExternalListing: !followUp.listing,
         externalListingRef: !followUp.listing
           ? followUp.title || "Autre"
@@ -101,6 +102,9 @@ export async function createFollowUp(
         notes: followUp.note,
         status: visitStatus,
         completedAt: visitStatus === "COMPLETED" ? new Date() : undefined,
+      }).catch(async (error: unknown) => {
+        await FollowUp.deleteOne({ _id: followUp._id });
+        throw error;
       });
 
       await Client.findByIdAndUpdate(followUp.client, {
@@ -136,6 +140,7 @@ export async function createFollowUp(
       status: 201,
     };
   } catch (error) {
+    if (error instanceof VisitSlotConflict) return { success: false, error: { message: error.message }, status: 409 };
     return handleError(error) as ErrorResponse;
   }
 }

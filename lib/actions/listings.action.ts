@@ -1,5 +1,6 @@
 "use server";
 
+import { assistantCreationId } from "@/lib/assistant-creation-id";
 import {
   Listing,
   Client,
@@ -29,6 +30,7 @@ import { revalidatePath } from "next/cache";
 import {
   PropertyStatus,
   canManageListingPublication,
+  canUseAssistantOperations,
   hasFullAccess,
   isElevatedRole,
 } from "@/constants/values";
@@ -168,7 +170,8 @@ function buildListingDescription(
 }
 
 export async function createListing(
-  params: ListingInput
+  params: ListingInput,
+  fromAssistant?: boolean,
 ): Promise<ActionResponse<Listing>> {
   // 1. Validation + Authorization
   const validationResult = await action({
@@ -209,6 +212,11 @@ export async function createListing(
 
     await dbConnect();
 
+    const chatCreation = fromAssistant === true && canUseAssistantOperations(user.data.role);
+    const creationId = chatCreation ? assistantCreationId("listing", String(user.data._id), parsedParams) : undefined;
+    const existing = creationId ? await Listing.findById(creationId) : null;
+    if (existing) return { success: true, data: JSON.parse(JSON.stringify(existing)), status: 200 };
+
     // 3. Create the required seller client
     const {
       sellerFirstName,
@@ -231,16 +239,21 @@ export async function createListing(
         { phone: { $in: sellerVariants } },
         { phone2: { $in: sellerVariants } },
       ],
-    }).select("referenceCode archived").lean() as unknown as { referenceCode: string; archived?: boolean } | null;
-    if (existingSeller) {
+    }).select("referenceCode archived type createdBy assignedAgent").lean<{
+      _id: Types.ObjectId; referenceCode: string; archived?: boolean; type?: string; createdBy?: Types.ObjectId; assignedAgent?: Types.ObjectId;
+    }>();
+    const mayReuseSeller = chatCreation && existingSeller?.type === "SELLER" && !existingSeller.archived && (
+      isElevatedRole(user.data.role) || [existingSeller.createdBy, existingSeller.assignedAgent].some((id) => String(id) === String(user.data!._id))
+    );
+    if (existingSeller && !mayReuseSeller) {
       return {
         success: false,
-        error: { message: `Le vendeur existe déjà sous la référence ${existingSeller.referenceCode}${existingSeller.archived ? " (archivée)" : ""}. Utilisez sa fiche existante avant d’ajouter le bien.` },
+        error: { message: chatCreation ? "Ce numéro est déjà associé à une fiche vendeur indisponible pour cet ajout." : `Le vendeur existe déjà sous la référence ${existingSeller.referenceCode}${existingSeller.archived ? " (archivée)" : ""}. Utilisez sa fiche existante avant d’ajouter le bien.` },
         status: 409,
       };
     }
 
-    const sellerClient = await Client.create({
+    const sellerId = existingSeller?._id ?? (await Client.create({
       referenceCode: sellerReferenceCode,
       profileKind: "INDIVIDUAL",
       type: "SELLER",
@@ -256,7 +269,7 @@ export async function createListing(
       assignedAgent: user.data._id,
       phoneKeys: sellerPhoneKeys,
       leadSource: "DIRECT_CALL",
-    });
+    }))._id;
 
     // 4. Create listing (no reference code yet — assigned on validation)
     const description =
@@ -272,7 +285,7 @@ export async function createListing(
     // required once a listing reaches VALIDATED (see toggleListingValidation).
     const isAgentCreated = user.data.role === "AGENT";
 
-    const listing = await Listing.create({
+    const listingData = {
       ...parsedParams,
       // Agents submit publication requests separately; they cannot publish via
       // a crafted form payload.
@@ -281,7 +294,7 @@ export async function createListing(
       propertyTypeCustom: normalizedPropertyTypeCustom,
       evaluation,
       agent: user.data._id,
-      sellerClient: sellerClient._id,
+      sellerClient: sellerId,
       isValidated: isAgentCreated,
       ...(isAgentCreated && {
         validationStatus: "APPROVED",
@@ -289,7 +302,10 @@ export async function createListing(
         validatedBy: user.data._id,
         pipelineStatus: "PHOTO_VISIT_PENDING",
       }),
-    });
+    };
+    const listing = creationId
+      ? await Listing.findOneAndUpdate({ _id: creationId }, { $setOnInsert: listingData }, { upsert: true, new: true, runValidators: true })
+      : await Listing.create(listingData);
 
     if (!listing) {
       throw new Error("Échec de la création de l'annonce");
@@ -631,6 +647,15 @@ export async function fetchListings(
         : -1
       : -1;
 
+    // Visibility is a server policy; caller-supplied filters cannot broaden it.
+    const viewer = await getUserBySessionEmail();
+    if (!viewer.data || viewer.data.role === "ASSISTANT" || viewer.data.role === "VIEWER") {
+      query.$and = [...(query.$and ?? []), {
+        isValidated: true, validationStatus: "VALIDATED", archived: { $ne: true },
+        ...(!viewer.data ? { isPublished: true } : {}),
+      }];
+    }
+
     const [listings, total] = await Promise.all([
       Listing.find(query)
         .sort({ [sortField]: sortDirection })
@@ -765,10 +790,15 @@ export async function fetchListingById(
     await dbConnect();
 
     // 3️⃣ Fetch listing
-    const listing = await Listing.findById(listingId)
-      .populate("agent", "firstname lastname email phone")
-      .populate("sellerClient", "firstName lastName phone email")
-      .lean();
+    const viewer = await getUserBySessionEmail();
+    const restricted = !viewer.data || viewer.data.role === "ASSISTANT" || viewer.data.role === "VIEWER";
+    const query = Listing.findOne({ _id: listingId, ...(restricted ? {
+      isValidated: true, validationStatus: "VALIDATED", archived: { $ne: true },
+      ...(!viewer.data ? { isPublished: true } : {}),
+    } : {}) }).populate("agent", "firstname lastname email phone");
+    if (viewer.data && viewer.data.role !== "VIEWER") query.populate("sellerClient", "firstName lastName phone email");
+    else query.select("-sellerClient");
+    const listing = await query.lean();
 
     if (!listing) {
       return {
@@ -1185,6 +1215,10 @@ export async function toggleListingValidation(
       };
     }
 
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
+    }
+
     await dbConnect();
 
     const listing = await Listing.findById(listingId);
@@ -1266,6 +1300,10 @@ export async function approveListingWithoutReference(
       };
     }
 
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
+    }
+
     await dbConnect();
 
     const listing = await Listing.findById(listingId);
@@ -1326,6 +1364,10 @@ export async function setListingNeutre(
       };
     }
 
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
+    }
+
     await dbConnect();
 
     await Listing.findByIdAndUpdate(listingId, {
@@ -1369,6 +1411,10 @@ export async function unarchiveListing(
         error: { message: "Utilisateur non autorisé" },
         status: 401,
       };
+    }
+
+    if (!isElevatedRole(user.data.role)) {
+      return { success: false, error: { message: "Accès refusé : validation réservée au gérant" }, status: 403 };
     }
 
     await dbConnect();
@@ -1440,7 +1486,15 @@ export async function fetchListingsBySellerClient(
 
     await dbConnect();
 
-    const listings = await Listing.find({ sellerClient: sellerClientId })
+    const viewer = await getUserBySessionEmail();
+    if (!viewer.data) return { success: false, error: { message: "Utilisateur non autorisé" }, status: 401 };
+    if (viewer.data.role === "VIEWER") return { success: false, error: { message: "Accès refusé" }, status: 403 };
+    const agency = isElevatedRole(viewer.data.role);
+    const accessibleSeller = await Client.exists({ _id: sellerClientId,
+      ...(agency ? {} : viewer.data.role === "ASSISTANT" ? { $or: [{ assignedAgent: viewer.data._id }, { createdBy: viewer.data._id }] } : { assignedAgent: viewer.data._id }),
+    });
+    if (!accessibleSeller) return { success: false, error: { message: "Client introuvable" }, status: 404 };
+    const listings = await Listing.find({ sellerClient: sellerClientId, ...(viewer.data.role === "ASSISTANT" ? { isValidated: true, validationStatus: "VALIDATED", archived: { $ne: true } } : {}) })
       .sort({ createdAt: -1 })
       .populate("agent", "name firstname lastname email phone")
       .lean();

@@ -9,6 +9,8 @@ export const scheduleVisitSchema = z
     scheduledAt: z.coerce.date({ required_error: "Date de visite requise" }),
     status: z.enum(["SCHEDULED", "COMPLETED"]).default("SCHEDULED"),
     notes: z.string().optional(),
+    deduplicate: z.boolean().optional(),
+    assignedAgentId: z.string().regex(/^[a-f0-9]{24}$/i).optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.isExternalListing && !data.listingId) {
@@ -36,6 +38,7 @@ export const completeVisitSchema = z.object({
 });
 
 export const cancelVisitSchema = z.object({
+  expectedScheduledAt: z.string().datetime().optional(),
   visitId: z.string().min(1),
   notes: z.string().optional(),
 });

@@ -64,6 +64,7 @@ interface ResidenceFormProps {
   initialData?: Residence;
   residenceId?: string;
   agents?: User[];
+  assistantDraft?: boolean;
 }
 
 const ORAN_CENTER = { lat: 35.6969, lng: -0.6331 };
@@ -76,6 +77,7 @@ export default function ResidenceForm({
   initialData,
   residenceId,
   agents = [],
+  assistantDraft = false,
 }: ResidenceFormProps) {
   const [isPending, startTransition] = useTransition();
   const [folderKey] = useState(() => residenceId ?? `draft-${Date.now()}`);
@@ -182,7 +184,7 @@ export default function ResidenceForm({
       toast.success(
         isEditMode ? "Résidence mise à jour avec succès" : "Résidence créée avec succès"
       );
-      router.push(ROUTES.RESIDENCES_DASHBOARD);
+      router.push(assistantDraft ? ROUTES.DASHBOARD : ROUTES.RESIDENCES_DASHBOARD);
     });
   };
 
@@ -766,8 +768,7 @@ export default function ResidenceForm({
               </Card>
             )}
 
-            {/* Publication */}
-            <Card>
+            {!assistantDraft && <Card>
               <CardHeader>
                 <CardTitle>Publication</CardTitle>
               </CardHeader>
@@ -807,7 +808,7 @@ export default function ResidenceForm({
                   )}
                 />
               </CardContent>
-            </Card>
+            </Card>}
           </div>
         </div>
 
